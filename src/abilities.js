@@ -100,7 +100,7 @@ export class Abilities {
     if (which === 'seal') {
       f.hasSeal = true;
       this.game.hud.toast(
-        `<b>Stasis Seal learned!</b> ${touch ? 'Tap <b>Seal</b>' : 'Press <kbd>R</kbd>'} next to something to hold it in its moment. It will stay exactly as it is, in every age after.`,
+        `<b>Stasis Seal learned!</b> Things that can be sealed shimmer with pale light. Stand beside one and ${touch ? 'tap <b>Seal</b>' : 'press <kbd>R</kbd>'} to hold it in its moment: it will stay exactly as it is, in every age after.`,
         8000,
       );
     } else {
@@ -122,15 +122,43 @@ export class Abilities {
     }
     for (const e of this.echoes) if (e) e.update(dt, g.renderer.billboardQ);
     this.updatePlates();
+    this.glint(dt);
   }
 
   // ------------------------------------------------------------------ Stasis Seal
+
+  /** Sealables that can be sealed right now, in this era (the shimmer shows where). */
+  readySealables() {
+    const g = this.game, f = g.state.flags;
+    if (!f.hasSeal) return [];
+    return SEALABLES.filter((s) => s.era === g.era && f[s.needs] && !f[s.flag]);
+  }
+
+  /** The sealable the player is standing at, if any: drives the "R Seal ..." prompt and the touch button. */
+  sealTarget() {
+    const b = this.game.player.body;
+    return this.readySealables().find((s) => b.x >= s.x0 && b.x <= s.x1 + 1) || null;
+  }
+
+  /** Pale motes rise off anything that can be sealed, so it reads as special before you get there. */
+  glint(dt) {
+    for (const s of this.readySealables()) {
+      if (Math.random() > dt * 14) continue;
+      const a = s.glint;
+      this.game.bursts.emit(a.x0 + Math.random() * (a.x1 - a.x0), a.y, a.z0 + Math.random() * (a.z1 - a.z0), 1, {
+        color: [0xbff6ff, 0xffffff], speed: 0.4, life: 1.2, gravity: -0.8, glow: 1.6,
+      });
+    }
+  }
+
   trySeal() {
     const g = this.game, b = g.player.body, f = g.state.flags;
-    const t = SEALABLES.find((s) => s.era === g.era && b.x >= s.x0 && b.x <= s.x1 + 1);
-    if (!t) return g.hud.toast('Nothing here to seal. The Stasis Seal holds something in its moment, so the years pass it by.');
-    if (f[t.flag]) return g.hud.toast(`${t.name} is already sealed in its moment.`);
-    if (!f[t.needs]) return g.hud.toast("There's nothing here worth keeping yet.");
+    const t = this.sealTarget();
+    if (!t) {
+      const here = SEALABLES.find((s) => s.era === g.era && b.x >= s.x0 && b.x <= s.x1 + 1);
+      if (here && f[here.flag]) return g.hud.toast(`${here.name} is already sealed in its moment.`);
+      return g.hud.toast('Nothing here to seal. Things that can be sealed shimmer with pale light. Stand beside one and use the Seal.', 5500);
+    }
     f[t.flag] = true;
     audio.sfx('socket');
     audio.sfx('shift', { era: g.era });
@@ -173,7 +201,26 @@ export class Abilities {
     audio.sfx('shift', { era: r.era });
     const first = !g.state.flags.echoHint;
     g.state.flags.echoHint = true;
-    g.hud.toast(`Echo left in the <b>${ERA_SHORT[r.era]}</b>.${first ? ' It keeps repeating there while you travel. Record a new one to replace it.' : ''}`, first ? 6000 : 3000);
+    g.hud.toast(
+      `Echo left in the <b>${ERA_SHORT[r.era]}</b>.${first ? ` It keeps repeating there while you travel. Record a new one to replace it, or stand on it and ${touchActive() ? 'tap <b>Dispel echo</b>' : 'press <kbd>F</kbd>'} to remove it.` : ''}`,
+      first ? 7000 : 3000,
+    );
+  }
+
+  /** The echo the player is standing on in this era (where it is now, or where its loop starts). */
+  dispelTarget() {
+    const g = this.game, b = g.player.body, e = this.echoes[g.era];
+    if (!e || this.rec) return null;
+    const on = (p) => Math.hypot(b.x - p.x, b.z - p.z) < 0.8 && Math.abs(b.y - p.y) < 1;
+    return on(e.pos) || on(e.frames[0]) ? e : null;
+  }
+
+  dispel(e) {
+    e.remove();
+    this.echoes[e.era] = null;
+    audio.sfx('snap');
+    this.game.bursts.emit(e.pos.x, e.pos.y + 0.9, e.pos.z, 30, { color: [ERA_TONE[e.era], 0xffffff], speed: 3, life: 0.7, gravity: 0 });
+    this.game.hud.toast(`Echo dispelled in the <b>${ERA_SHORT[e.era]}</b>.`, 2500);
   }
 
   /** Drop a recording in progress (death, hazards, world rebuilds). */

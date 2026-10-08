@@ -96,7 +96,7 @@ export function currentGoal(game) {
       if (inv.includes('wheel')) return step("Close the mill's sluice gate.", 'Fit the brass wheel to the sluice on top of the dam, in the <b>Present</b>.');
       return step('Stop the millpond draining away.', "The sluice on the dam is stuck open and its wheel is gone. In the <b>Future</b> the mill is a pumping station with a little museum by the road. Look there.");
     }
-    return step('Swim across the millpond.', `The pond is deep now. Swim to the cliff on the far side (${keys.jump} to swim up) and climb out onto the ledge.`);
+    return step('Cross the millpond.', "The full pond floats the mill's log boom up level with the banks. Hop from log to log to the far side, and don't fall in.");
   }
   // ---- Tamsin's Crossing
   if (x < X.chord) {
@@ -142,5 +142,5 @@ function missingEarlier(hasHammer, hasRod, hasDisc = true) {
 /** Key / button names for the current input method. */
 function inputNames() {
   const touch = document.body.classList.contains('touch');
-  return touch ? { jump: 'tap <b>Jump</b>', seal: 'the <b>Seal</b> button', echo: 'the <b>Echo</b> button' } : { jump: '<kbd>Space</kbd>', seal: '<kbd>R</kbd>', echo: '<kbd>V</kbd>' };
+  return touch ? { seal: 'the <b>Seal</b> button', echo: 'the <b>Echo</b> button' } : { seal: '<kbd>R</kbd>', echo: '<kbd>V</kbd>' };
 }

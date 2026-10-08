@@ -94,7 +94,8 @@ export const CHORD_PLATES = [
 /** Things the Stasis Seal can hold in their moment. */
 export const SEALABLES = [
   {
-    id: 'bridge', era: P, x0: L.gorgeX0 - 2, x1: L.gorgeX1 + 1, needs: 'bridgeBuilt', flag: 'bridgeSealed', name: "Tamsin's bridge",
+    id: 'bridge', era: P, x0: L.gorgeX0 - 1, x1: L.gorgeX1 + 1, needs: 'bridgeBuilt', flag: 'bridgeSealed', name: "Tamsin's bridge",
+    glint: { x0: L.gorgeX0, x1: L.gorgeX1 + 1, y: 0.1, z0: 2, z1: 5 }, // where the "this can be sealed" shimmer plays
     focus: [(L.gorgeX0 + L.gorgeX1 + 1) / 2, 0.5, 3.5], caption: 'Sealed in its moment, the bridge waits out the centuries...',
     after: 'The bridge stands in every age now. In the <b>Present</b> a city wall blocks the far bank, but in the <b>Future</b> that wall is rubble.',
   },
@@ -1163,11 +1164,10 @@ function millHollow(world) {
     id: 'millM', eras: [M], key: (s) => `${!!s.flags.millDammed},${!!s.flags.sluiceClosed}`,
     build: (b, era, s) => {
       const { millDammed: dammed, sluiceClosed: closed } = s.flags;
-      // full: the water cells reach one above the cliff top (the swim stroke only lifts you a
-      // hair above the water), drawn brim-full at the ledge
-      if (dammed && closed) b.water(L.pondX0, 0, 0, L.pondX1, 3, 6, MILL_WATER[1], 0.8);
-      else if (dammed) b.water(L.pondX0, 0, 0, L.pondX1, 0, 6, MILL_WATER[1], 0.45);
+      const level = millLevel(s);
+      if (level >= 0) b.hazard(L.pondX0, 0, 0, L.pondX1, level, 6, MILL_WATER[1], false, level ? 0.25 : 0.45);
       else for (let i = 0; i < 14; i++) b.deco(L.pondX0 + hash3(i, 1, 3) * 8.5, 0, hash3(i, 2, 3) * 6.5, 0.6, 0.03, 0.08, 0x5a4a3a); // cracked mud
+      logBoom(b, M, Math.max(0, level));
       millLadder(b, M);
       // the sluice on the rim: an open slot, or a shut gate with its brass wheel
       b.deco(L.rimX + 0.05, 3, 4.6, 0.12, 1.4, 0.12, C.wood[1]);
@@ -1185,17 +1185,39 @@ function millHollow(world) {
   world.addFeature({
     id: 'millF', eras: [F], key: (s) => `${!!s.flags.millDammed},${!!s.flags.sluiceClosed}`,
     build: (b, era, s) => {
-      if (s.flags.millDammed && s.flags.sluiceClosed) {
-        b.water(L.pondX0, 0, 0, L.pondX1, 3, 6, MILL_WATER[2], 0.8);
-        b.glow(L.pondX0, 3.22, 6.9, L.pondX1 - L.pondX0 + 1, 0.04, 0.08, NEON.cyan);
-        b.light((L.pondX0 + L.pondX1) / 2, 1, 3.5, NEON.cyan, 5, 8, 0);
+      const full = millLevel(s) === 2;
+      if (full) {
+        b.hazard(L.pondX0, 0, 0, L.pondX1, 2, 6, MILL_WATER[2], false, 0.25);
+        b.glow(L.pondX0, 2.77, 6.9, L.pondX1 - L.pondX0 + 1, 0.04, 0.08, NEON.cyan);
+        b.light((L.pondX0 + L.pondX1) / 2, 3.5, 3.5, NEON.cyan, 5, 8, 0);
+        // a lone pontoon off the walkway, with something shiny on it
+        b.solid(195, 2, 6, 195, 2, 6, jitter(C.metalL));
+        b.glow(195.05, 3.0, 6.05, 0.9, 0.04, 0.9, NEON.amber);
       } else {
-        // a dry concrete spillway
-        for (let x = L.pondX0; x <= L.pondX1; x += 2) b.deco(x + 0.1, 0, 0.2, 0.06, 0.02, 6.6, 0x2a2f3a);
+        for (let x = L.pondX0; x <= L.pondX1; x += 2) b.deco(x + 0.1, 0, 0.2, 0.06, 0.02, 6.6, 0x2a2f3a); // dry spillway
       }
+      logBoom(b, F, full ? 2 : 0);
       millLadder(b, F);
     },
   });
+}
+
+/** Pond water: -1 dry, 0 shallow (sluice open), 2 brim-full (top cell; the cliffs are 3 high). */
+function millLevel(s) {
+  if (!s.flags.millDammed) return -1;
+  return s.flags.sluiceClosed ? 2 : 0;
+}
+
+// The mill's log boom: three floating sections with hop-able gaps between them. They rest on
+// the pond bed until the water is deep enough to lift them level with the dam and the cliff.
+const BOOM = [[191, 192], [194, 195], [197, 199]];
+function logBoom(b, era, y) {
+  const pal = era === F ? C.metalL : C.log;
+  for (const [x0, x1] of BOOM) {
+    b.solid(x0, y, 2, x1, y, 4, jitter(pal));
+    if (era === F) b.glow(x0 + 0.05, y + 1.0, 1.98, x1 - x0 + 0.9, 0.03, 0.05, NEON.cyan);
+    else for (const z of [2.05, 4.85]) b.deco(x0, y + 0.95, z, x1 - x0 + 1, 0.08, 0.1, 0xc8a060); // rope lashings
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -1444,7 +1466,7 @@ export const SPAWNS = [
   { type: 'cog', id: 'cogF1', era: F, x: 29.5, y: 3.7, z: 2.5 },
   { type: 'cog', id: 'cogF2', era: F, x: 65.5, y: -2.4, z: 3.5, needs: 'springOpen' },
   { type: 'cog', id: 'cogF3', era: F, x: 92.9, y: 0.6, z: 4.6, needs: ['acornPlanted', 'acornPlantedM'] },
-  { type: 'cog', id: 'cogF4', era: F, x: 195.5, y: 0.6, z: 3.5, needs: 'sluiceClosed' }, // at the bottom of the reservoir
+  { type: 'cog', id: 'cogF4', era: F, x: 195.5, y: 3.7, z: 6.5, needs: 'sluiceClosed' }, // on a pontoon off the boom
 
   // Pushables
   { type: 'pushable', id: 'block', era: P, x: L.blockStart.x, z: L.blockStart.z, kind: 'stone', posKey: 'blockPos' },

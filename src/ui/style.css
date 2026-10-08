@@ -572,3 +572,8 @@ body.recording .tc-echo { color: #ffd6e0; border-color: #ff3a5a; box-shadow: 0 0
   body.touch.has-seal #prompt, body.touch.has-echo #prompt { bottom: calc(252px + env(safe-area-inset-bottom, 0px)); }
   body.touch.has-seal:not(.in-dialogue) #toasts, body.touch.has-echo:not(.in-dialogue) #toasts { bottom: calc(306px + env(safe-area-inset-bottom, 0px)); }
 }
+/* the Seal button only lights up beside something that can be sealed */
+.tc-seal:not(.ready) { opacity: 0.45; }
+.tc-seal.ready { color: #140f1c; background: #bff6ff; border-color: transparent; box-shadow: 0 0 24px rgba(160, 240, 255, 0.7); animation: talkPulse 1.2s ease-in-out infinite; }
+#prompt[data-action='seal'] { border-color: rgba(160, 240, 255, 0.6); box-shadow: 0 0 24px rgba(160, 240, 255, 0.35); }
+@media (prefers-reduced-motion: reduce) { .tc-seal.ready { animation: none; } }

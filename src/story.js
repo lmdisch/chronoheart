@@ -194,11 +194,12 @@ function npcLines(game, id) {
     }
     case 'hobb': {
       const h = S('hobb', 'Hobb the Miller');
-      if (f.sluiceClosed) return [h('A full millpond! The wheel turns again, and the whole valley will have flour by Sunday.'), h("You're a marvel, girl. Mind you don't drown showing off.")];
+      if (f.sluiceClosed) return [h('A full millpond! The wheel turns again, and the old log boom floats like it did in Grandsire\'s day.'), h("You're a marvel, girl. Mind you keep to the logs. That water's deep enough to drown a horse.")];
       if (f.millDammed) {
         return [
           h("The pond came back, just like Grandsire said it once was! But look at it. It runs straight out through the sluice."),
           h('The wheel that winds the gate shut was sold for scrap before I was born. Some fool thought it belonged in a museum.'),
+          h("Fill this pond to the brim and that old log boom lying in the mud would float again. You could walk clear across."),
         ];
       }
       return [
@@ -395,7 +396,7 @@ export async function interact(game, ent) {
       game.refreshWorld();
       await say([N('You fit the brass wheel onto the spindle and wind. With a long groan, the sluice gate drops shut.'), Wr('Now the pond can fill all the way up!')]);
       await game.timelapse({ to: ERA.FUTURE, focus: [195.5, 1.5, 3], years: 300, caption: 'The millpond fills to the brim, and in time becomes a reservoir...', grow: ['millF'] });
-      game.hud.toast(touchActive() ? 'The millpond is deep now. <b>Swim</b> across (tap <b>Jump</b> to swim up) and climb out onto the far bank.' : 'The millpond is deep now. <b>Swim</b> across (<kbd>Space</kbd> to swim up) and climb out onto the far bank.', 6500);
+      game.hud.toast("The pond is full, and the mill's old log boom has floated up level with the banks. Hop across the logs, and don't fall in: the water is deep and cold.", 7000);
       game.save();
       return;
     case 'satchel':

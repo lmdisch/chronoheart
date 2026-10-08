@@ -130,6 +130,7 @@ export class TouchControls {
     const seal = make('tc-seal', 'Seal', ICON.seal);
     const echo = make('tc-echo', 'Echo', ICON.echo);
     abil.append(seal, echo);
+    this.sealBtn = seal;
     this.tap(seal, () => this.pulse('KeyR'));
     this.tap(echo, () => this.pulse('KeyV'));
 
@@ -279,7 +280,7 @@ export class TouchControls {
     if (dial) this.hold(dial, 'Tab');
 
     const prompt = document.getElementById('prompt');
-    this.tap(prompt, () => this.pulse('KeyF'));
+    this.tap(prompt, () => this.pulse(prompt.dataset.action === 'seal' ? 'KeyR' : 'KeyF'));
 
     // during cutscenes and conversations, a tap anywhere (controls included) moves the dialogue on
     const advance = () => {
@@ -296,6 +297,7 @@ export class TouchControls {
   /** Called every frame: highlight Talk when there's something to talk to. */
   update(hasPrompt) {
     if (!this.on) return;
-    this.talkBtn.classList.toggle('ready', !!hasPrompt);
+    this.talkBtn.classList.toggle('ready', !!hasPrompt && document.getElementById('prompt').dataset.action !== 'seal');
+    this.sealBtn.classList.toggle('ready', !!this.game.abilities?.sealTarget());
   }
 }

@@ -451,6 +451,8 @@ export class Game {
 
   async runEnding() {
     this.mode = 'ending';
+    this.hud.showPrompt(null);
+    this.abilities.cancelRecording();
     audio.sfx('bell');
     audio.sfx('fanfare');
     this.renderer.shake = 1.5;
@@ -594,7 +596,14 @@ export class Game {
 
     // interaction
     const near = ctl ? this.nearestInteractive() : null;
-    this.hud.showPrompt(near ? (near.prompt ? near.prompt() : 'Interact') : null);
+    // with nothing to talk to, offer the Stasis Seal when something sealable is right here
+    // ...or, standing on one of your echoes, offer to dispel it
+    const seal = ctl && !near ? this.abilities.sealTarget() : null;
+    const echo = ctl && !near && !seal ? this.abilities.dispelTarget() : null;
+    if (seal) this.hud.showPrompt(`Seal ${seal.name}`, 'seal');
+    else if (echo) this.hud.showPrompt('Dispel echo', 'dispel');
+    else this.hud.showPrompt(near ? (near.prompt ? near.prompt() : 'Interact') : null);
+    if (echo && input.hit('interact')) this.abilities.dispel(echo);
     if (near && ctl && input.hit('interact')) {
       this.mode = 'dialogue';
       const p = near instanceof NPC ? talk(this, near) : interact(this, near);
