@@ -710,6 +710,8 @@ export const CHAR = {
   callie: { skin: '#c08860', hair: '#b8925a', hairStyle: 'braid', top: '#d8b880', apron: '#8a6a3a', legs: '#7a5a3a', boots: '#5a3a22', belt: '#c8642a', wide: true },
   lillian: { skin: '#e8b088', hair: '#36d0e0', hairStyle: 'spiky', top: '#e07a2a', apron: '#3a404c', legs: '#3a404c', boots: '#22262f', belt: '#ffb03a', goggles: true },
   eugene: { skin: '#eac0a0', hair: '#e8e8f0', hairStyle: 'short', beard: '#e8e8f0', top: '#3a4a8a', apron: '#c9a44a', legs: '#2a2a3a', boots: '#3a2a20', belt: '#c9a44a' },
+  hobb: { skin: '#e0b088', hair: '#8a5a32', hairStyle: 'bald', beard: '#a87a4a', top: '#c8c0a8', apron: '#e8e0d0', legs: '#5a4a3a', boots: '#3a2a20', belt: '#6a4a2a', wide: true },
+  tamsin: { skin: '#9a6a48', hair: '#1e1612', hairStyle: 'braid', top: '#7a8a3a', apron: '#c9a24a', legs: '#6a5232', boots: '#4a3220', belt: '#c8642a' },
 };
 
 let cache = null;
@@ -729,6 +731,8 @@ export function getSheets() {
     megan: squirrelSheet(),
     zach: squirrelSheet({ B: '#86848e', L: '#cfccd6', acorn: false, spectacles: true }),
     michelle: humanoidSheet(CHAR.michelle, { npcOnly: true }),
+    hobb: humanoidSheet(CHAR.hobb, { npcOnly: true }),
+    tamsin: humanoidSheet(CHAR.tamsin, { npcOnly: true }),
     thornback: thornbackSheet(),
     rat: ratSheet(),
     drone: droneSheet(),
@@ -973,6 +977,39 @@ const ICONS = {
     for (let y = 0; y < 6; y++) rect(c, 2 + y, 7 + y, 13 - y * 2, 1, '#ff4a6a');
     px(c, 4, 5, '#ffc0d0');
     px(c, 5, 4, '#ffc0d0');
+  },
+  wheel: (c) => {
+    disc(c, 8, 8, 6, '#b8862a');
+    disc(c, 8, 8, 5, '#3a2a14');
+    line(c, 3, 8, 13, 8, '#e8b84a', 1);
+    line(c, 8, 3, 8, 13, '#e8b84a', 1);
+    line(c, 4, 4, 12, 12, '#d8a840', 1);
+    line(c, 12, 4, 4, 12, '#d8a840', 1);
+    disc(c, 8, 8, 1, '#ffe08a');
+    px(c, 5, 3, '#fff2b0');
+  },
+  cable: (c) => {
+    disc(c, 8, 9, 6, '#5b6472');
+    disc(c, 8, 9, 4, '#8a94a4');
+    disc(c, 8, 9, 2, '#3a404c');
+    line(c, 13, 6, 15, 2, '#a0a8b4', 1);
+    px(c, 6, 5, '#d8dce6');
+    px(c, 10, 13, '#d8dce6');
+  },
+  satchel: (c) => {
+    rect(c, 2, 6, 12, 8, '#7a5232');
+    rect(c, 2, 6, 12, 3, '#8a6038');
+    rect(c, 7, 8, 2, 2, '#c9a44a');
+    line(c, 4, 6, 6, 2, '#5a3a22', 1);
+    line(c, 12, 6, 10, 2, '#5a3a22', 1);
+    rect(c, 6, 2, 5, 1, '#5a3a22');
+  },
+  lens: (c) => {
+    disc(c, 8, 8, 6, '#c9a44a');
+    disc(c, 8, 8, 4, '#ff4fd8');
+    disc(c, 8, 8, 2, '#ffc8f4');
+    px(c, 6, 6, '#ffffff');
+    rect(c, 7, 14, 2, 2, '#8a6a3a');
   },
   amulet: (c) => {
     disc(c, 8, 9, 5, '#c9a44a');

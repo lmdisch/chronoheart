@@ -13,6 +13,8 @@ const ICON = {
   items: '<svg viewBox="0 0 24 24"><path d="M8 7V6a4 4 0 0 1 8 0v1h3l1 14H4L5 7zm2 0h4V6a2 2 0 0 0-4 0z"/></svg>',
   help: '<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm1 14h-2v-2h2zm2.1-6.6-.9.9c-.7.7-1.2 1.3-1.2 2.7h-2v-.5c0-1.1.5-2.1 1.2-2.8l1.2-1.3A1.5 1.5 0 1 0 10.5 8.5h-2a3.5 3.5 0 1 1 6.6 1.9z"/></svg>',
   pause: '<svg viewBox="0 0 24 24"><path d="M7 5h3.5v14H7zm6.5 0H17v14h-3.5z"/></svg>',
+  seal: '<svg viewBox="0 0 24 24"><path d="M6 2h12v2h-1v3.2L13.6 12l3.4 4.8V20h1v2H6v-2h1v-3.2l3.4-4.8L7 7.2V4H6zm3 2v2.6l3 4.2 3-4.2V4zm3 9.2-3 4.2V20h6v-2.6z"/></svg>',
+  echo: '<svg viewBox="0 0 24 24"><path d="M9 3a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM6 9.5h6l1 6h-2l-.5 6.5h-3L7 15.5H5z"/><path opacity=".45" d="M16 3a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zm-2.4 6.5H19l1 6h-2l-.5 6.5h-3l-.2-3z"/></svg>',
 };
 
 const STICK_R = 54; // px of thumb travel for full speed
@@ -122,7 +124,16 @@ export class TouchControls {
     this.tap(help, onHelp);
     this.tap(pause, onPause);
 
-    this.root.append(pad, top);
+    // abilities learned east of the gatehouse (shown once unlocked, see body.has-seal / has-echo)
+    const abil = document.createElement('div');
+    abil.className = 'tc-abil';
+    const seal = make('tc-seal', 'Seal', ICON.seal);
+    const echo = make('tc-echo', 'Echo', ICON.echo);
+    abil.append(seal, echo);
+    this.tap(seal, () => this.pulse('KeyR'));
+    this.tap(echo, () => this.pulse('KeyV'));
+
+    this.root.append(pad, top, abil);
   }
 
   /**

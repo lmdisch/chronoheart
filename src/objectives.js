@@ -2,8 +2,12 @@
 // (revealed only when the player asks for it), based on where the player is and what
 // they've done. Earlier unfinished steps are named when they block the end of the game.
 import { ERA } from './core/util.js';
+import { L } from './levels/hollowmere.js';
 
-const X = { ford: 38, fordFar: 48, cliff: 66, rampart: 79, wall: 97, smithy: 105, terrace: 130, gate: 157, tower: 182 };
+const X = {
+  ford: 38, fordFar: 48, cliff: 66, rampart: 79, wall: 97, smithy: 105, terrace: 130, gate: 157,
+  mill: L.millX0, crossing: L.crossingX0, chord: L.chordX0, tower: L.towerX0,
+};
 
 const step = (goal, hint) => ({ goal, hint });
 
@@ -66,7 +70,7 @@ export function currentGoal(game) {
     return missingEarlier(hasHammer, hasRod) || step('Keep heading east.', 'The Gatehouse is just past the terrace.');
   }
   // ---- Gatehouse: the Fusion Core
-  if (x < X.tower) {
+  if (x < X.mill) {
     if (!hasCore) {
       if (!f.winchFixed) {
         if (!hasRod) return step('Find a way through the Gatehouse.', 'The gate winch has no handle. Aria keeps an iron rod on her rack in Smithy Lane, back west.');
@@ -76,15 +80,52 @@ export function currentGoal(game) {
       if (game.era !== ERA.FUTURE) return step('Reach the vault at the end of the gatehouse.', 'The Fusion Core is in the vault, in the <b>Future</b>. Jump over the fallen gate in the corridor.');
       return step('Reach the vault at the end of the gatehouse.', 'Jump over the rusted gate in the corridor, get past the Sentinel, and hop onto the pedestal for the Fusion Core.');
     }
-    return missingEarlier(hasHammer, hasRod, hasDisc) || step('Keep heading east.', 'The Clocktower is at the end of the road.');
+    return missingEarlier(hasHammer, hasRod, hasDisc) || step('Keep heading east.', 'The road goes on past the vault, toward the Clocktower.');
   }
+  // ---- Millrace Hollow
+  const keys = inputNames();
+  if (x < X.crossing) {
+    if (x >= L.millCliffX0) return step('Keep heading east.', "Tamsin's Crossing is just ahead.");
+    if (!f.millDammed) {
+      return step(
+        'Find a way across the hollow.',
+        'The far bank is too high to climb. In the <b>Past</b>, a spring falls from the cliff and drains away down a gully. Push the boulder into the glowing gully mouth to turn the water into the hollow.',
+      );
+    }
+    if (!f.sluiceClosed) {
+      if (inv.includes('wheel')) return step("Close the mill's sluice gate.", 'Fit the brass wheel to the sluice on top of the dam, in the <b>Present</b>.');
+      return step('Stop the millpond draining away.', "The sluice on the dam is stuck open and its wheel is gone. In the <b>Future</b> the mill is a pumping station with a little museum by the road. Look there.");
+    }
+    return step('Swim across the millpond.', `The pond is deep now. Swim to the cliff on the far side (${keys.jump} to swim up) and climb out onto the ledge.`);
+  }
+  // ---- Tamsin's Crossing
+  if (x < X.chord) {
+    if (x >= L.farWallX1 + 1) return step('Keep heading east.', 'The Chord Vault is just ahead.');
+    if (!f.hasSeal) return step('Look around the old crossing.', "Something of Eugene's was left in the reeds on this bank, in the <b>Present</b>.");
+    if (!f.bridgeBuilt) {
+      if (inv.includes('cable')) return step('Bring the cable to Tamsin.', 'Tamsin the Ropewright is on this bank in the <b>Past</b>. Steel cable never rots.');
+      if (f.bridgeQuest) return step('Find rope that never rots.', 'In the <b>Future</b>, there is a scrapyard on this bank. A spool of steel cable would do nicely.');
+      return step('Find a way across the gorge.', 'In the <b>Past</b>, a ropewright named Tamsin is planning a bridge here. Talk to her.');
+    }
+    if (!f.bridgeSealed) return step('Make the bridge last.', `Tamsin's bridge rots away within a century. Stand by it in the <b>Past</b> and use the Stasis Seal (${keys.seal}).`);
+    return step('Cross the gorge.', 'In the <b>Present</b> a city wall blocks the far bank, but in the <b>Future</b> it is only rubble. Cross in the Future, then return to the Present once you are past the wall.');
+  }
+  // ---- The Chord Vault
+  if (x < X.tower && !f.chordOpen) {
+    if (!f.hasEcho) return step('Find a way into the vault.', 'The vault door needs three plates pressed at once, one in each age. In the <b>Future</b>, the archive pedestal by the entrance holds something of Eugene\'s.');
+    return step(
+      'Press all three plates at once.',
+      `Each age has one plate. Stand on a plate and record an echo there (${keys.echo} to start and stop): it keeps standing on it in that age. Leave echoes in two ages, then stand on the last plate yourself. The Present plate is up on the stone platform.`,
+    );
+  }
+  if (x < X.tower) return step('Keep heading east.', 'The Clocktower is through the vault.');
   // ---- Clocktower
   const missing = [];
   if (!hasDisc) missing.push('the Sun Disc (Sun Terrace, in the Past)');
   if (!hasHammer) missing.push('the Bell Hammer (Smithy Lane)');
   if (!hasCore) missing.push('the Fusion Core (Gatehouse vault, in the Future)');
   if (missing.length) {
-    const back = f.posternOpen ? 'The postern passage leads back west through the rubble.' : 'Pull the old postern lever by the Clocktower\'s west wall (<b>Present</b>) to open a way back west.';
+    const back = f.posternOpen ? 'The postern passage leads back west through the rubble.' : 'Pull the old postern lever just past the gatehouse vault (<b>Present</b>) to open a way back west.';
     return step('The Tower needs all three Era Keys.', `You still need ${missing.join(' and ')}. ${back}`);
   }
   return step('Restart the Clocktower.', 'Place all three keys quickly: the Sun pedestal (<b>Past</b>), the great bell (<b>Present</b>) and the reactor socket (<b>Future</b>).');
@@ -96,4 +137,10 @@ function missingEarlier(hasHammer, hasRod, hasDisc = true) {
   if (!hasDisc) return step('Something\'s still missing back west.', 'You still need the Sun Disc from the top of the Sun Terrace, in the Past.');
   if (!hasRod) return step('Something\'s still missing back west.', 'Don\'t forget the iron rod on Aria\'s rack in Smithy Lane. The gate winch needs it.');
   return null;
+}
+
+/** Key / button names for the current input method. */
+function inputNames() {
+  const touch = document.body.classList.contains('touch');
+  return touch ? { jump: 'tap <b>Jump</b>', seal: 'the <b>Seal</b> button', echo: 'the <b>Echo</b> button' } : { jump: '<kbd>Space</kbd>', seal: '<kbd>R</kbd>', echo: '<kbd>V</kbd>' };
 }

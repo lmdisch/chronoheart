@@ -4,6 +4,7 @@ import { audio } from '../audio/audio.js';
 import { iconURL, portraitURL } from '../render/sprites.js';
 import { ITEMS } from '../story.js';
 import { ERA_NAMES } from '../core/util.js';
+import { COG_TOTAL } from '../levels/hollowmere.js';
 
 const $ = (id) => document.getElementById(id);
 const ERA_CLASS = ['past', 'present', 'future'];
@@ -55,7 +56,7 @@ export class HUD {
       .join('');
   }
   setCogs(n) {
-    this.cogs.textContent = `${n}/9`;
+    this.cogs.textContent = `${n}/${COG_TOTAL}`;
   }
   showPrompt(text) {
     if (text === this.lastPrompt) return;
@@ -149,7 +150,7 @@ export class Dialogue {
       let i = 0;
       this.textEl.textContent = '';
       this.clicked = false;
-      const pitch = { michelle: 20, zach: 420, vivienne: 140, louise: 40, samaria: 120, aria: -80, callie: 60, sheng: -70, lillian: 160, eugene: -20, tick: 300, brn: 250, megan: 500 }[line.who] ?? 0;
+      const pitch = { michelle: 20, zach: 420, vivienne: 140, louise: 40, samaria: 120, aria: -80, callie: 60, sheng: -70, lillian: 160, eugene: -20, tick: 300, brn: 250, megan: 500, hobb: -60, tamsin: 80 }[line.who] ?? 0;
       let acc = 0;
       let last = performance.now();
       const tick = (now) => {

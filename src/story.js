@@ -14,6 +14,8 @@ export const ITEMS = {
   starChart: { name: 'Ancient Star Chart', desc: 'Borrowed from the Future archive. It belongs to Samaria, the Sun-Keeper.' },
   lilySeeds: { name: 'Sun-Lily Seeds', desc: 'Golden seeds from a flower that died out long ago.' },
   medallion: { name: "Aria's Medallion", desc: "A smith's medallion stamped with the family mark. For Lillian." },
+  wheel: { name: 'Brass Sluice Wheel', desc: "The old mill's sluice wheel, kept in a museum for three hundred years. It winds the sluice gate shut." },
+  cable: { name: 'Steel Cable', desc: 'A spool of cable from the scrapyard. It will not fray or rot for a very, very long time.' },
 };
 
 /** Kindness side quests. `start` is the flag set when the favour is asked. */
@@ -190,6 +192,48 @@ function npcLines(game, id) {
       const g = S('sheng', 'Sheng the Gatekeeper');
       return [g('The road past this gate collapsed in the quake a hundred years ago. Nothing but rubble now.'), g("The winch? Its handle's gone missing. Any decent iron rod would do."), g("My grandsire always said the future's wide open. Ha! Whatever that means.")];
     }
+    case 'hobb': {
+      const h = S('hobb', 'Hobb the Miller');
+      if (f.sluiceClosed) return [h('A full millpond! The wheel turns again, and the whole valley will have flour by Sunday.'), h("You're a marvel, girl. Mind you don't drown showing off.")];
+      if (f.millDammed) {
+        return [
+          h("The pond came back, just like Grandsire said it once was! But look at it. It runs straight out through the sluice."),
+          h('The wheel that winds the gate shut was sold for scrap before I was born. Some fool thought it belonged in a museum.'),
+        ];
+      }
+      return [
+        h('Hobb, miller. Or I would be, if this hollow held a drop of water.'),
+        h('My great-grandsire swore a spring once ran down that cliff. Then one day it wandered off into the hills, and the pond with it.'),
+        Wr('A spring that wandered off... in the Past, maybe it can be turned back this way.'),
+      ];
+    }
+    case 'tamsin': {
+      const t = S('tamsin', 'Tamsin the Ropewright');
+      if (f.bridgeSealed) return [t('Look at it. Not a fray, not a speck of rot, and it hums like a plucked string.'), t('Whatever you did, spirit, my bridge will outlive us all.')];
+      if (f.bridgeBuilt) {
+        const lines = [t("Strong as I could make it. Mind, the planks will rot and the posts will go soft. A lifetime, maybe two, and it'll be gone.")];
+        if (f.hasSeal) lines.push(Wr("Unless it never ages at all. Eugene's Stasis Seal..."));
+        return lines;
+      }
+      if (inv.includes('cable')) {
+        return [
+          t("What's this? Rope made of... iron? Cold, and finer than spider silk. It won't fray, will it?"),
+          Wr('Not for a very, very long time.'),
+          { take: 'cable' },
+          N('Tamsin works through the afternoon, threading the cable through her planks and lashing it to the stakes.'),
+          { flag: 'bridgeBuilt', refresh: true, sfx: 'socket' },
+          t('There. The first bridge over the Thornwater! The far side is nothing but cliff, mind. My grandchildren will have to cut the road.'),
+        ];
+      }
+      if (f.bridgeQuest) return [t("Rope that never rots. That's what I need. Find me some and I'll bridge this gorge.")];
+      f.bridgeQuest = true;
+      return [
+        t('A traveller! Careful near the edge. The Thornwater has taken braver folk than you.'),
+        t("I'm Tamsin. I mean to bridge this gorge, but every vine rope I twist frays within a season."),
+        t('If only there were rope that never rotted. Spirits\' rope. Ha!'),
+        Wr('Rope that never rots... there must be something like that in the Future.'),
+      ];
+    }
     default:
       return [N('...')];
   }
@@ -205,6 +249,11 @@ export async function talk(game, npc) {
     if (cmd.flag) game.state.flags[cmd.flag] = true;
     if (cmd.favour) game.startFavour(cmd.favour);
     if (cmd.kind) game.completeKindness(cmd.kind);
+    if (cmd.sfx) audio.sfx(cmd.sfx);
+    if (cmd.refresh) {
+      game.refreshWorld();
+      game.save();
+    }
   });
   npc.talking = false;
   if (npc.id === 'tick') game.state.flags.metTick = true;
@@ -321,17 +370,56 @@ export async function interact(game, ent) {
       }
       return say(N('An iron quench-vault, used to temper metal very, very slowly.'));
     case 'glyphP':
-    case 'glyphF': {
-      const p = game.pushables.find((q) => q.era === ent.era);
+    case 'glyphF':
+    case 'glyphMill': {
+      const p = game.pushables.find((q) => q.id === ent.spec.resets);
       if (!p) return;
+      if (p.spec.lockFlag && f[p.spec.lockFlag]) return say(N('The glyph is dark. The boulder is wedged firmly in the gully mouth now.'));
       const st = p.start;
       if (game.player.body.x > st.x - 0.4 && game.player.body.x < st.x + 1.4 && game.player.body.z > st.z - 0.4 && game.player.body.z < st.z + 1.4) return say(N('Step out of the way first.'));
       p.setCell(st.x, st.z);
       game.onPushed(p);
       audio.sfx('shift', { era: ent.era });
       game.bursts.emit(st.x + 0.5, 0.6, st.z + 0.5, 30, { color: ent.era === ERA.PAST ? 0x3ad0c0 : 0xffb03a, speed: 3, life: 0.7 });
-      return say(N(ent.era === ERA.PAST ? 'The glyph pulses, and the carved block shimmers back to where it started.' : 'BEACON RESET: CRATE RETURNED TO ITS DEPOT.'));
+      return say(N(ent.era === ERA.PAST ? `The glyph pulses, and the carved ${p.id === 'boulder' ? 'boulder' : 'block'} shimmers back to where it started.` : 'BEACON RESET: CRATE RETURNED TO ITS DEPOT.'));
     }
+    case 'sluice':
+      if (f.sluiceClosed) return say(N('The sluice gate is shut tight. The millpond is brim-full.'));
+      if (!f.millDammed) return say([N('An old sluice gate in the dam. The channel beneath it is bone dry: there is no water to hold back.'), Wr('A dam with nothing to dam...')]);
+      if (!inv.includes('wheel')) return say([N("Water trickles out through the open sluice. The gate's wheel is missing; only a bare, rusted spindle is left."), Wr("Without a wheel, I can't wind it shut.")]);
+      game.removeItem('wheel');
+      f.sluiceClosed = true;
+      audio.sfx('lever');
+      audio.sfx('gate');
+      game.renderer.shake = 0.4;
+      game.refreshWorld();
+      await say([N('You fit the brass wheel onto the spindle and wind. With a long groan, the sluice gate drops shut.'), Wr('Now the pond can fill all the way up!')]);
+      await game.timelapse({ to: ERA.FUTURE, focus: [195.5, 1.5, 3], years: 300, caption: 'The millpond fills to the brim, and in time becomes a reservoir...', grow: ['millF'] });
+      game.hud.toast(touchActive() ? 'The millpond is deep now. <b>Swim</b> across (tap <b>Jump</b> to swim up) and climb out onto the far bank.' : 'The millpond is deep now. <b>Swim</b> across (<kbd>Space</kbd> to swim up) and climb out onto the far bank.', 6500);
+      game.save();
+      return;
+    case 'satchel':
+      if (f.hasSeal) return say(N("Eugene's satchel, empty now apart from a few bent cogs."));
+      await say([
+        N("Half-hidden in the reeds by the old crossing: Eugene's battered leather satchel."),
+        N('Inside is a brass ring etched with an hourglass, and another note:'),
+        N('"Vivienne. If you have come this far, the Chronoheart can do more than carry you. Touch this ring to it and you can hold a thing in its moment, so the years pass it by. I call it the Stasis Seal. ~E."'),
+        Wr('Hold a thing in its moment... so it never ages at all?'),
+      ]);
+      game.abilities.unlock('seal');
+      game.save();
+      return;
+    case 'echoLens':
+      if (f.hasEcho) return say(N('"EXHIBIT 0091: ON LOAN TO V., APPRENTICE. PLEASE ENJOY."'));
+      await say([
+        N('The archive pedestal flickers awake.'),
+        N('"EXHIBIT 0091: THE ECHO LENS. RECORDS A TRAVELLER\'S MOVEMENTS AND REPLAYS THEM, OVER AND OVER, IN THE AGE WHERE THEY WERE MADE. DONATED BY E. THE CLOCKMAKER."'),
+        Wr('Eugene again! He really did think of everything.'),
+        N('The lens clicks neatly into the Chronoheart.'),
+      ]);
+      game.abilities.unlock('echo');
+      game.save();
+      return;
     case 'winch':
       if (!f.winchFixed) {
         if (!inv.includes('rod')) return say([N("The winch's handle is missing. Some kind of iron rod might fit.")]);

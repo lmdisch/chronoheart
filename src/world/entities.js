@@ -259,10 +259,12 @@ export class Player {
     } else this.pushT = 0;
 
     // hazards
-    if (overlapsType(world, era, b, T.HAZARD, 0, 0.4) || b.y < -7) g.onHazard();
+    const inHazard = overlapsType(world, era, b, T.HAZARD, 0, 0.4);
+    if (inHazard || b.y < -7) g.onHazard();
 
     // safe spot tracking
-    if (b.onGround && this.state !== 'hurt' && !inWater) {
+    // (never on a hazard's bed: you could land there before the respawn kicks in)
+    if (b.onGround && this.state !== 'hurt' && !inWater && !inHazard && !g.respawning) {
       const fy = Math.floor(b.y) - 1;
       const solidAt = (dx, dz) => world.cell(era, Math.floor(b.x + dx), fy, Math.floor(b.z + dz)) === T.SOLID;
       if (solidAt(0, 0) && solidAt(0.9, 0) && solidAt(-0.9, 0) && solidAt(0, 0.9) && solidAt(0, -0.9)) {
@@ -608,6 +610,7 @@ export class Pushable extends EraEntity {
   canPush(dx, dz) {
     if (this.moving) return false;
     const w = this.game.world;
+    if (this.spec.lockFlag && this.game.state.flags[this.spec.lockFlag]) return false; // wedged in place for good
     const tx = this.cx + dx, tz = this.cz + dz;
     if (w.cell(this.era, tx, 0, tz) !== T.AIR) return false;
     if (w.cell(this.era, tx, -1, tz) !== T.SOLID) return false;
@@ -723,6 +726,14 @@ export class Interactable extends EraEntity {
       );
       this.ring.rotation.x = Math.PI / 2;
       this.group.add(this.ring);
+    } else if (this.spec.icon) {
+      // something to pick up from it: floats above until its flag is set
+      this.floatIcon = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.6, 0.6),
+        new THREE.MeshBasicMaterial({ map: iconTexture(this.spec.icon), alphaTest: 0.5, side: THREE.DoubleSide }),
+      );
+      this.floatIcon.material.color.setScalar(1.8);
+      this.group.add(this.floatIcon);
     }
   }
   prompt() {
@@ -748,8 +759,12 @@ export class Interactable extends EraEntity {
     } else if (this.id === 'winch') {
       this.handleMesh.visible = s.inventory.includes('rod') || s.flags.winchFixed;
       this.handleMesh.rotation.z = s.flags.gateDown ? 1.2 : 0;
-    } else if (this.id === 'glyphP' || this.id === 'glyphF') {
-      // nothing
+    } else if (this.floatIcon) {
+      const waiting = !s.flags[this.spec.goneFlag];
+      this.floatIcon.visible = waiting;
+      this.floatIcon.position.set(this.x, this.y + 0.5 + Math.sin(t * 2) * 0.06, this.z);
+      this.floatIcon.quaternion.copy(this.game.renderer.billboardQ);
+      if (waiting && Math.random() < dt * 8) this.game.bursts.emit(this.x, this.y + 0.5, this.z, 1, { color: 0x7ff6ff, speed: 0.6, life: 0.8, gravity: -0.5, jitter: 0.5 });
     } else if (this.placedIcon) {
       const placed = this.game.sockets[this.id];
       this.placedIcon.visible = !!placed;

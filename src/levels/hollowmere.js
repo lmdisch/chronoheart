@@ -65,9 +65,40 @@ export const L = {
   gateX: 165,
   rubbleX0: 168,
   vaultX0: 174, vaultX1: 181,
-  towerX0: 182,
+  // Millrace Hollow: a dry basin between a dam (Present/Future) and a 3-high cliff
+  millX0: 182,
+  rimX: 190, pondX0: 191, pondX1: 199, millCliffX0: 200, millCliffX1: 204,
+  boulderStart: { x: 192, z: 3 },
+  boulderTarget: { x: 195, z: 0 }, // the mouth of the gully the spring drains into
+  // Tamsin's Crossing: a gorge; Past cliff, Present wall and Future rubble on the far bank
+  crossingX0: 207,
+  gorgeX0: 213, gorgeX1: 222,
+  pastCliffX0: 223, pastCliffX1: 229,
+  farWallX0: 225, farWallX1: 226,
+  // The Chord Vault: three pressure plates, one per era, and a door that needs all of them
+  chordX0: 230,
+  vaultDoorX0: 250, vaultDoorX1: 252,
+  towerX0: 254,
   cameraBounds: [10, W - 11],
 };
+/** Tower details were laid out when the Clocktower started at x = 182; this shifts them. */
+const TO = L.towerX0 - 182;
+
+/** Pressure plates in the Chord Vault. y is the height of the surface the plate sits on. */
+export const CHORD_PLATES = [
+  { era: P, x: 237, z: 5, y: 0 },
+  { era: M, x: 242, z: 1, y: 2 },
+  { era: F, x: 246, z: 3, y: 0 },
+];
+
+/** Things the Stasis Seal can hold in their moment. */
+export const SEALABLES = [
+  {
+    id: 'bridge', era: P, x0: L.gorgeX0 - 2, x1: L.gorgeX1 + 1, needs: 'bridgeBuilt', flag: 'bridgeSealed', name: "Tamsin's bridge",
+    focus: [(L.gorgeX0 + L.gorgeX1 + 1) / 2, 0.5, 3.5], caption: 'Sealed in its moment, the bridge waits out the centuries...',
+    after: 'The bridge stands in every age now. In the <b>Present</b> a city wall blocks the far bank, but in the <b>Future</b> that wall is rubble.',
+  },
+];
 
 export const AREAS = [
   { x: 0, name: 'Hollowmere Square' },
@@ -77,9 +108,13 @@ export const AREAS = [
   { x: 105, name: 'Smithy Lane' },
   { x: 130, name: 'The Sun Terrace' },
   { x: 157, name: 'The Gatehouse' },
-  { x: 182, name: 'The Clocktower' },
+  { x: L.millX0, name: 'Millrace Hollow' },
+  { x: L.crossingX0, name: "Tamsin's Crossing" },
+  { x: L.chordX0, name: 'The Chord Vault' },
+  { x: L.towerX0, name: 'The Clocktower' },
 ];
 
+// Shrine 6 used to be the Clocktower's; it now opens the new stretch, so old saves resume there.
 export const CHECKPOINTS = [
   { id: 0, x: 3.5, z: 1.2 },
   { id: 1, x: 53.5, z: 1.2 },
@@ -88,6 +123,9 @@ export const CHECKPOINTS = [
   { id: 4, x: 131.5, z: 1.2 },
   { id: 5, x: 158.5, z: 1.2 },
   { id: 6, x: 184.5, z: 1.2 },
+  { id: 7, x: 207.5, z: 1.2 },
+  { id: 8, x: 231.5, z: 1.2 },
+  { id: 9, x: L.towerX0 + 2.5, z: 1.2 },
 ];
 
 /** Cells the spring wears away through the Present cliff (shared with the time-lapse). */
@@ -132,6 +170,7 @@ function buildGround(world) {
     const b = world.staticBuilder(era);
     for (let x = 0; x < W; x++) {
       if (x >= L.riverX0 && x <= L.riverX1) continue;
+      if (x >= L.gorgeX0 && x <= L.gorgeX1) continue;
       if (era === F && x >= L.pitX0 && x <= L.pitX1) continue; // handled by feature
       for (let z = ZMIN; z < ZMAX; z++) {
         for (let y = -4; y <= -1; y++) b.setCell(x, y, z, T.SOLID, groundColor(era, x, y, z));
@@ -139,10 +178,12 @@ function buildGround(world) {
     }
     // river bed
     b.solid(L.riverX0, -5, ZMIN, L.riverX1, -5, ZMAX - 1, era === F ? C.panel : C.dirt);
+    b.solid(L.gorgeX0, -5, ZMIN, L.gorgeX1, -5, ZMAX - 1, era === F ? C.panel : C.dirt);
     if (era === F) {
       // neon edge strips along the walkway
       for (let x = 0; x < W; x += 1) {
         if (x >= L.riverX0 - 1 && x <= L.riverX1 + 1) continue;
+        if (x >= L.gorgeX0 - 1 && x <= L.gorgeX1 + 1) continue;
         if (x >= L.pitX0 && x <= L.pitX1) continue;
         if (x % 2 === 0) b.glow(x + 0.1, 0.0, 6.88, 0.8, 0.04, 0.08, NEON.cyan);
         if (x % 3 === 0) b.glow(x + 0.1, 0.0, 0.02, 0.6, 0.04, 0.06, NEON.magenta);
@@ -381,6 +422,7 @@ function backdrop(world) {
     // trees / structures between buildings and backdrop
     for (let x = 2; x < W - 2; x += rng.int(3, 6)) {
       const z = -rng.int(7, 11);
+      if (x >= L.gorgeX0 - 2 && x <= L.gorgeX1) continue; // nothing growing in the gorge's river
       if (era === F) {
         if (rng.chance(0.4)) blobTree(b, x, z, rng, era, 0.8);
         else {
@@ -406,6 +448,7 @@ function backdrop(world) {
     // foreground props
     for (let x = 1; x < W - 1; x++) {
       if (x >= L.riverX0 - 1 && x <= L.riverX1 + 1) continue;
+      if (x >= L.gorgeX0 - 1 && x <= L.gorgeX1 + 1) continue;
       if (x >= L.pitX0 && x <= L.pitX1 && era === F) continue;
       const r = hash3(x, era, 77);
       if (era === M) {
@@ -1021,56 +1064,323 @@ function gatehouse(world) {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Millrace Hollow
+// ---------------------------------------------------------------------------
+// Past: a spring falls off the cliff and drains away down a gully. Push the boulder into the
+// gully's mouth and, over the centuries, the hollow fills. Present: the millpond drains out
+// through an open sluice whose wheel is long gone. Future: the mill is a pumping station and
+// its little museum has the wheel. Close the sluice and the pond rises high enough to swim to
+// the top of the cliff.
+const MILL_WATER = [0x4a9ad8, 0x4a90c8, 0x2aa8c8];
+
+function millCliff(b, era) {
+  const pal = era === P ? C.sandstone : era === M ? C.stoneMoss : C.metal;
+  b.solid(L.millCliffX0, 0, ZMIN, L.millCliffX1, 2, 6, jitter(pal));
+  // two steps back down to the road on the far side
+  b.solid(L.millCliffX1 + 1, 0, 0, L.millCliffX1 + 1, 1, 6, jitter(pal));
+  b.solid(L.millCliffX1 + 2, 0, 0, L.millCliffX1 + 2, 0, 6, jitter(pal));
+}
+
+/** Present/Future: stairs up to the dam rim, and a retaining wall behind the pond. */
+function millDam(b, pal) {
+  for (let i = 0; i < 3; i++) b.solid(L.rimX - 3 + i, 0, 0, L.rimX - 3 + i, i, 6, jitter(pal));
+  b.solid(L.rimX, 0, ZMIN, L.rimX, 2, 6, jitter(pal));
+  b.solid(L.pondX0, 0, -2, L.pondX1, 2, -1, jitter(pal));
+}
+
+/** The ladder up the inside of the dam, so a dry or shallow pond is never a trap. */
+function millLadder(b, era) {
+  b.ladder(L.pondX0, 0, 0, L.pondX0, 2, 0);
+  const wood = era === F ? 0x5a6470 : C.wood[0];
+  for (let y = 0; y < 3; y++) b.deco(L.pondX0 + 0.1, y + 0.4, 0.05, 0.8, 0.1, 0.12, wood);
+  b.deco(L.pondX0 + 0.1, 0, 0.05, 0.1, 3, 0.12, wood);
+  b.deco(L.pondX0 + 0.8, 0, 0.05, 0.1, 3, 0.12, wood);
+}
+
+function millHollow(world) {
+  const t = L.boulderTarget;
+  // PAST: the spring and its gully
+  let b = world.staticBuilder(P);
+  millCliff(b, P);
+  b.waterfall(L.millCliffX0 - 0.5, L.millCliffX0 - 0.02, 0, 3.0, 3.2, 4.4, MILL_WATER[0]);
+  b.deco(t.x - 0.1, 0, -3.5, 1.2, 0.03, 3.5, 0x3a2a1a); // the gully cut into the hillside
+  for (const [ox, oz, sx, sz] of [[0.05, 0.05, 0.9, 0.08], [0.05, 0.87, 0.9, 0.08], [0.05, 0.05, 0.08, 0.9], [0.87, 0.05, 0.08, 0.9]])
+    b.glow(t.x + ox, 0.0, t.z + oz, sx, 0.03, sz, 0x3ad0c0);
+  b.light(t.x + 0.5, 0.6, t.z + 0.5, 0x3ad0c0, 3, 4, 0.1);
+  // rewind glyph for the boulder
+  b.deco(L.millX0 + 6.1, 0, 0.0, 0.8, 0.06, 0.8, 0x2a2010);
+  b.glow(L.millX0 + 6.25, 0.06, 0.15, 0.5, 0.03, 0.5, 0x3ad0c0);
+  b.solid(t.x - 1, 0, ZMIN, t.x - 1, 3, -2, jitter(C.sandstone));
+  b.solid(t.x + 2, 0, ZMIN, t.x + 2, 3, -2, jitter(C.sandstone));
+  filler(b, P, 183, t.x - 1, 91);
+  wallTorch(b, L.millCliffX0 - 0.1, 1.2, 1.0);
+
+  // PRESENT: the dam and the mill on the cliff top
+  b = world.staticBuilder(M);
+  millCliff(b, M);
+  millDam(b, C.stone);
+  b.solid(L.millCliffX0, 3, -5, L.millCliffX1, 7, -2, (x, y, z) => jitter(y < 5 ? C.stone : C.plaster)(x, y, z));
+  b.roof(L.millCliffX0 - 0.45, L.millCliffX1 + 1.45, 8, -6.5, -0.6, 10.5, C.thatch[0], C.plaster[0]);
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI * 2;
+    b.deco(L.millCliffX0 - 0.3, 5 + Math.sin(a) * 1.8 - 0.2, -3.5 + Math.cos(a) * 1.8 - 0.2, 0.25, 0.4, 0.4, C.wood[i % 3]);
+  }
+  b.deco(L.millCliffX0 - 0.35, 4.8, -3.7, 0.3, 0.4, 0.4, 0x3a2614); // wheel hub
+  b.glow(L.millCliffX0 + 1.5, 4.0, -1.95, 0.7, 0.8, 0.05, NEON.warm);
+  b.light(L.millCliffX0 + 2, 4.5, 0.5, 0xffb060, 5, 8, 0.05);
+  filler(b, M, 183, L.rimX - 3, 93);
+
+  // FUTURE: the pumping station and its museum
+  b = world.staticBuilder(F);
+  millCliff(b, F);
+  millDam(b, C.metalL);
+  b.solid(L.millCliffX0, 3, -6, L.millCliffX1, 10, -2, jitter(C.metalL));
+  for (let y = 4; y < 10; y += 2) b.glow(L.millCliffX0 + 0.3, y, -1.95, 4.4, 0.12, 0.05, NEON.cyan);
+  b.glow(L.millCliffX0 + 0.4, 8.6, -1.9, 3.2, 0.8, 0.04, NEON.amber); // "PUMP STATION 7"
+  // museum display case for the old sluice wheel
+  b.deco(184.6, 0, 3.6, 0.9, 0.8, 0.9, 0x3a404c);
+  b.glow(184.6, 0.8, 3.6, 0.9, 0.04, 0.9, NEON.cyan);
+  for (const [ox, oz] of [[0, 0], [0.85, 0], [0, 0.85], [0.85, 0.85]]) b.deco(184.6 + ox, 0.8, 3.6 + oz, 0.05, 1.3, 0.05, 0x8a94a4);
+  b.light(185, 2, 4, NEON.cyan, 4, 5, 0);
+  filler(b, F, 183, L.rimX - 3, 95);
+
+  world.addFeature({
+    id: 'millP', eras: [P], key: (s) => String(!!s.flags.millDammed),
+    build: (b, era, s) => {
+      const x1 = L.millCliffX0 - 0.02;
+      if (!s.flags.millDammed) {
+        // the spring runs along the cliff foot and away down the gully
+        b.stream(t.x + 0.1, 3.2, x1, 4.4, MILL_WATER[0]);
+        b.stream(t.x + 0.1, -3.5, t.x + 1.0, 4.4, MILL_WATER[0]);
+      } else {
+        // dammed: the water spreads across the hollow floor instead
+        b.stream(L.pondX0 + 0.2, 1.2, x1, 6.8, MILL_WATER[0]);
+      }
+    },
+  });
+  world.addFeature({
+    id: 'millM', eras: [M], key: (s) => `${!!s.flags.millDammed},${!!s.flags.sluiceClosed}`,
+    build: (b, era, s) => {
+      const { millDammed: dammed, sluiceClosed: closed } = s.flags;
+      // full: the water cells reach one above the cliff top (the swim stroke only lifts you a
+      // hair above the water), drawn brim-full at the ledge
+      if (dammed && closed) b.water(L.pondX0, 0, 0, L.pondX1, 3, 6, MILL_WATER[1], 0.8);
+      else if (dammed) b.water(L.pondX0, 0, 0, L.pondX1, 0, 6, MILL_WATER[1], 0.45);
+      else for (let i = 0; i < 14; i++) b.deco(L.pondX0 + hash3(i, 1, 3) * 8.5, 0, hash3(i, 2, 3) * 6.5, 0.6, 0.03, 0.08, 0x5a4a3a); // cracked mud
+      millLadder(b, M);
+      // the sluice on the rim: an open slot, or a shut gate with its brass wheel
+      b.deco(L.rimX + 0.05, 3, 4.6, 0.12, 1.4, 0.12, C.wood[1]);
+      b.deco(L.rimX + 0.05, 3, 6.6, 0.12, 1.4, 0.12, C.wood[1]);
+      b.deco(L.rimX + 0.05, 4.3, 4.6, 0.12, 0.12, 2.1, C.wood[0]);
+      b.deco(L.rimX + 0.2, closed ? 3.0 : 3.9, 4.75, 0.08, 0.5, 1.8, C.wood[2]);
+      if (closed) {
+        for (let i = 0; i < 8; i++) {
+          const a = (i / 8) * Math.PI * 2;
+          b.deco(L.rimX + 0.4, 4.6 + Math.sin(a) * 0.35, 5.6 + Math.cos(a) * 0.35, 0.08, 0.12, 0.12, 0xd8a840);
+        }
+      }
+    },
+  });
+  world.addFeature({
+    id: 'millF', eras: [F], key: (s) => `${!!s.flags.millDammed},${!!s.flags.sluiceClosed}`,
+    build: (b, era, s) => {
+      if (s.flags.millDammed && s.flags.sluiceClosed) {
+        b.water(L.pondX0, 0, 0, L.pondX1, 3, 6, MILL_WATER[2], 0.8);
+        b.glow(L.pondX0, 3.22, 6.9, L.pondX1 - L.pondX0 + 1, 0.04, 0.08, NEON.cyan);
+        b.light((L.pondX0 + L.pondX1) / 2, 1, 3.5, NEON.cyan, 5, 8, 0);
+      } else {
+        // a dry concrete spillway
+        for (let x = L.pondX0; x <= L.pondX1; x += 2) b.deco(x + 0.1, 0, 0.2, 0.06, 0.02, 6.6, 0x2a2f3a);
+      }
+      millLadder(b, F);
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Tamsin's Crossing
+// ---------------------------------------------------------------------------
+// Past: Tamsin will bridge the gorge if you bring rope that never rots (steel cable from the
+// Future). The bridge rots away within a century, unless you hold it in its moment with the
+// Stasis Seal. The far bank is a jungle cliff in the Past and a city wall in the Present, but
+// only rubble in the Future, so the way on is to cross in the Future.
+function bridgeDeck(b, era, glow = false) {
+  const x0 = L.gorgeX0, x1 = L.gorgeX1;
+  b.solid(x0, -1, 2, x1, -1, 4, jitter(C.wood));
+  for (let x = x0; x <= x1 + 1; x += 3) {
+    for (const z of [1.85, 4.95]) b.deco(x - 0.1, -0.2, z, 0.2, 1.3, 0.2, C.log[1]);
+  }
+  for (const z of [1.92, 5.02]) b.deco(x0, 0.95, z, x1 - x0 + 1, 0.06, 0.06, era === P ? 0xc8a060 : 0xa0a8b4);
+  if (glow) {
+    // a faint shimmer: this bridge is outside time
+    b.glow(x0, 0.0, 1.98, x1 - x0 + 1, 0.03, 0.04, 0xbff6ff);
+    b.glow(x0, 0.0, 4.98, x1 - x0 + 1, 0.03, 0.04, 0xbff6ff);
+  }
+}
+
+function crossing(world) {
+  for (let era = 0; era < 3; era++) {
+    const b = world.staticBuilder(era);
+    const col = [0x3f8fc9, 0x3e8ab8, 0x5aff4a][era];
+    b.hazard(L.gorgeX0, -4, ZMIN, L.gorgeX1, -2, ZMAX - 1, col, era === F, 0.5);
+  }
+  // PAST: the bridgewright's yard, and a sheer jungle cliff on the far bank
+  let b = world.staticBuilder(P);
+  b.solid(L.pastCliffX0, 0, ZMIN, L.pastCliffX1, 12, 7, (x, y, z) => jitter(hash3(x, y, z) < 0.3 ? C.jungle : C.sandDark)(x, y, z));
+  for (let i = 0; i < 4; i++) b.deco(208.2 + i * 0.9, 0, 0.2, 0.7, 0.35, 0.7, C.thatch[i % 3]); // rope coils
+  b.deco(L.gorgeX0 - 0.9, 0, 1.9, 0.25, 1.4, 0.25, C.log[0]);
+  b.deco(L.gorgeX0 - 0.9, 0, 4.9, 0.25, 1.4, 0.25, C.log[0]);
+  filler(b, P, L.crossingX0, L.gorgeX0 - 1, 101);
+
+  // PRESENT: the city wall on the far bank
+  b = world.staticBuilder(M);
+  b.solid(L.farWallX0, 0, ZMIN, L.farWallX1, 8, 6, jitter(C.stone));
+  for (let z = ZMIN; z <= 6; z += 2) b.solid(L.farWallX0, 9, z, L.farWallX1, 9, z, jitter(C.stone));
+  b.deco(L.farWallX0 - 0.06, 0, 2.1, 0.08, 2.8, 2.8, 0x4a3420); // barred gate
+  for (let z = 2.3; z < 4.9; z += 0.45) b.deco(L.farWallX0 - 0.12, 0, z, 0.06, 2.8, 0.08, 0x3a3a42);
+  b.deco(L.farWallX0 - 0.04, 4.5, 3.0, 0.06, 1.8, 1.0, 0xb22a2a); // city banner
+  for (let i = 0; i < 6; i++) b.deco(208 + hash3(i, 4, 4) * 3, 0, 0.1 + hash3(i, 5, 5) * 0.6, 0.06, 0.6 + hash3(i, 6, 6) * 0.5, 0.06, C.grassM[i % 5]); // reeds
+  filler(b, M, L.crossingX0, L.gorgeX0 - 1, 103);
+
+  // FUTURE: a scrapyard on this bank; the wall is rubble now
+  b = world.staticBuilder(F);
+  b.solid(L.farWallX0, 0, 0, L.farWallX0, 0, 6, jitter(C.stone));
+  b.solid(L.farWallX0, 1, 0, L.farWallX1, 3, 0, jitter(C.stone));
+  b.solid(L.farWallX0, 1, 6, L.farWallX0, 2, 6, jitter(C.stone));
+  b.solid(L.farWallX0, 0, ZMIN, L.farWallX1, 4, -1, jitter(C.stoneMoss));
+  for (let i = 0; i < 5; i++) b.deco(208.6 + i * 0.7, 0, 4.3 + hash3(i, 1, 9) * 1.5, 0.6, 0.4 + hash3(i, 2, 9) * 0.7, 0.6, rng5(i));
+  b.glow(L.gorgeX0 - 1, 0.02, 1.9, 0.9, 0.04, 3.2, 0xff3040); // "bridge out" floor marking
+  filler(b, F, L.crossingX0, L.gorgeX0 - 1, 105);
+  filler(b, F, L.farWallX1 + 1, L.chordX0 + 1, 106);
+
+  world.addFeature({
+    id: 'bridgeP', eras: [P], key: (s) => `${!!s.flags.bridgeBuilt},${!!s.flags.bridgeSealed}`,
+    build: (b, era, s) => {
+      if (s.flags.bridgeBuilt) bridgeDeck(b, P, !!s.flags.bridgeSealed);
+      else for (const z of [2.1, 4.1]) b.deco(L.gorgeX0 - 0.6, 0, z, 0.2, 0.7, 0.2, C.log[2]); // stakes, waiting for rope
+    },
+  });
+  world.addFeature({
+    id: 'bridgeM', eras: [M], key: (s) => String(!!s.flags.bridgeSealed),
+    build: (b, era, s) => {
+      if (s.flags.bridgeSealed) bridgeDeck(b, M, true);
+      else for (const x of [L.gorgeX0, L.gorgeX1]) for (const z of [1.85, 4.95]) b.deco(x - 0.1, -0.6, z, 0.2, 0.7, 0.2, 0x4a3a2a); // rotted stumps
+    },
+  });
+  world.addFeature({
+    id: 'bridgeF', eras: [F], key: (s) => String(!!s.flags.bridgeSealed),
+    build: (b, era, s) => {
+      if (s.flags.bridgeSealed) bridgeDeck(b, F, true);
+    },
+  });
+}
+const rng5 = (i) => [0x5b6472, 0x8a4a2a, 0x3a404c, 0x7a8494, 0x9a5a32][i % 5];
+
+// ---------------------------------------------------------------------------
+// The Chord Vault
+// ---------------------------------------------------------------------------
+// The vault door opens only when all three plates are pressed at the same moment, one plate
+// in each age. You can only be in one age at a time, so you leave echoes on the other plates.
+function chordVault(world) {
+  const pals = [C.sandstone, C.stone, C.metalL];
+  const tones = [0xffc060, 0xbff6ff, 0xff4fd8];
+  for (let era = 0; era < 3; era++) {
+    const b = world.staticBuilder(era);
+    const pal = jitter(pals[era]);
+    for (let x = L.vaultDoorX0; x <= L.vaultDoorX1; x++)
+      for (let y = 0; y <= 11; y++)
+        for (let z = ZMIN; z <= 6; z++) if (!(z >= 2 && z <= 4 && y <= 3)) b.setCell(x, y, z, T.SOLID, pal(x, y, z));
+    // three tones carved above the door; the lit one belongs to this age
+    for (let i = 0; i < 3; i++) {
+      const col = tones[i];
+      if (i === era) b.glow(L.vaultDoorX0 - 0.04, 5 + i * 1.2, 2.2, 0.06, 0.5, 2.6, col);
+      else b.deco(L.vaultDoorX0 - 0.04, 5 + i * 1.2, 2.2, 0.06, 0.5, 2.6, era === F ? 0x3a404c : 0x5a4a3a);
+    }
+  }
+  // PAST: a temple forecourt
+  let b = world.staticBuilder(P);
+  wallTorch(b, L.vaultDoorX0 - 0.1, 1.5, 1.2);
+  wallTorch(b, L.vaultDoorX0 - 0.1, 1.5, 5.6);
+  filler(b, P, L.pastCliffX1 + 1, L.vaultDoorX0 - 1, 111);
+  // PRESENT: the platform the Present plate sits on
+  b = world.staticBuilder(M);
+  b.solid(241, 0, 0, 243, 1, 2, jitter(C.stone));
+  b.solid(240, 0, 0, 240, 0, 2, jitter(C.stone));
+  filler(b, M, L.farWallX1 + 1, L.vaultDoorX0 - 1, 113);
+  // FUTURE: the archive pedestal that holds the Echo Lens
+  b = world.staticBuilder(F);
+  b.deco(234.1, 0, 0.1, 0.8, 0.9, 0.7, 0x3a404c);
+  b.glow(234.1, 0.9, 0.1, 0.8, 0.04, 0.7, NEON.magenta);
+  b.light(234.5, 1.6, 1.0, NEON.magenta, 4, 5, 0);
+  filler(b, F, L.chordX0 + 2, L.vaultDoorX0 - 1, 115);
+
+  world.addFeature({
+    id: 'chordDoor', eras: [P, M, F], key: (s) => String(!!s.flags.chordOpen),
+    build: (b, era, s) => {
+      if (!s.flags.chordOpen) {
+        const pal = jitter(era === F ? C.panel : C.sandDark);
+        b.solid(L.vaultDoorX0, 0, 2, L.vaultDoorX1, 3, 4, pal);
+        b.glow(L.vaultDoorX0 - 0.04, 1.9, 2.0, 0.06, 0.08, 3.0, tones[era]);
+      } else {
+        b.glow(L.vaultDoorX0 - 0.04, 3.95, 1.95, 0.06, 0.1, 3.1, tones[era]);
+        b.light(L.vaultDoorX0 + 1, 1.5, 3.5, tones[era], 6, 8, 0);
+      }
+    },
+  });
+}
+
 function tower(world) {
+  const X = (x) => x + TO;
   for (let era = 0; era < 3; era++) {
     const b = world.staticBuilder(era);
     const pal = era === P ? C.sandstone : era === M ? C.stone : C.metalL;
-    b.solid(L.towerX0, 0, ZMIN, 203, 22, -1, jitter(pal));
+    b.solid(L.towerX0, 0, ZMIN, W - 1, 22, -1, jitter(pal));
     b.solid(L.towerX0, 4, 0, L.towerX0, 12, 6, jitter(pal));
-    b.solid(202, 0, 0, 203, 22, 6, jitter(pal));
+    b.solid(W - 2, 0, 0, W - 1, 22, 6, jitter(pal));
     if (era === P) {
-      b.glow(189, 5, 0.0, 6, 6, 0.04, 0xe8b040);
-      b.deco(189.6, 5.6, 0.04, 4.8, 4.8, 0.04, 0x8a5a1a);
-      b.glow(191.2, 7.2, 0.08, 1.6, 1.6, 0.04, 0xffe070);
-      for (const cx of [184, 195, 200]) b.solid(cx, 0, -1, cx, 10, -1, jitter(C.sandDark));
-      wallTorch(b, 185, 2, 0.0);
-      wallTorch(b, 199, 2, 0.0);
+      b.glow(X(189), 5, 0.0, 6, 6, 0.04, 0xe8b040);
+      b.deco(X(189.6), 5.6, 0.04, 4.8, 4.8, 0.04, 0x8a5a1a);
+      b.glow(X(191.2), 7.2, 0.08, 1.6, 1.6, 0.04, 0xffe070);
+      for (const cx of [184, 195, 200]) b.solid(X(cx), 0, -1, X(cx), 10, -1, jitter(C.sandDark));
+      wallTorch(b, X(185), 2, 0.0);
+      wallTorch(b, X(199), 2, 0.0);
       // sun pedestal
-      b.solid(186, 0, 1, 186, 0, 1, jitter(C.sandDark));
-      b.glow(186.1, 1.0, 1.1, 0.8, 0.05, 0.8, 0xffcf5a);
+      b.solid(X(186), 0, 1, X(186), 0, 1, jitter(C.sandDark));
+      b.glow(X(186.1), 1.0, 1.1, 0.8, 0.05, 0.8, 0xffcf5a);
     } else if (era === M) {
-      b.deco(186, 6, 0.0, 9, 9, 0.06, 0x6a4a1a);
-      b.glow(186.3, 6.3, 0.04, 8.4, 8.4, 0.04, 0xfff0c8);
+      b.deco(X(186), 6, 0.0, 9, 9, 0.06, 0x6a4a1a);
+      b.glow(X(186.3), 6.3, 0.04, 8.4, 8.4, 0.04, 0xfff0c8);
       for (let i = 0; i < 12; i++) {
         const a = (i / 12) * Math.PI * 2;
-        b.deco(190.5 + Math.cos(a) * 3.5 - 0.2, 10.5 + Math.sin(a) * 3.5 - 0.2, 0.1, 0.4, 0.4, 0.04, 0x2a2014);
+        b.deco(X(190.5) + Math.cos(a) * 3.5 - 0.2, 10.5 + Math.sin(a) * 3.5 - 0.2, 0.1, 0.4, 0.4, 0.04, 0x2a2014);
       }
-      b.deco(190.4, 10.5, 0.12, 0.2, 3, 0.04, 0x2a2014);
-      b.deco(190.4, 10.4, 0.12, 2.2, 0.2, 0.04, 0x2a2014);
-      for (const [gx, gy, gr] of [[184, 4, 1.2], [198, 6, 1.6], [200, 2, 0.9]]) b.deco(gx, gy, -0.3, gr * 2, gr * 2, 0.3, 0xa8843a);
+      b.deco(X(190.4), 10.5, 0.12, 0.2, 3, 0.04, 0x2a2014);
+      b.deco(X(190.4), 10.4, 0.12, 2.2, 0.2, 0.04, 0x2a2014);
+      for (const [gx, gy, gr] of [[184, 4, 1.2], [198, 6, 1.6], [200, 2, 0.9]]) b.deco(X(gx), gy, -0.3, gr * 2, gr * 2, 0.3, 0xa8843a);
       // balcony + ladder
-      b.solid(190, 3, 0, 194, 3, 2, jitter(C.wood));
-      b.ladder(189, 0, 1, 189, 4, 1);
-      for (let y = 0; y < 5; y++) b.deco(189.1, y + 0.4, 1.2, 0.8, 0.1, 0.12, C.wood[0]);
-      b.deco(189.1, 0, 1.15, 0.1, 5, 0.12, C.wood[1]);
-      b.deco(189.8, 0, 1.15, 0.1, 5, 0.12, C.wood[1]);
+      b.solid(X(190), 3, 0, X(194), 3, 2, jitter(C.wood));
+      b.ladder(X(189), 0, 1, X(189), 4, 1);
+      for (let y = 0; y < 5; y++) b.deco(X(189.1), y + 0.4, 1.2, 0.8, 0.1, 0.12, C.wood[0]);
+      b.deco(X(189.1), 0, 1.15, 0.1, 5, 0.12, C.wood[1]);
+      b.deco(X(189.8), 0, 1.15, 0.1, 5, 0.12, C.wood[1]);
       // bell
-      b.deco(191.7, 6.3, 0.6, 1.6, 0.3, 1.2, 0x3a2614);
-      b.deco(191.8, 5.0, 0.7, 1.4, 1.3, 1.0, 0xc9a44a);
-      b.deco(191.6, 4.8, 0.5, 1.8, 0.3, 1.4, 0xb8933a);
-      b.light(190, 8, 2, 0xffd8a0, 7, 12, 0);
-      b.light(185, 2.5, 2, 0xffb060, 5, 8, 0.05);
+      b.deco(X(191.7), 6.3, 0.6, 1.6, 0.3, 1.2, 0x3a2614);
+      b.deco(X(191.8), 5.0, 0.7, 1.4, 1.3, 1.0, 0xc9a44a);
+      b.deco(X(191.6), 4.8, 0.5, 1.8, 0.3, 1.4, 0xb8933a);
+      b.light(X(190), 8, 2, 0xffd8a0, 7, 12, 0);
+      b.light(X(185), 2.5, 2, 0xffb060, 5, 8, 0.05);
     } else {
       for (let i = 0; i < 36; i++) {
         const a = (i / 36) * Math.PI * 2;
-        b.glow(192 + Math.cos(a) * 4, 9 + Math.sin(a) * 4, 0.04, 0.4, 0.4, 0.04, NEON.cyan);
+        b.glow(X(192) + Math.cos(a) * 4, 9 + Math.sin(a) * 4, 0.04, 0.4, 0.4, 0.04, NEON.cyan);
       }
-      b.glow(191.4, 8.4, 0.06, 1.2, 1.2, 0.04, 0xc8fcff);
+      b.glow(X(191.4), 8.4, 0.06, 1.2, 1.2, 0.04, 0xc8fcff);
       for (let y = 1; y < 20; y += 4) b.glow(L.towerX0 + 0.5, y, 0.0, 19, 0.08, 0.04, NEON.magenta);
-      b.solid(197, 0, 3, 197, 0, 3, jitter(C.panel));
-      b.glow(197.1, 1.0, 3.1, 0.8, 0.05, 0.8, NEON.cyan);
-      b.light(192, 9, 2, NEON.cyan, 10, 14, 0);
-      b.light(197.5, 1.5, 3.5, NEON.cyan, 6, 7, 0);
+      b.solid(X(197), 0, 3, X(197), 0, 3, jitter(C.panel));
+      b.glow(X(197.1), 1.0, 3.1, 0.8, 0.05, 0.8, NEON.cyan);
+      b.light(X(192), 9, 2, NEON.cyan, 10, 14, 0);
+      b.light(X(197.5), 1.5, 3.5, NEON.cyan, 6, 7, 0);
     }
   }
 }
@@ -1092,6 +1402,8 @@ export const SPAWNS = [
   { type: 'npc', id: 'lillian', era: F, x: 120.5, z: 1.2, sheet: 'lillian', name: 'Lillian' },
   { type: 'npc', id: 'brn', era: F, x: 122.6, z: 1.0, sheet: 'brn', name: 'BR-4N' },
   { type: 'npc', id: 'sheng', era: M, x: 160.5, z: 1.2, sheet: 'sheng', name: 'Sheng the Gatekeeper' },
+  { type: 'npc', id: 'hobb', era: M, x: 186.2, z: 2.6, sheet: 'hobb', name: 'Hobb the Miller' },
+  { type: 'npc', id: 'tamsin', era: P, x: 210.5, z: 1.4, sheet: 'tamsin', name: 'Tamsin the Ropewright' },
 
   // Interactables
   { type: 'interact', id: 'workbench', era: M, x: 9.0, y: 1, z: 0.5, prompt: 'Examine workbench' },
@@ -1102,34 +1414,42 @@ export const SPAWNS = [
   { type: 'interact', id: 'soil', era: P, x: 92.5, y: 0, z: 3.5, prompt: 'Fertile soil' },
   { type: 'interact', id: 'soilM', era: M, x: 92.5, y: 0, z: 3.5, prompt: 'Planter box', hideIf: 'acornPlanted' },
   { type: 'interact', id: 'vault', era: M, x: 112.5, y: 1, z: 0.5, prompt: 'Quench vault' },
-  { type: 'interact', id: 'glyphP', era: P, x: 136.5, y: 0, z: 0.5, prompt: 'Rewind glyph' },
-  { type: 'interact', id: 'glyphF', era: F, x: 136.5, y: 0, z: 0.5, prompt: 'Reset beacon' },
+  { type: 'interact', id: 'glyphP', era: P, x: 136.5, y: 0, z: 0.5, prompt: 'Rewind glyph', resets: 'block' },
+  { type: 'interact', id: 'glyphF', era: F, x: 136.5, y: 0, z: 0.5, prompt: 'Reset beacon', resets: 'crate' },
+  { type: 'interact', id: 'glyphMill', era: P, x: L.millX0 + 6.5, y: 0, z: 0.5, prompt: 'Rewind glyph', resets: 'boulder' },
+  { type: 'interact', id: 'sluice', era: M, x: L.rimX + 0.5, y: 3, z: 5.6, prompt: 'Sluice gate' },
+  { type: 'interact', id: 'satchel', era: M, x: 208.5, y: 0, z: 0.6, prompt: "Eugene's satchel", icon: 'satchel', goneFlag: 'hasSeal' },
+  { type: 'interact', id: 'echoLens', era: F, x: 234.5, y: 1, z: 0.5, prompt: 'Archive pedestal', icon: 'lens', goneFlag: 'hasEcho' },
   { type: 'interact', id: 'postern', era: M, x: 182.7, y: 0, z: 5.4, prompt: 'Old postern lever' },
   { type: 'interact', id: 'winch', era: M, x: 167.5, y: 0, z: 0.6, prompt: 'Gate winch' },
-  { type: 'interact', id: 'socketSun', era: P, x: 186.5, y: 1, z: 1.5, prompt: 'Sun pedestal' },
-  { type: 'interact', id: 'socketBell', era: M, x: 192.5, y: 4, z: 1.5, prompt: 'Great bell' },
-  { type: 'interact', id: 'socketCore', era: F, x: 197.5, y: 1, z: 3.5, prompt: 'Reactor socket' },
+  { type: 'interact', id: 'socketSun', era: P, x: 186.5 + TO, y: 1, z: 1.5, prompt: 'Sun pedestal' },
+  { type: 'interact', id: 'socketBell', era: M, x: 192.5 + TO, y: 4, z: 1.5, prompt: 'Great bell' },
+  { type: 'interact', id: 'socketCore', era: F, x: 197.5 + TO, y: 1, z: 3.5, prompt: 'Reactor socket' },
 
   // Pickups (items)
   { type: 'pickup', id: 'acorn', era: M, x: 85.5, y: 2.4, z: 1.5, item: 'acorn' },
   { type: 'pickup', id: 'rod', era: M, x: 114.5, y: 1.1, z: 0.6, item: 'rod' },
   { type: 'pickup', id: 'disc', era: P, x: 151.5, y: 4.5, z: 1.0, item: 'disc' },
   { type: 'pickup', id: 'core', era: F, x: 178.5, y: 1.6, z: 3.5, item: 'core' },
+  { type: 'pickup', id: 'wheel', era: F, x: 185.05, y: 1.5, z: 4.05, item: 'wheel' },
+  { type: 'pickup', id: 'cable', era: F, x: 210.5, y: 1.3, z: 5.2, item: 'cable' },
 
-  // Lost cogs (3 per era)
+  // Lost cogs
   { type: 'cog', id: 'cogP1', era: P, x: 24.5, y: 3.7, z: 1.5 },
   { type: 'cog', id: 'cogP2', era: P, x: 57.5, y: 3.7, z: 0.5 },
   { type: 'cog', id: 'cogP3', era: P, x: 154.5, y: 3.7, z: 5.0 },
   { type: 'cog', id: 'cogM1', era: M, x: 30.5, y: 3.7, z: 1.5 },
   { type: 'cog', id: 'cogM2', era: M, x: 95.5, y: 8.7, z: 3.5, needs: ['acornPlanted', 'acornPlantedM'] },
-  { type: 'cog', id: 'cogM3', era: M, x: 193.5, y: 4.7, z: 1.5 },
+  { type: 'cog', id: 'cogM3', era: M, x: 193.5 + TO, y: 4.7, z: 1.5 },
   { type: 'cog', id: 'cogF1', era: F, x: 29.5, y: 3.7, z: 2.5 },
   { type: 'cog', id: 'cogF2', era: F, x: 65.5, y: -2.4, z: 3.5, needs: 'springOpen' },
   { type: 'cog', id: 'cogF3', era: F, x: 92.9, y: 0.6, z: 4.6, needs: ['acornPlanted', 'acornPlantedM'] },
+  { type: 'cog', id: 'cogF4', era: F, x: 195.5, y: 0.6, z: 3.5, needs: 'sluiceClosed' }, // at the bottom of the reservoir
 
   // Pushables
-  { type: 'pushable', id: 'block', era: P, x: L.blockStart.x, z: L.blockStart.z, kind: 'stone' },
-  { type: 'pushable', id: 'crate', era: F, x: L.crateStart.x, z: L.crateStart.z, kind: 'crate' },
+  { type: 'pushable', id: 'block', era: P, x: L.blockStart.x, z: L.blockStart.z, kind: 'stone', posKey: 'blockPos' },
+  { type: 'pushable', id: 'crate', era: F, x: L.crateStart.x, z: L.crateStart.z, kind: 'crate', posKey: 'cratePos' },
+  { type: 'pushable', id: 'boulder', era: P, x: L.boulderStart.x, z: L.boulderStart.z, kind: 'stone', posKey: 'boulderPos', lockFlag: 'millDammed' },
 
   // Enemies
   { type: 'enemy', kind: 'thornback', era: P, x: 58, z: 3.5, range: [53, 64] },
@@ -1144,10 +1464,14 @@ export const SPAWNS = [
   { type: 'enemy', kind: 'drone', era: F, x: 113, z: 3, range: [108, 116] },
   { type: 'enemy', kind: 'drone', era: F, x: 127, z: 4, range: [124, 129] },
   { type: 'enemy', kind: 'drone', era: F, x: 135, z: 2, range: [132, 141] },
+  { type: 'enemy', kind: 'drone', era: F, x: 186, z: 2.5, range: [183, 188] },
+  { type: 'enemy', kind: 'drone', era: F, x: 210, z: 3, range: [207, 212] },
   { type: 'sentinel', era: F, x: 170, z: 3.5, range: [167.5, 172.5] },
 ];
 
 // ---------------------------------------------------------------------------
+export const COG_TOTAL = SPAWNS.filter((s) => s.type === 'cog').length;
+
 export function buildLevel(world, state) {
   world.__state = state;
   buildGround(world);
@@ -1160,6 +1484,9 @@ export function buildLevel(world, state) {
   smithy(world);
   terrace(world);
   gatehouse(world);
+  millHollow(world);
+  crossing(world);
+  chordVault(world);
   tower(world);
   world.finalizeStatic();
   world.refreshFeatures(state);

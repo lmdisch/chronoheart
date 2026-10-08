@@ -8,7 +8,7 @@ import { buildTufts, buildCanopies } from '../render/foliage.js';
 
 export const T = { AIR: 0, SOLID: 1, WATER: 2, LADDER: 3, HAZARD: 4 };
 
-export const W = 204; // level length (x)
+export const W = 276; // level length (x)
 export const YMIN = -5;
 export const YMAX = 26;
 export const ZMIN = -16;

@@ -6,14 +6,15 @@ import { audio } from './audio/audio.js';
 import { Renderer } from './render/renderer.js';
 import { Post } from './render/post.js';
 import { Ambient, Bursts } from './render/particles.js';
-import { World, T } from './world/world.js';
+import { World, T, W } from './world/world.js';
 import { hits } from './world/physics.js';
-import { buildLevel, SPAWNS, CHECKPOINTS, AREAS, L } from './levels/hollowmere.js';
+import { buildLevel, SPAWNS, CHECKPOINTS, AREAS, L, COG_TOTAL } from './levels/hollowmere.js';
 import { Player, NPC, Enemy, Sentinel, Pushable, Pickup, Interactable, Shrine } from './world/entities.js';
 import { HUD, Dialogue, showInventoryPanel, setFade, letterbox } from './ui/ui.js';
 import { talk, interact, ITEMS, INTRO, ENDING, FAVOURS } from './story.js';
 import { touchActive } from './ui/touch.js';
 import { currentGoal } from './objectives.js';
+import { Abilities } from './abilities.js';
 
 const SAVE_KEY = 'chronoheart-save-v1';
 // Storage can be unavailable (private windows, embedded viewers): the game still runs, it just won't save.
@@ -46,6 +47,7 @@ export function newState() {
     kindness: [], // completed favours (see FAVOURS in story.js)
     blockPos: { ...L.blockStart },
     cratePos: { ...L.crateStart },
+    boulderPos: { ...L.boulderStart },
     checkpoint: 0,
     playTime: 0,
   };
@@ -74,6 +76,7 @@ export class Game {
     this.invOpen = false;
     this.warnT = 0;
     this.state = newState();
+    this.abilities = new Abilities(this);
     this.buildWorld();
     this.clock = new THREE.Clock();
     this.titleT = 0;
@@ -104,7 +107,7 @@ export class Game {
       else if (s.type === 'enemy') this.enemies.push((e = new Enemy(this, s)));
       else if (s.type === 'sentinel') this.enemies.push((e = this.sentinel = new Sentinel(this, s)));
       else if (s.type === 'pushable') {
-        const pos = s.id === 'block' ? this.state.blockPos : this.state.cratePos;
+        const pos = this.state[s.posKey];
         this.pushables.push((e = new Pushable(this, { ...s, x: pos.x, z: pos.z })));
         e.start = { x: s.x, z: s.z };
       } else if (s.type === 'pickup') this.pickups.push((e = new Pickup(this, s, s.item)));
@@ -118,6 +121,7 @@ export class Game {
     this.player.maxHp = this.player.hp = BASE_HP + this.state.kindness.length; // each kindness adds a heart
     const cp = CHECKPOINTS[this.state.checkpoint] || CHECKPOINTS[0];
     this.player.place(cp.x + 1.2, 0, 3.5);
+    this.abilities.attach();
   }
 
   refreshWorld() {
@@ -175,6 +179,7 @@ export class Game {
     this.hud.setInventory(this.state.inventory);
     this.hud.setCogs(this.state.cogs.length);
     this.hud.setResonance(null);
+    this.abilities.syncBody();
     this.areaIdx = -1;
     audio.setEra(ERA.PRESENT);
     audio.setMusicVolume(0.55);
@@ -330,8 +335,20 @@ export class Game {
   }
 
   onPushed(p) {
-    if (p.id === 'block') {
-      this.state.blockPos = { x: p.cx, z: p.cz };
+    this.state[p.spec.posKey] = { x: p.cx, z: p.cz };
+    if (p.id === 'boulder') {
+      const t = L.boulderTarget;
+      if (p.cx !== t.x || p.cz !== t.z || this.state.flags.millDammed) return;
+      this.state.flags.millDammed = true;
+      audio.sfx('socket');
+      audio.sfx('splash');
+      this.bursts.emit(t.x + 0.5, 0.8, t.z + 0.5, 30, { color: [0x3ad0c0, 0x9fe0ff], speed: 3, life: 0.8 });
+      this.refreshWorld();
+      this.save();
+      this.timelapse({ to: ERA.PRESENT, focus: [195.5, 1, 3], years: 500, caption: 'Turned from its gully, the spring pools in the hollow...', grow: ['millM'] }).then(() =>
+        this.hud.toast("The hollow is a millpond now, but it's draining away through the mill's open sluice.", 6500),
+      );
+    } else if (p.id === 'block') {
       this.refreshWorld();
       const t = L.pillarTarget;
       if (p.cx === t.x && p.cz === t.z) {
@@ -345,7 +362,7 @@ export class Game {
         this.state.flags.pushHint = true;
         this.hud.toast('The ancient block slides across the sand. That glowing outline nearby looks like it was carved for it...');
       }
-    } else this.state.cratePos = { x: p.cx, z: p.cz };
+    }
   }
 
   collect(p) {
@@ -354,7 +371,7 @@ export class Game {
       s.cogs.push(p.id);
       audio.sfx('cog');
       this.hud.setCogs(s.cogs.length);
-      this.hud.toast(`<b>Lost Cog found!</b> (${s.cogs.length}/9)`);
+      this.hud.toast(`<b>Lost Cog found!</b> (${s.cogs.length}/${COG_TOTAL})`);
       this.bursts.emit(p.x, p.y, p.z, 30, { color: [0xffd070, 0xffffff], speed: 4, life: 0.8 });
       this.save();
       return;
@@ -476,6 +493,7 @@ export class Game {
     if (this.respawning) return;
     this.respawning = true;
     audio.sfx('splash');
+    this.abilities.cancelRecording();
     const b = this.player.body;
     this.bursts.emit(b.x, b.y + 0.5, b.z, 24, { color: this.era === ERA.FUTURE ? [0x7cff6a] : [0x9fe0ff, 0xffffff], speed: 4, life: 0.6 });
     setFade(0.85, '#000');
@@ -497,6 +515,7 @@ export class Game {
   onDeath() {
     if (this.mode !== 'play') return;
     this.mode = 'dead';
+    this.abilities.cancelRecording();
     setFade(1, '#05040a', 'Time rewinds...');
     audio.setMusicVolume(0.15);
     setTimeout(() => {
@@ -586,6 +605,7 @@ export class Game {
     }
 
     if (input.hit('hint') && ctl) this.showHint();
+    this.abilities.update(dt, ctl);
 
     // inventory & pause
     if (input.hit('inventory') && ctl) {
@@ -850,7 +870,7 @@ export class Game {
     const busy =
       this.state.flags.finished || this.mode === 'ending' || this.mode === 'credits' || this.lapse ||
       this.post.trans < 1 || this.post.peekAmt > 0.01 || this.blockFlashT > 0 || this.swipePeek || this.peekTarget !== null;
-    const prox = Math.min(1, Math.max(0, (r.camTarget.x - 166) / 14));
+    const prox = Math.min(1, Math.max(0, (r.camTarget.x - (L.towerX0 - 16)) / 14));
     if (busy || prox <= 0) {
       g.on = 0;
       return;
@@ -878,7 +898,7 @@ export class Game {
     // screen-space bounds of the tower
     const cam = r.camera, v = new THREE.Vector3();
     let x0 = 1, y0 = 1, x1 = 0, y1 = 0;
-    for (const cx of [L.towerX0, 204]) for (const cy of [0.5, 23]) for (const cz of [-16, 7]) {
+    for (const cx of [L.towerX0, W]) for (const cy of [0.5, 23]) for (const cz of [-16, 7]) {
       v.set(cx, cy, cz).project(cam);
       const u = v.x * 0.5 + 0.5, w = v.y * 0.5 + 0.5;
       x0 = Math.min(x0, u); x1 = Math.max(x1, u); y0 = Math.min(y0, w); y1 = Math.max(y1, w);

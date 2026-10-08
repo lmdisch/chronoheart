@@ -543,3 +543,32 @@ body.touch.in-dialogue #toasts {
   .tagline { font-size: 0.95rem; margin: 10px auto 24px; }
   .era-strip { gap: 8px; font-size: 0.66rem; letter-spacing: 0.2em; }
 }
+
+/* ---------------- abilities: Stasis Seal & Echo ---------------- */
+body:not(.has-seal) .needs-seal, body:not(.has-echo) .needs-echo { display: none !important; }
+#ability-status {
+  position: absolute; left: 50%; top: 150px; transform: translateX(-50%); z-index: 7; pointer-events: none;
+  padding: 7px 16px 7px 30px; border-radius: 99px; white-space: nowrap;
+  font: 600 0.78rem var(--font-ui); letter-spacing: 0.1em; text-transform: uppercase; color: #ffd6e0;
+  background: rgba(14, 10, 24, 0.75); border: 1px solid rgba(255, 70, 110, 0.5); backdrop-filter: blur(8px);
+}
+#ability-status::before {
+  content: ''; position: absolute; left: 12px; top: 50%; width: 9px; height: 9px; margin-top: -4.5px; border-radius: 50%;
+  background: #ff3a5a; box-shadow: 0 0 10px #ff3a5a; animation: blink 0.8s steps(2) infinite;
+}
+.tc-abil {
+  position: absolute; right: calc(18px + env(safe-area-inset-right, 0px)); bottom: calc(188px + env(safe-area-inset-bottom, 0px));
+  display: flex; gap: 10px;
+}
+.tc-abil .tc-btn { width: 54px; height: 54px; }
+body:not(.has-seal) .tc-seal, body:not(.has-echo) .tc-echo { display: none; }
+body.recording .tc-echo { color: #ffd6e0; border-color: #ff3a5a; box-shadow: 0 0 22px rgba(255, 58, 90, 0.7); }
+@media (max-height: 520px) {
+  #ability-status { top: calc(112px + env(safe-area-inset-top, 0px)); }
+}
+/* portrait phones: the ability buttons sit just above the pad, so lift the prompt and messages over them */
+@media (orientation: portrait) and (max-width: 600px) {
+  #ability-status { top: 40%; }
+  body.touch.has-seal #prompt, body.touch.has-echo #prompt { bottom: calc(252px + env(safe-area-inset-bottom, 0px)); }
+  body.touch.has-seal:not(.in-dialogue) #toasts, body.touch.has-echo:not(.in-dialogue) #toasts { bottom: calc(306px + env(safe-area-inset-bottom, 0px)); }
+}

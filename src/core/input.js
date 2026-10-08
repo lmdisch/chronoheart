@@ -17,6 +17,8 @@ const BIND = {
   pause: ['Escape', 'KeyP'],
   controls: ['KeyH'],
   hint: ['KeyG'],
+  seal: ['KeyR'],
+  echo: ['KeyV'],
 };
 
 class Input {

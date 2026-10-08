@@ -5,6 +5,7 @@ import { input } from './core/input.js';
 import { iconURL } from './render/sprites.js';
 import { setFade } from './ui/ui.js';
 import { TouchControls } from './ui/touch.js';
+import { COG_TOTAL } from './levels/hollowmere.js';
 
 const $ = (id) => document.getElementById(id);
 const game = new Game($('game-root'));
@@ -131,9 +132,9 @@ $('btn-portrait-ok').addEventListener('click', () => document.body.classList.add
 game.onCredits = (state) => {
   const t = Math.floor(state.playTime);
   $('stat-time').textContent = `${Math.floor(t / 60)}m ${String(t % 60).padStart(2, '0')}s`;
-  $('stat-cogs').textContent = `${state.cogs.length} / 9`;
+  $('stat-cogs').textContent = `${state.cogs.length} / ${COG_TOTAL}`;
   $('stat-kind').textContent = `${state.kindness.length} / 3`;
-  $('credits-bonus').hidden = state.cogs.length < 9;
+  $('credits-bonus').hidden = state.cogs.length < COG_TOTAL;
   credits.hidden = false;
   requestAnimationFrame(() => credits.classList.add('in'));
   setTimeout(() => setFade(0), 400);
