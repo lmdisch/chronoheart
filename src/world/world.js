@@ -191,7 +191,47 @@ function addSharedVisuals(world, era, b, group) {
 }
 
 /** Visuals for a feature builder: its voxels (culled against the static world), decos, roofs, glows... */
+/**
+ * Decorations are often stacked flush against each other or against voxel walls (a sign on a
+ * wall, a window glow on a sign, leaves over windows). Faces sharing one plane z-fight: they
+ * shimmer as the camera moves. This grows every box by a tiny amount, strictly more than each
+ * earlier box it touches, so no two touching boxes share a face plane and every box sits a
+ * hair proud of the voxels behind it. Glows go last, so they land in front of what they're on.
+ * `base` keeps static and feature boxes on different steps, so those never coincide either.
+ */
+const SEP_STEP = 0.0006; // well above depth-buffer precision at diorama distances
+function separateBoxes(lists, base) {
+  const all = lists.flat();
+  const level = new Array(all.length).fill(0);
+  const buckets = new Map(); // x cell -> indices of earlier boxes reaching into it
+  const T = 1e-4;
+  for (let i = 0; i < all.length; i++) {
+    const [cx, cy, cz, sx, sy, sz] = all[i];
+    const xa = Math.floor(cx - sx / 2), xb = Math.floor(cx + sx / 2);
+    const seen = new Set();
+    let k = 0;
+    for (let x = xa; x <= xb; x++)
+      for (const j of buckets.get(x) || []) {
+        if (seen.has(j)) continue;
+        seen.add(j);
+        const o = all[j];
+        if (Math.abs(cx - o[0]) <= (sx + o[3]) / 2 + T && Math.abs(cy - o[1]) <= (sy + o[4]) / 2 + T && Math.abs(cz - o[2]) <= (sz + o[5]) / 2 + T)
+          k = Math.max(k, level[j] + 1);
+      }
+    level[i] = Math.min(k, 14);
+    for (let x = xa; x <= xb; x++) (buckets.get(x) || buckets.set(x, []).get(x)).push(i);
+  }
+  let i = 0;
+  for (const list of lists)
+    for (let n = 0; n < list.length; n++, i++) {
+      const e = 2 * (base + level[i] * SEP_STEP);
+      const d = list[n];
+      list[n] = [d[0], d[1], d[2], d[3] + e, d[4] + e, d[5] + e, d[6]];
+    }
+}
+
 function addFeatureVisuals(world, era, b, group) {
+  separateBoxes([b.decos, b.glows], 0.0018);
   const meshes = [];
   const cells = new Map();
   let lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
@@ -321,6 +361,7 @@ export class World {
   finalizeStatic() {
     for (let era = 0; era < 3; era++) {
       const b = this.staticBuilder(era);
+      separateBoxes([b.decos, b.glows], 0.0015);
       const group = this.groups[era];
       const get = (x, y, z) => this.staticVisible(era, x, y, z);
       for (let cx = 0; cx < W; cx += CHUNK) {

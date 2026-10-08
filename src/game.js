@@ -892,6 +892,7 @@ export class Game {
       const others = [0, 1, 2].filter((e) => e !== this.era);
       g.era = others[Math.floor(Math.random() * others.length)];
       if (prox > 0.5) audio.sfx('glitch');
+      if (!this.state.flags.towerGlitchSeen && !this.glitchExplaining && this.player.body.x > L.vaultDoorX1 && this.controlsEnabled()) this.explainTowerGlitch();
     }
     if (g.on <= 0) return;
     g.on -= dt;
@@ -922,6 +923,28 @@ export class Game {
     groups.forEach((grp, i) => (grp.visible = i === g.era));
     this.post.capture();
     groups.forEach((grp, i) => (grp.visible = i === this.era));
+  }
+
+  /** The first time the stopped Tower stutters in front of you, Vivienne says what it is. */
+  explainTowerGlitch() {
+    this.glitchExplaining = true;
+    const V = (text) => ({ who: 'vivienne', name: 'Vivienne', text });
+    setTimeout(() => {
+      this.glitchExplaining = false;
+      if (this.mode !== 'play' || this.dialogue.active) return; // busy: try again on the next stutter
+      this.state.flags.towerGlitchSeen = true;
+      this.save();
+      this.mode = 'dialogue';
+      this.dialogue
+        .run([
+          V('Whoa! Did the Tower wall just flicker into another age?'),
+          V("Its heart has stopped, so it's stuttering between the ages. Once I restart it, it should hold steady."),
+        ])
+        .then(() => {
+          if (this.mode === 'dialogue') this.mode = 'play';
+          this.lockT = 0.2;
+        });
+    }, 900);
   }
 
   renderPeek() {
