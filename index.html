@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chronoheart: A Time-Travel Puzzle Adventure</title>
+    <meta name="description" content="Chronoheart is an HD-2D time-travel puzzle adventure. Shift between the Ancient, Medieval and Chrome ages of Hollowmere to restart the great Clocktower." />
+    <meta name="theme-color" content="#120e1e" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Outfit:wght@300;400;600;700&family=Pixelify+Sans:wght@400;600&display=swap" rel="stylesheet" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='%23c9a44a'/%3E%3Ccircle cx='16' cy='16' r='8' fill='%2336f0ff'/%3E%3C/svg%3E" />
+  </head>
+  <body data-era="present">
+    <main id="app">
+      <div id="game-root" aria-label="Game view"></div>
+
+      <!-- HUD -->
+      <div id="hud" hidden>
+        <div class="hud-left glass">
+          <div id="hearts" aria-label="Health"></div>
+          <div class="cogs"><img id="cog-icon" alt="Lost cogs" /><span id="cog-count">0/9</span></div>
+          <div id="goal" aria-live="polite">
+            <div class="goal-head"><span class="goal-label">Goal</span><button id="goal-hint-btn" type="button" aria-expanded="false" aria-controls="goal-hint">Hint</button></div>
+            <span id="goal-text"></span>
+            <span id="goal-hint" hidden></span>
+          </div>
+        </div>
+
+        <div id="chrono" class="locked" data-era="present" aria-label="Chronoheart">
+          <div class="era-row">
+            <span class="kbd-hint">Q</span>
+            <span class="era-pill" data-e="0">Past</span>
+            <div class="chrono-dial">
+              <svg viewBox="0 0 100 100" aria-hidden="true">
+                <circle class="ring-bg" cx="50" cy="50" r="40" />
+                <circle id="chrono-ring" class="ring-fg" cx="50" cy="50" r="40" />
+                <g class="ticks">
+                  <line x1="50" y1="4" x2="50" y2="10" /><line x1="96" y1="50" x2="90" y2="50" />
+                  <line x1="50" y1="96" x2="50" y2="90" /><line x1="4" y1="50" x2="10" y2="50" />
+                </g>
+              </svg>
+              <img id="chrono-core" alt="" />
+            </div>
+            <span class="era-pill" data-e="2">Future</span>
+            <span class="kbd-hint">E</span>
+          </div>
+          <span class="era-pill present-pill active" data-e="1">Present</span>
+        </div>
+
+        <div class="hud-right">
+          <div id="inventory" aria-label="Inventory"></div>
+          <div class="hud-keys kb-only"><kbd>I</kbd> Items · <kbd>Tab</kbd> Peek · <button id="hud-controls" class="hud-key-btn" type="button"><kbd>H</kbd> Controls</button> · <kbd>Esc</kbd> Pause</div>
+        </div>
+
+        <div id="resonance" hidden>
+          <span>Tower resonance</span>
+          <div class="res-track"><div id="resonance-bar"></div></div>
+        </div>
+      </div>
+
+      <!-- on-screen controls for touchscreens (filled in by src/ui/touch.js) -->
+      <div id="touch-controls"></div>
+
+      <div id="prompt"><kbd>F</kbd><span id="prompt-text"></span></div>
+      <div id="toasts" aria-live="polite"></div>
+      <div id="area-banner"><div class="area-era"></div><div class="area-name"></div><div class="area-line"></div></div>
+      <!-- cause-and-effect time-lapse overlay -->
+      <div id="timelapse" hidden aria-live="polite">
+        <p class="lapse-era"></p>
+        <p id="lapse-years">+0 years</p>
+        <p class="lapse-caption"></p>
+        <p class="lapse-skip">Tap or press any key to skip</p>
+      </div>
+      <div class="lb lb-top"></div>
+      <div class="lb lb-bottom"></div>
+
+      <div id="dialogue" hidden>
+        <div class="d-portrait"><img alt="" /></div>
+        <div class="d-body">
+          <div class="d-name"></div>
+          <p class="d-text"></p>
+          <div class="d-next">▼</div>
+        </div>
+      </div>
+
+      <div id="inventory-panel" class="glass panel" hidden>
+        <h2>Apron Pockets</h2>
+        <div class="inv-list"></div>
+        <div class="favours" hidden>
+          <h3 class="favours-title">Favours</h3>
+          <div class="favour-list"></div>
+        </div>
+        <p class="muted small"><span class="kb-only">Press <kbd>I</kbd> to close</span><span class="touch-only">Tap here to close</span></p>
+      </div>
+
+      <!-- Title -->
+      <section id="title-screen" aria-labelledby="game-title">
+        <div class="title-rings" aria-hidden="true">
+          <div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div>
+          <div class="hand h1"></div><div class="hand h2"></div>
+        </div>
+        <div class="title-content">
+          <p class="eyebrow">A tale told across three ages</p>
+          <h1 id="game-title">Chronoheart</h1>
+          <p class="tagline">Change the past. Borrow from the future. Restart the Clocktower of Hollowmere.</p>
+          <nav class="menu">
+            <button id="btn-continue" class="btn primary" hidden>Continue</button>
+            <button id="btn-new" class="btn primary">New Game</button>
+            <button class="btn" data-open-controls>Controls</button>
+          </nav>
+          <div class="era-strip" aria-hidden="true">
+            <span class="past">Ancient</span><span class="dot">◆</span><span class="present">Medieval</span><span class="dot">◆</span><span class="future">Chrome</span>
+          </div>
+        </div>
+      </section>
+
+      <div id="controls-panel" class="glass panel" hidden>
+        <h2>Controls</h2>
+        <div class="controls-grid touch-only">
+          <span class="tc-legend">Joystick</span><span>Touch anywhere on the left side and drag. Push all the way to sprint. Up and down move into and out of the scene and climb ladders.</span>
+          <span class="tc-legend">Jump</span><span>Hold for a higher jump · swim upward</span>
+          <span class="tc-legend">Attack</span><span>Swing your wrench</span>
+          <span class="tc-legend">Roll</span><span>Dodge-roll</span>
+          <span class="tc-legend">Talk</span><span>Talk / interact. It lights up when someone is nearby. You can also tap the prompt.</span>
+          <span class="tc-legend">Swipe</span><span>Swipe left to travel toward the Future, right toward the Past. Drag slowly to preview first.</span>
+          <span class="tc-legend">Past · Future</span><span>Or tap the era names at the top</span>
+          <span class="tc-legend">Amulet</span><span>Hold the amulet dial to peek at another era, then tap Past or Future to choose which</span>
+          <span class="tc-legend">Dialogue</span><span>Tap anywhere to continue</span>
+          <span class="tc-legend">Hint</span><span>Stuck? Tap Hint next to your goal</span>
+        </div>
+        <div class="controls-grid kb-only">
+          <span><kbd>A</kbd><kbd>D</kbd></span><span>Move left / right</span>
+          <span><kbd>W</kbd><kbd>S</kbd></span><span>Move into / out of the scene · climb ladders &amp; vines</span>
+          <span><kbd>Space</kbd></span><span>Jump (hold for higher) · swim upward</span>
+          <span><kbd>Shift</kbd></span><span>Sprint</span>
+          <span><kbd>C</kbd></span><span>Dodge-roll</span>
+          <span><kbd>X</kbd></span><span>Wrench attack</span>
+          <span><kbd>F</kbd></span><span>Talk / interact</span>
+          <span><kbd>Q</kbd> / <kbd>E</kbd></span><span>Travel one era back / forward</span>
+          <span><kbd>Tab</kbd></span><span>Hold to peek at another era (Q/E chooses which)</span>
+          <span><kbd>I</kbd></span><span>Inventory</span>
+          <span><kbd>G</kbd></span><span>Show a hint for your current goal</span>
+          <span><kbd>H</kbd></span><span>Show these controls</span>
+          <span><kbd>Esc</kbd></span><span>Pause</span>
+        </div>
+        <p class="muted small">Push blocks by walking into them. The Chronoheart drains while you're in the Past or Future and recharges in the Present.</p>
+        <button id="btn-close-controls" class="btn primary">Got it</button>
+      </div>
+
+      <div id="pause-menu" class="glass panel" hidden>
+        <h2>Paused</h2>
+        <nav class="menu">
+          <button id="btn-resume" class="btn primary">Resume</button>
+          <button class="btn" data-open-controls>Controls</button>
+          <button id="btn-music" class="btn">Music: On</button>
+          <button id="btn-restart-cp" class="btn">Return to last shrine</button>
+          <button id="btn-quit" class="btn">Quit to title</button>
+        </nav>
+      </div>
+
+      <div id="rotate-hint" role="dialog" aria-label="Rotate your device">
+        <div class="rotate-phone" aria-hidden="true"></div>
+        <p>Chronoheart plays best sideways.<br />Turn your phone to landscape.</p>
+        <button id="btn-portrait-ok" class="btn">Play in portrait anyway</button>
+      </div>
+
+      <section id="credits" hidden aria-labelledby="credits-title">
+        <div class="credits-inner">
+          <p class="eyebrow">The Clocktower ticks again</p>
+          <h2 id="credits-title">Chronoheart</h2>
+          <div class="stats">
+            <div><span>Time</span><strong id="stat-time">0m</strong></div>
+            <div><span><img data-icon="cog" alt="" /> Lost Cogs</span><strong id="stat-cogs">0/9</strong></div>
+            <div><span><img data-icon="heart" alt="" /> Kindness</span><strong id="stat-kind">0/3</strong></div>
+          </div>
+          <p id="credits-bonus" class="bonus" hidden>You found every Lost Cog! Eugene's old pocketwatch starts ticking again... but that's a story for another time.</p>
+          <p class="muted">Every world, sprite, melody and sound in this game was generated from code.</p>
+          <button id="btn-credits-title" class="btn primary">Return to Title</button>
+        </div>
+      </section>
+
+      <div id="fade"><p id="fade-text"></p></div>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
