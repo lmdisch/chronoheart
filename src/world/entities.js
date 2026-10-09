@@ -705,6 +705,7 @@ export class Pickup extends EraEntity {
     const s = this.game.state;
     const needs = [].concat(this.spec.needs || []); // any one of these flags unlocks it
     if (needs.length && !needs.some((n) => s.flags[n])) return false;
+    if (this.spec.unless && s.flags[this.spec.unless]) return false;
     if (this.spec.type === 'cog') return !s.cogs.includes(this.id);
     if (this.spec.type === 'heart') return true;
     return !s.taken.includes(this.id);

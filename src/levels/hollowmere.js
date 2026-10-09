@@ -1522,7 +1522,10 @@ export const SPAWNS = [
   { type: 'cog', id: 'cogP2', era: P, x: 57.5, y: 3.7, z: 0.5 },
   { type: 'cog', id: 'cogP3', era: P, x: 154.5, y: 3.7, z: 5.0 },
   { type: 'cog', id: 'cogM1', era: M, x: 30.5, y: 3.7, z: 1.5 },
-  { type: 'cog', id: 'cogM2', era: M, x: 95.5, y: 8.7, z: 3.5, needs: ['acornPlanted', 'acornPlantedM'] },
+  // on the oak's branch: in the Present if the acorn went in the Past soil, or on the same
+  // branch of the petrified tree in the Future if it went in the Present planter (one cog)
+  { type: 'cog', id: 'cogM2', era: M, x: 95.5, y: 8.7, z: 3.5, needs: 'acornPlanted' },
+  { type: 'cog', id: 'cogM2', era: F, x: 95.5, y: 8.7, z: 3.5, needs: 'acornPlantedM', unless: 'acornPlanted' },
   { type: 'cog', id: 'cogM3', era: M, x: 193.5 + TO, y: 4.7, z: 1.5 },
   { type: 'cog', id: 'cogF1', era: F, x: 29.5, y: 3.7, z: 2.5 },
   { type: 'cog', id: 'cogF2', era: F, x: 65.5, y: -2.4, z: 3.5, needs: 'springOpen' },
@@ -1555,7 +1558,7 @@ export const SPAWNS = [
 ];
 
 // ---------------------------------------------------------------------------
-export const COG_TOTAL = SPAWNS.filter((s) => s.type === 'cog').length;
+export const COG_TOTAL = new Set(SPAWNS.filter((s) => s.type === 'cog').map((s) => s.id)).size;
 
 export function buildLevel(world, state) {
   world.__state = state;
