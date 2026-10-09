@@ -5,7 +5,7 @@ import { input } from './core/input.js';
 import { ERA } from './core/util.js';
 import { audio } from './audio/audio.js';
 import { getSheets, SpriteActor } from './render/sprites.js';
-import { ECHO_BUTTONS, ECHO_STEPS, SEALABLES, L } from './levels/hollowmere.js';
+import { ECHO_BUTTONS, ECHO_STEPS, ECHO_GATES, GATE_BUTTONS, SEALABLES, L } from './levels/hollowmere.js';
 import { T } from './world/world.js';
 import { touchActive } from './ui/touch.js';
 
@@ -93,6 +93,44 @@ export class Abilities {
       g.add(base, glow);
       return { ...p, mat, glow, pressed: false, lit: 0 };
     });
+    // gate buttons: plain square plates in their gate's colour
+    this.gateButtons = GATE_BUTTONS.map((p) => {
+      const base = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.06, 0.92), new THREE.MeshStandardMaterial({ color: 0x2a2630, roughness: 0.7 }));
+      base.position.set(p.x + 0.5, p.y + 0.03, p.z + 0.5);
+      const mat = new THREE.MeshBasicMaterial({ color: p.color });
+      const top = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.08, 0.64), mat);
+      top.position.set(p.x + 0.5, p.y + 0.07, p.z + 0.5);
+      g.add(base, top);
+      return { ...p, mat, top, pressed: false };
+    });
+    // gates: a row of bars across the road that sink into the floor when open. The second
+    // green gate is the airlock's "inverted" half: open only while its button is NOT held.
+    this.gates = ECHO_GATES.map((gt) => {
+      const color = GATE_BUTTONS.find((b) => b.id === gt.button).color;
+      const group = new THREE.Group();
+      const barMat = new THREE.MeshStandardMaterial({ color: 0x4a4a52, roughness: 0.5, metalness: 0.4 });
+      for (let z = 0.15; z < 7; z += 0.42) {
+        const bar = new THREE.Mesh(new THREE.BoxGeometry(0.12, 3, 0.12), barMat);
+        bar.position.set(gt.x + 0.5, 1.5, z);
+        bar.castShadow = true;
+        group.add(bar);
+      }
+      const bandMat = new THREE.MeshBasicMaterial({ color });
+      if (gt.inverted) {
+        // dashed band: "opens when the button is released"
+        for (let z = 0.1; z < 7; z += 0.8) {
+          const dash = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.16, 0.45), bandMat);
+          dash.position.set(gt.x + 0.5, 3.0, z + 0.22);
+          group.add(dash);
+        }
+      } else {
+        const band = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.16, 7), bandMat);
+        band.position.set(gt.x + 0.5, 3.0, 3.5);
+        group.add(band);
+      }
+      g.add(group);
+      return { ...gt, group, open: false, shown: 0, init: false };
+    });
     this.steps = ECHO_STEPS.map((s) => {
       const w = s.x1 - s.x0 + 1, d = s.z1 - s.z0 + 1;
       const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, 1, d).translate(0, 0.5, 0), new THREE.MeshStandardMaterial({ color: 0x8f8a80, roughness: 0.85 }));
@@ -126,14 +164,14 @@ export class Abilities {
     if (which === 'seal') {
       f.hasSeal = true;
       this.game.hud.toast(
-        `<b>Stasis Seal learned!</b> Things that can be sealed shimmer with pale light. Stand beside one and ${touch ? 'tap <b>Seal</b>' : 'press <kbd>R</kbd>'} to hold it in its moment: it will stay exactly as it is, in every age after.`,
-        8000,
+        `<b>Stasis Seal!</b> Stand by something that shimmers and ${touch ? 'tap <b>Seal</b>' : 'press <kbd>R</kbd>'}.`,
+        5000,
       );
     } else {
       f.hasEcho = true;
       this.game.hud.toast(
-        `<b>Echo Lens fitted!</b> In the Present, ${touch ? 'tap <b>Echo</b>' : 'press <kbd>V</kbd>'} to start recording, and again to stop (up to ${ECHO_MAX} seconds). Your echo repeats it over and over. Up to ${ECHO_LIMIT} echoes at once.`,
-        9000,
+        `<b>Echo!</b> ${touch ? 'Tap <b>Echo</b>' : 'Press <kbd>V</kbd>'} to record, again to stop. Your echo repeats it.`,
+        5000,
       );
     }
     this.syncBody();
@@ -163,7 +201,7 @@ export class Abilities {
   /** The sealable the player is standing at, if any: drives the "R Seal ..." prompt and the touch button. */
   sealTarget() {
     const b = this.game.player.body;
-    return this.readySealables().find((s) => b.x >= s.x0 && b.x <= s.x1 + 1) || null;
+    return this.readySealables().find((s) => b.x >= s.x0 && b.x <= s.x1 + 1 && b.y >= (s.yMin ?? -Infinity)) || null;
   }
 
   /** Pale motes rise off anything that can be sealed, so it reads as special before you get there. */
@@ -183,7 +221,7 @@ export class Abilities {
     if (!t) {
       const here = SEALABLES.find((s) => s.era === g.era && b.x >= s.x0 && b.x <= s.x1 + 1);
       if (here && f[here.flag]) return g.hud.toast(`${here.name} is already sealed in its moment.`);
-      return g.hud.toast('Nothing here to seal. Things that can be sealed shimmer with pale light. Stand beside one and use the Seal.', 5500);
+      return g.hud.toast('Nothing here shimmers to seal.', 2500);
     }
     f[t.flag] = true;
     audio.sfx('socket');
@@ -202,7 +240,7 @@ export class Abilities {
 
   startRecording() {
     const g = this.game;
-    if (g.era !== ERA.PRESENT) return g.hud.toast('Echoes only hold together in the <b>Present</b>, where time runs steady.', 4000);
+    if (g.era !== ERA.PRESENT) return g.hud.toast('Echoes only work in the <b>Present</b>.', 2500);
     this.rec = { t: 0, frames: [] };
     this.rec.frames.push(this.frameOf());
     audio.sfx('tick');
@@ -234,11 +272,7 @@ export class Abilities {
     const first = !g.state.flags.echoHint;
     g.state.flags.echoHint = true;
     const n = this.echoes.length;
-    g.hud.toast(
-      `Echo ${n} of ${ECHO_LIMIT} left${replaced ? ' (your oldest echo faded)' : ''}.` +
-        (first ? ` It repeats what you did, over and over. To remove one, stand on it and ${touchActive() ? 'tap <b>Dispel echo</b>' : 'press <kbd>F</kbd>'}.` : ''),
-      first ? 7500 : 3000,
-    );
+    g.hud.toast(`Echo ${n}/${ECHO_LIMIT}${replaced ? ' (oldest faded)' : ''}`, 2200);
   }
 
   /** The echo the player is standing on (where it is now, or where its loop starts). */
@@ -273,16 +307,13 @@ export class Abilities {
   // ------------------------------------------------------------------ Echo Gallery
   /** One-time explanations: first button stepped on, and first out-of-order press. */
   galleryHint(outOfOrder) {
-    const f = this.game.state.flags, keys = touchActive() ? 'tap <b>Echo</b>' : 'press <kbd>V</kbd>';
+    const f = this.game.state.flags;
     if (outOfOrder && !f.galleryOrderHint) {
       f.galleryOrderHint = true;
-      this.game.hud.toast('That button stays dark: they only light in order, <b>1 → 2 → 3</b>. Count the dots beside each one.', 5500);
+      this.game.hud.toast('They light in order: <b>1 → 2 → 3</b>.', 3000);
     } else if (!outOfOrder && !f.galleryHint) {
       f.galleryHint = true;
-      this.game.hud.toast(
-        `Buttons light in order, <b>1 → 2 → 3</b>, and fade a few seconds after you step off. The step rises while its whole row is lit. ${keys}, walk the row, then ${keys} again: your echo will keep walking it for you.`,
-        9000,
-      );
+      this.game.hud.toast('The step rises while its whole row is lit.', 3500);
     }
   }
 
@@ -293,6 +324,28 @@ export class Abilities {
    */
   updateGallery(dt) {
     const g = this.game, f = g.state.flags, w = g.world, P = ERA.PRESENT;
+    // gate buttons only count while something stands on them
+    for (const btn of this.gateButtons) {
+      btn.pressed = (g.era === P && standsOn(g.player.body, btn)) || this.echoes.some((e) => standsOn(e.pos, btn));
+      btn.mat.color.setHex(btn.color).multiplyScalar(btn.pressed ? 2.2 : 0.45);
+      btn.top.position.y = btn.y + (btn.pressed ? 0.04 : 0.07);
+    }
+    const pb = g.player.body;
+    for (const gt of this.gates) {
+      const held = this.gateButtons.find((b) => b.id === gt.button).pressed;
+      let open = !!f.galleryClimbed || (gt.inverted ? !held : held);
+      // never close on top of the player
+      if (!open && gt.open && g.era === P && pb.x + pb.hw > gt.x && pb.x - pb.hw < gt.x + 1) open = true;
+      if (open !== gt.open || !gt.init) {
+        gt.init = true;
+        for (let y = 0; y < 3; y++) for (let z = 0; z <= 6; z++) open ? w.clearDyn(P, gt.x, y, z) : w.setDyn(P, gt.x, y, z, T.SOLID);
+        if (gt.open !== open && Math.abs(pb.x - gt.x) < 10 && g.era === P) audio.sfx('push');
+        gt.open = open;
+      }
+      gt.shown += ((gt.open ? 1 : 0) - gt.shown) * Math.min(1, dt * 9);
+      gt.group.position.y = -3.05 * gt.shown;
+      gt.group.visible = gt.shown < 0.99;
+    }
     for (const btn of this.buttons) {
       const on = (g.era === P && standsOn(g.player.body, btn)) || this.echoes.some((e) => standsOn(e.pos, btn));
       const prev = this.buttons.find((b) => b.step === btn.step && b.order === btn.order - 1);
@@ -337,7 +390,7 @@ export class Abilities {
       f.galleryClimbed = true;
       g.refreshWorld();
       g.save();
-      g.hud.toast('You made it up! You kick the old rope ladder down the wall, so you can always climb back.', 5500);
+      g.hud.toast('You kick a rope ladder down for the way back.', 3000);
     }
   }
 }

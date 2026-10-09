@@ -456,7 +456,8 @@ body.touch #chrono, body.touch #prompt { z-index: 7; } /* above the swipe layer 
 
 /* ---------------- phone layout (touch devices) ---------------- */
 /* Messages never stack up on a phone: at most two toasts at a time. */
-body.touch #toasts .toast:nth-last-child(n + 3) { display: none; }
+body.touch #toasts .toast:nth-last-child(n + 2) { display: none; }
+#toasts .toast:nth-last-child(n + 3) { display: none; }
 
 /* During a conversation the dialogue box owns the bottom of the screen: dim the HUD and show
    any toasts across the top instead, so nothing ends up hidden behind the box. */
@@ -571,3 +572,21 @@ body.recording .tc-echo { color: #ffd6e0; border-color: #ff3a5a; box-shadow: 0 0
 .tc-seal.ready { color: #140f1c; background: #bff6ff; border-color: transparent; box-shadow: 0 0 24px rgba(160, 240, 255, 0.7); animation: talkPulse 1.2s ease-in-out infinite; }
 #prompt[data-action='seal'] { border-color: rgba(160, 240, 255, 0.6); box-shadow: 0 0 24px rgba(160, 240, 255, 0.35); }
 @media (prefers-reduced-motion: reduce) { .tc-seal.ready { animation: none; } }
+
+/* ---------------- quieter UI ---------------- */
+/* a new goal: a small dot on the Menu button (and the I key hint) until you open the Menu */
+#hud-menu-key { position: relative; }
+body.goal-new #hud-menu-key::after, body.goal-new .tc-menu::after {
+  content: ''; position: absolute; width: 9px; height: 9px; border-radius: 50%;
+  background: var(--gold-2); box-shadow: 0 0 8px var(--gold); animation: blink 1.2s steps(2) infinite;
+}
+body.goal-new #hud-menu-key::after { top: -4px; right: -8px; }
+body.goal-new .tc-menu::after { top: 2px; right: 2px; }
+/* area names are smaller and quieter on phones */
+body.touch .area-era { display: none; }
+body.touch .area-name { font-size: 1.25rem; }
+body.touch #area-banner.in .area-line { width: 140px; }
+body.touch .toast { font-size: 0.8rem; padding: 7px 11px; }
+@media (prefers-reduced-motion: reduce) { body.goal-new #hud-menu-key::after, body.goal-new .tc-menu::after { animation: none; } }
+/* the Steady Heart: the Chronoheart's ring holds a gold glow and never drains */
+#chrono.steady .ring-fg { stroke: var(--gold-2); filter: drop-shadow(0 0 4px var(--gold)); }

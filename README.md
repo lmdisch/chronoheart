@@ -2,7 +2,7 @@
 
 **A time-travel puzzle adventure in one valley, three ages.**
 
-Master Eugene, the clockmaker of Hollowmere, has vanished, and the great Clocktower has stopped for the first time in five hundred years. His apprentice, Vivienne, finds his amulet, the **Chronoheart**, and with it the power to step between three versions of the valley:
+Master Donald Eugene, the clockmaker of Hollowmere, has vanished, and the great Clocktower has stopped for the first time in five hundred years. His apprentice, Vivienne, finds his amulet, the **Chronoheart**, and with it the power to step between three versions of the valley:
 
 | Age | What it looks like | Its colour |
 | --- | --- | --- |
@@ -26,6 +26,7 @@ Every world, sprite, melody and sound in the game is generated from code: there 
 - [Walkthrough](#walkthrough) *(spoilers)*
 - [All 10 Lost Cogs](#all-10-lost-cogs) *(spoilers)*
 - [Favours](#favours) *(spoilers)*
+- [Secrets](#secrets) *(big spoilers)*
 - [Project structure](#project-structure)
 - [Publishing the live page](#publishing-the-live-page)
 
@@ -46,8 +47,8 @@ Every world, sprite, melody and sound in the game is generated from code: there 
 
 | Ability | Where | What it does |
 | --- | --- | --- |
-| **Stasis Seal** | Eugene's satchel at Tamsin's Crossing (Present) | Hold something in its moment, so it stays exactly the same in every later age. Things that can be sealed shimmer with pale light; stand beside one and a **Seal** prompt appears. |
-| **Echo** | Eugene's lectern at the Echo Gallery (Present) | Record up to 5 seconds of your own movement. Your echo replays it on a loop, forever. Present only, up to 3 echoes at once (a 4th replaces the oldest). Stand on an echo and press **Interact** to dispel it. |
+| **Stasis Seal** | Donald Eugene's satchel at Tamsin's Crossing (Present) | Hold something in its moment, so it stays exactly the same in every later age. Things that can be sealed shimmer with pale light; stand beside one and a **Seal** prompt appears. |
+| **Echo** | Donald Eugene's lectern at the Echo Gallery (Present) | Record up to 5 seconds of your own movement. Your echo replays it on a loop, forever. Present only, up to 3 echoes at once (a 4th replaces the oldest). Stand on an echo and press **Interact** to dispel it. |
 
 ---
 
@@ -110,8 +111,8 @@ The road runs west to east. Each area below lists what you need and how to get i
 
 ### 1. Hollowmere Square
 
-- In the **Present**, go into **Eugene's workshop** at the west end and examine the **workbench**. You get the **Chronoheart** and Eugene's note: find the three Era Keys and restart the Tower.
-- Elder Louise (Present) has advice about the river, and a favour (see [Favours](#favours)).
+- In the **Present**, go into **Donald Eugene's workshop** at the west end and examine the **workbench**. You get the **Chronoheart** and Donald Eugene's note: find the three Era Keys and restart the Tower.
+- Elder Karen Louise (Present) has advice about the river, and a favour (see [Favours](#favours)).
 
 ### 2. The Old Ford
 
@@ -163,7 +164,7 @@ The road runs west to east. Each area below lists what you need and how to get i
 ### 9. Tamsin's Crossing
 
 - A gorge with a river far below.
-- **Present:** look in the reeds on this bank for **Eugene's satchel**. It teaches you the **Stasis Seal**.
+- **Present:** look in the reeds on this bank for **Donald Eugene's satchel**. It teaches you the **Stasis Seal**.
 - **Past:** **Tamsin the Ropewright** wants to bridge the gorge, but her vine rope always rots.
 - **Future:** a scrapyard on this bank has a spool of **steel cable** (drone nearby). Bring it to Tamsin, and she builds the bridge.
 - The bridge rots away within a century. Stand by it in the **Past** and use the **Stasis Seal**: it now exists, unchanged, in every age.
@@ -171,12 +172,16 @@ The road runs west to east. Each area below lists what you need and how to get i
 
 ### 10. The Echo Gallery
 
-- A 4-high wall. Three stone steps can rise out of the floor, but only in the **Present**.
-- **Eugene's lectern** by the entrance gives you the **Echo**.
-- Each step is raised by a **row of three buttons**. The dots beside each button show its number (1, 2, 3). A button only lights if the one before it is lit, and stays lit for a few seconds after you step off. The step stands while its **whole row** is lit.
+Everything here happens in the **Present**: the gates, the steps and your echoes. In the Past and the Future the gate section is solid wall. You can keep **3 echoes** at once, and recording a 4th makes the oldest fade, so plan which ones you still need.
+
+- **Donald Eugene's lectern** by the entrance gives you the **Echo**.
+- **The gold gate** stands open only while the **gold button** is held. Stand on the gold button and record an echo standing still: it holds the gate open for you.
+- **The green airlock** is two gates worked by one **green button**. The first (solid green band) is open while the button is held; the second (dashed band) only while it's **not**. Record an echo that stands on the green button for about two seconds and then steps off for two. Walk through the first gate while the echo is on the button, wait in the gap, and go through the second when it steps off.
+- **The wall:** three stone steps rise out of the floor up a 4-high wall. Each step is raised by a **row of three buttons**. The dots beside each button show its number (1, 2, 3). A button only lights if the one before it is lit, and stays lit for a few seconds after you step off. The step stands while its **whole row** is lit.
 - So: stand on button 1, start recording (`V`), walk the row 1 → 2 → 3 and back, and stop recording. Your echo keeps walking the row, and the step stays up.
 - Do this for the ground row (step 1), then the row **on** step 1 (step 2), then the row **on** step 2, which runs the other way (step 3). Then climb up the steps onto the gallery.
-- At the top you kick down a rope ladder, so the way back never needs echoes again.
+- Your gate echoes will fade as you record the row echoes. That's fine: you're past the gates.
+- At the top you kick down a rope ladder, and the gates stay open for good, so the way back never needs echoes again.
 
 ### 11. The Warden's Courtyard: the Escapement Key
 
@@ -186,19 +191,18 @@ The road runs west to east. Each area below lists what you need and how to get i
   - If it spots you, it winds up and charges. Break line of sight behind a pillar, or **switch to another era** to lose it.
   - If it catches you, you lose a heart and it throws you out to the courtyard gate.
   - In the Present, the key's spot is **inside a fountain**, so you can't just pop into the Future on top of it. You have to cover the last stretch in the Future, and walk clear of the fountain's footprint before switching back.
+  - **Tip:** walk most of the way in the **Present** (there's no Warden there). Wait beside the fountain until the Warden's cone points away from you, then pop into the Future, take the key, step back clear of the fountain and switch back.
 - With all four keys, open the door in the **Present**. You keep the three Era Keys: the Tower needs them inside.
 
 ### 12. The Clocktower
 
-Place the three Era Keys **quickly**. Once the first is in, the Tower hums, and you have about **22 seconds** to place the other two before the resonance fades and the keys drop back into your hands.
+The finale is a climb. Each Era Key goes in higher up, in a different age, using a different power. There's no timer, and placed keys are saved.
 
-| Key | Socket | Age |
-| --- | --- | --- |
-| Sun Disc | Sun pedestal, by the entrance | **Past** |
-| Bell Hammer | The great bell, on the balcony (climb the ladder) | **Present** |
-| Fusion Core | Reactor socket, at the back | **Future** |
+1. **The Sun Disc (Past): wake the Tower.** The Sun pedestal stands on a high ledge just inside the door. Nothing reaches it in the Present or the Future, but in the **Past** an ancient stair still climbs to it. Place the disc and the Tower lurches awake: its great gears begin to turn, and the **piston** gets power.
+2. **The Bell Hammer (Present): ride the piston.** The bell hangs in the belfry, 12 blocks up. Beside it, the great piston rises only while its **brass button** is held, and sinks when it's released. Record an **echo** that waits beside the button for a few seconds and then stands on it. Stand on the piston's base while it's down, ride it up, and step onto the belfry.
+3. **The Fusion Core (Future): seal and climb.** The reactor deck is above the belfry, but only in the **Future**, where the old wooden belfry floor has rotted away. Stand on the belfry in the Present and use the **Stasis Seal**. Then switch to the **Future** and climb the gantry to the reactor.
 
-Then enjoy the ending.
+Every key you place makes the Tower lurch, its gears turn faster, and its time-stutter flare. Then enjoy the ending.
 
 ---
 
@@ -217,7 +221,7 @@ Then enjoy the ending.
 | 7 | Rampart Row | **Future** | At the foot of the tree by the wall, among its roots. | The acorn planted (either age) |
 | 8 | The Sun Terrace | **Past** | On top of the terrace, at its front-right corner. | Getting up the terrace |
 | 9 | Millrace Hollow | **Future** | On a lone pontoon one hop off the log boom, on the reservoir. | The sluice closed |
-| 10 | The Clocktower | **Present** | On the balcony beside the great bell. | Getting into the Tower |
+| 10 | The Clocktower | **Present** | Up in the belfry, beside the great bell. | Riding the piston (after the Sun Disc) |
 
 ---
 
@@ -228,8 +232,22 @@ Three optional side quests. Each completed favour gives you **+1 heart** (and so
 | Favour | Starts with | What to do |
 | --- | --- | --- |
 | **Samaria's star chart** | Samaria the Sun-Keeper (Past, Hollowmere Square) | A storm carried off her star chart. In the **Future**, **TICK** the archivist robot has it in the archive: ask about it and borrow it. Bring it back to Samaria in the Past. |
-| **Louise's sun-lilies** | Elder Louise (Present, Hollowmere Square) | Golden sun-lilies grew in the square in the oldest days. In the **Past**, gather seeds from the wild flowers at the front of the square, then plant them in Louise's empty **flower bed** in the Present. |
+| **Karen Louise's sun-lilies** | Elder Karen Louise (Present, Hollowmere Square) | Golden sun-lilies grew in the square in the oldest days. In the **Past**, gather seeds from the wild flowers at the front of the square, then plant them in Karen Louise's empty **flower bed** in the Present. |
 | **Lillian's keepsake** | Lillian (Future, Smithy Lane) | Lillian has nothing her ancestor Aria ever held. After you've left the hammer in Aria's vault, tell **Aria** (Present) about Lillian: she gives you her **medallion**. Bring it to Lillian. |
+
+---
+
+## Secrets
+
+> **Big spoilers.** Michelle the Wise drops the only hint, in her very first conversation.
+
+### The Everspring (Smithy Lane)
+
+In the **Present** and the **Future**, a small walled garden stands beside the street in Smithy Lane, its gate rusted shut. Through the bars you can see a ring of stones around a dry spring. The walls were built later: in the **Past** there are no walls, just open ground and a spring that has never run dry.
+
+Walk in, in the **Past**, and drink. You gain the **Steady Heart**: the Chronoheart's ring turns gold and **never drains again**, so you can stay in any age for as long as you like.
+
+Michelle's hint, at the Old Ford: *"Before Hollowmere had any walls, they say the smiths drew their water from a spring that never once ran dry."*
 
 ---
 
@@ -240,7 +258,7 @@ index.html              the page: HUD, dialogue box, menus (all HTML/CSS over a 
 src/
   main.js               start-up, title screen, the pause / Controls / Menu overlays
   game.js               the game: modes, era shifting, the amulet meter, saving, time-lapses, the ending
-  abilities.js          the Stasis Seal, the Echo, and the Echo Gallery's buttons and steps
+  abilities.js          the Stasis Seal, the Echo, and the Echo Gallery's gates, buttons and steps
   objectives.js         the goal and hint for wherever you are and whatever you've done
   story.js              items, favours, all dialogue, and every interaction
   core/                 input (keyboard + virtual keys), small utilities

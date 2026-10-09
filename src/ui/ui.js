@@ -41,9 +41,10 @@ export class HUD {
     for (let i = 0; i < max; i++) html += `<span class="heart ${i < hp ? 'full' : 'empty'}"></span>`;
     this.hearts.innerHTML = html;
   }
-  setMeter(v, era) {
+  setMeter(v, era, steady = false) {
     this.ring.style.strokeDashoffset = `${this.circ * (1 - v)}`;
-    this.chrono.classList.toggle('low', v < 0.25 && era !== 1);
+    this.chrono.classList.toggle('low', v < 0.25 && era !== 1 && !steady);
+    this.chrono.classList.toggle('steady', steady);
   }
   setEra(era) {
     this.chrono.dataset.era = ERA_CLASS[era];

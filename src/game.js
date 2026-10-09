@@ -15,6 +15,7 @@ import { talk, interact, ITEMS, INTRO, ENDING, FAVOURS } from './story.js';
 import { touchActive } from './ui/touch.js';
 import { currentGoal } from './objectives.js';
 import { Abilities } from './abilities.js';
+import { Finale } from './finale.js';
 
 const SAVE_KEY = 'chronoheart-save-v1';
 // Storage can be unavailable (private windows, embedded viewers): the game still runs, it just won't save.
@@ -25,7 +26,6 @@ const store = {
 };
 const ERA_RING = [0xffc060, 0xbff6ff, 0xff4fd8];
 const DRAIN_TIME = 10; // seconds of charge away from the present
-const RESONANCE_TIME = 22;
 const BASE_HP = 5;
 /** Short vibration on phones that support it (Android); silently ignored elsewhere. */
 export function haptic(ms) {
@@ -48,6 +48,7 @@ export function newState() {
     blockPos: { ...L.blockStart },
     cratePos: { ...L.crateStart },
     boulderPos: { ...L.boulderStart },
+    sockets: {}, // Era Keys placed in the Clocktower (saved, so a key is never lost mid-finale)
     checkpoint: 0,
     playTime: 0,
   };
@@ -67,8 +68,6 @@ export class Game {
     this.time = 0;
     this.era = ERA.PRESENT;
     this.meter = 1;
-    this.sockets = {};
-    this.resonance = 0;
     this.lockT = 0;
     this.peekTarget = null;
     this.blockFlashT = 0;
@@ -76,6 +75,7 @@ export class Game {
     this.warnT = 0;
     this.state = newState();
     this.abilities = new Abilities(this);
+    this.finale = new Finale(this);
     this.buildWorld();
     this.clock = new THREE.Clock();
     this.titleT = 0;
@@ -121,6 +121,12 @@ export class Game {
     const cp = CHECKPOINTS[this.state.checkpoint] || CHECKPOINTS[0];
     this.player.place(cp.x + 1.2, 0, 3.5);
     this.abilities.attach();
+    this.finale.attach();
+  }
+
+  /** Era Keys placed in the Clocktower, keyed by socket id. */
+  get sockets() {
+    return (this.state.sockets ||= {});
   }
 
   refreshWorld() {
@@ -138,11 +144,9 @@ export class Game {
     this.renderer.camTarget.set(L.start.x + 4, 1, 3);
     this.cutscene(INTRO).then(() => {
       if (touchActive()) {
-        this.hud.toast('Drag on the left side of the screen to move. Tap <b>Jump</b> to jump, and <b>Interact</b> when it lights up.', 6500);
-        setTimeout(() => this.hud.toast('Tap <b>Attack</b> to swing your wrench. Tap <b>?</b> any time to see all controls.', 6500), 1200);
+        this.hud.toast('Drag the left side to move. <b>?</b> shows all controls.', 5000);
       } else {
-        this.hud.toast('Move with <kbd>A</kbd><kbd>D</kbd> and <kbd>W</kbd><kbd>S</kbd>. Jump with <kbd>Space</kbd>. Interact with <kbd>F</kbd>.', 6500);
-        setTimeout(() => this.hud.toast('Swing your wrench with <kbd>X</kbd>. Press <kbd>H</kbd> any time to see all controls.', 6500), 1200);
+        this.hud.toast('Move <kbd>WASD</kbd> · Jump <kbd>Space</kbd> · Interact <kbd>F</kbd> · All controls <kbd>H</kbd>', 5000);
       }
     });
   }
@@ -167,8 +171,6 @@ export class Game {
   beginPlay() {
     this.mode = 'play';
     this.meter = 1;
-    this.sockets = {};
-    this.resonance = 0;
     this.applyEra(ERA.PRESENT, true);
     this.post.trans = 1;
     this.post.peekAmt = 0;
@@ -234,19 +236,29 @@ export class Game {
       this.blockFlashEra = target;
       if (!this.state.flags.blockHint) {
         this.state.flags.blockHint = true;
-        this.hud.toast(`Something solid is standing right here in the ${ERA_SHORT[target]}. Move a little and try again.`, 5000);
+        this.hud.toast(`Something's in the way in the ${ERA_SHORT[target]}. Step aside and try again.`, 3500);
       }
       return;
     }
-    if (this.overHazard(target)) {
+    if (this.overHazard(target) || !this.groundBelow(target)) {
       audio.sfx('blocked');
       this.hud.flashBlocked();
       this.blockFlashT = 0.7;
       this.blockFlashEra = target;
-      this.hud.toast(`Careful! In the ${ERA_SHORT[target]} there's nothing to stand on here.`, 4000);
+      this.hud.toast(`Nothing to stand on here in the ${ERA_SHORT[target]}.`, 3000);
       return;
     }
     this.doShift(target);
+  }
+
+  /** Something to land on within a few cells below the player in `era`? (no switching into a long fall) */
+  groundBelow(era) {
+    const b = this.player.body, x = Math.floor(b.x), z = Math.floor(b.z);
+    for (let y = Math.floor(b.y + 0.01); y >= Math.floor(b.y) - 3; y--) {
+      const c = this.world.cell(era, x, y, z);
+      if (c === T.SOLID || c === T.WATER || c === T.LADDER) return true;
+    }
+    return false;
   }
 
   /** True if the first non-air cell below the player in `era` is a hazard (deep river, toxic canal...). */
@@ -271,7 +283,6 @@ export class Game {
     audio.sfx('shift', { era: target });
     const b = this.player.body;
     this.bursts.emit(b.x, b.y + 0.8, b.z, 40, { color: [ERA_RING[target], 0xffffff], speed: 5, life: 0.6, gravity: 0, glow: 2.5 });
-    this.areaIdx = -1;
     // a moment to get your bearings: nothing can hurt or notice you right after you arrive
     this.shiftGrace = 1.5;
   }
@@ -296,7 +307,7 @@ export class Game {
     }
     this.doShift(ERA.PRESENT);
     audio.sfx('snap');
-    this.hud.toast("The Chronoheart's charge ran out. You were pulled back to the Present!");
+    this.hud.toast('Out of charge: pulled back to the Present.', 3000);
   }
 
   // ------------------------------------------------------------------ gameplay hooks
@@ -336,7 +347,7 @@ export class Game {
       this.refreshWorld();
       this.save();
       this.timelapse({ to: ERA.PRESENT, focus: [195.5, 1, 3], years: 500, caption: 'Turned from its gully, the spring pools in the hollow...', grow: ['millM'] }).then(() =>
-        this.hud.toast("The hollow is a millpond now, but it's draining away through the mill's open sluice.", 6500),
+        this.hud.toast("A millpond now, but it drains through the mill's open sluice.", 4500),
       );
     } else if (p.id === 'block') {
       this.refreshWorld();
@@ -346,11 +357,11 @@ export class Game {
         this.bursts.emit(t.x + 0.5, 0.8, t.z + 0.5, 30, { color: [0x3ad0c0, 0xffe070], speed: 3, life: 0.8 });
         this.save();
         this.timelapse({ to: ERA.PRESENT, focus: [t.x + 0.5, 1.5, t.z], years: 600, caption: 'Generations build on the ancient stone...', grow: ['pillar'] }).then(() =>
-          this.hud.toast('A pillar now stands on the old foundation, right beside the bench.', 6000),
+          this.hud.toast('A pillar now stands beside the bench.', 3500),
         );
       } else if (!this.state.flags.pushHint) {
         this.state.flags.pushHint = true;
-        this.hud.toast('The ancient block slides across the sand. That glowing outline nearby looks like it was carved for it...');
+        this.hud.toast('That glowing outline looks made for this block...', 3500);
       }
     }
   }
@@ -384,7 +395,7 @@ export class Game {
     this.hud.setInventory(this.state.inventory);
     const it = ITEMS[item];
     audio.sfx(it.key ? 'key' : 'pickup');
-    this.hud.toast(`${it.key ? '<b>Era Key obtained:</b>' : 'Obtained:'} ${it.name}<br><small>${it.desc}</small>`, 5000);
+    this.hud.toast(`${it.key ? 'Era Key:' : 'Got:'} <b>${it.name}</b>`, 3000);
   }
 
   removeItem(item) {
@@ -403,7 +414,10 @@ export class Game {
     this.state.checkpoint = id;
     this.player.heal(this.player.maxHp);
     audio.sfx('checkpoint');
-    this.hud.toast('Clock shrine activated. Progress saved.');
+    if (!this.state.flags.shrineHint) {
+      this.state.flags.shrineHint = true;
+      this.hud.toast('Clock shrines save your progress.', 3000);
+    }
     const c = CHECKPOINTS[id];
     this.bursts.emit(c.x, 1.8, c.z, 30, { color: [0x7ff6ff, 0xffd070], speed: 3, life: 0.8 });
     this.save();
@@ -417,32 +431,25 @@ export class Game {
     const ent = this.interactables.find((i) => i.id === socketId);
     this.bursts.emit(ent.x, ent.y + 0.6, ent.z, 40, { color: [0xffd070, 0x9ff4ff], speed: 4, life: 0.9 });
     this.renderer.shake = 0.5;
-    const n = Object.keys(this.sockets).length;
-    if (n === 3) {
-      this.hud.setResonance(null);
+    this.save();
+    if (Object.keys(this.sockets).length === 3) {
       this.runEnding();
       return;
     }
-    if (n === 1) {
-      this.resonance = RESONANCE_TIME;
-      this.hud.toast('<b>The Tower hums!</b> Place the other Era Keys before the resonance fades!', 5000);
-    } else this.hud.toast('Two keys resonate. One more!');
-  }
-
-  failResonance() {
-    for (const [sid, item] of Object.entries(this.sockets)) this.state.inventory.push(item);
-    this.sockets = {};
-    this.resonance = 0;
-    this.hud.setResonance(null);
-    this.hud.setInventory(this.state.inventory);
-    audio.sfx('snap');
-    this.hud.toast('The resonance faded, and the keys dropped back into your hands. Place all three before the echo dies!', 6000);
+    this.finale.lurch(socketId);
   }
 
   async runEnding() {
     this.mode = 'ending';
     this.hud.showPrompt(null);
     this.abilities.cancelRecording();
+    // a flash of white, and you're back down on the Tower floor for the ending
+    setFade(1, '#fff6e0');
+    await new Promise((r) => setTimeout(r, 450));
+    this.player.place(L.towerX0 + 9.5, 0, 3.5);
+    this.player.facing = 1;
+    this.applyEra(ERA.PRESENT, true);
+    setFade(0);
     audio.sfx('bell');
     audio.sfx('fanfare');
     this.renderer.shake = 1.5;
@@ -454,8 +461,8 @@ export class Game {
       this.doShift(e);
     }
     await new Promise((r) => setTimeout(r, 900));
-    // Eugene appears
-    const os = new NPC(this, { type: 'npc', id: 'eugeneEnd', era: ERA.PRESENT, x: b.x + 2.2, z: b.z, sheet: 'eugene', name: 'Eugene' });
+    // Donald Eugene appears
+    const os = new NPC(this, { type: 'npc', id: 'eugeneEnd', era: ERA.PRESENT, x: b.x + 2.2, z: b.z, sheet: 'eugene', name: 'Donald Eugene' });
     this.npcs.push(os);
     this.entities.push(os);
     this.bursts.emit(os.x, 1, os.z, 60, { color: [0x9ff4ff, 0xffffff], speed: 4, life: 1 });
@@ -528,7 +535,7 @@ export class Game {
     setFade(0.6, '#200008');
     setTimeout(() => setFade(0), 160);
     this.lockT = 0.4;
-    this.hud.toast('The Warden seized you and threw you out of the courtyard! Stay out of its sight cone.', 5000);
+    this.hud.toast('Caught! Stay out of the Warden\'s sight cone.', 3500);
     if (this.player.hp <= 0) this.onDeath();
   }
 
@@ -553,7 +560,6 @@ export class Game {
       this.player.invuln = 1.5;
       this.applyEra(ERA.PRESENT, true);
       this.meter = 1;
-      if (Object.keys(this.sockets).length) this.failResonance();
       for (const e of this.enemies) if (e.alive && e.reset) e.reset();
       this.warden?.reset();
       this.hud.setHearts(this.player.hp, this.player.maxHp);
@@ -597,7 +603,8 @@ export class Game {
     }
 
     // meter
-    if (this.era !== ERA.PRESENT && this.mode === 'play') {
+    if (f.steadyHeart) this.meter = 1; // the Everspring: the Chronoheart never drains again
+    else if (this.era !== ERA.PRESENT && this.mode === 'play') {
       this.meter -= dt / DRAIN_TIME;
       if (this.meter < 0.25) {
         this.warnT -= dt;
@@ -611,7 +618,7 @@ export class Game {
         this.snapBack();
       }
     } else this.meter = Math.min(1, this.meter + dt / 2.5);
-    this.hud.setMeter(this.meter, this.era);
+    this.hud.setMeter(this.meter, this.era, !!f.steadyHeart);
 
     // entities
     this.player.update(dt);
@@ -648,19 +655,14 @@ export class Game {
     this.abilities.update(dt, ctl);
 
 
-    // resonance
-    if (this.resonance > 0) {
-      this.resonance -= dt;
-      this.hud.setResonance(Math.max(0, this.resonance / RESONANCE_TIME));
-      if (this.resonance <= 0) this.failResonance();
-    }
+    this.finale.update(dt);
 
     // first time a hostile creature gets close, remind the player how to fight
     if (!f.attackHint && ctl) {
       const b = this.player.body;
       if (this.enemies.some((e) => e.active() && !e.dead && Math.abs(e.body.x - b.x) < 7)) {
         f.attackHint = true;
-        this.hud.toast(`Something hostile is nearby! ${touchActive() ? 'Tap <b>Attack</b>' : 'Press <kbd>X</kbd>'} to swing your wrench.`, 5500);
+        this.hud.toast(`Enemy nearby! ${touchActive() ? '<b>Attack</b>' : '<kbd>X</kbd>'} swings your wrench.`, 3500);
       }
     }
 
@@ -670,11 +672,11 @@ export class Game {
       const solved = bp.x === t.x && bp.z === t.z;
       if (!solved && !f.terraceHint && this.era !== ERA.PAST && bx > 137 && bx < 146 && ctl) {
         f.terraceHint = true;
-        this.hud.toast('The terrace is too high to climb. There\'s an old, empty foundation stone right next to the bench, as if something was meant to stand there long ago...', 7000);
+        this.hud.toast('Too high to climb. That empty foundation by the bench looks like it\'s waiting for something...', 5000);
       }
       if (!solved && !f.blockHint2 && this.era === ERA.PAST && Math.abs(bx - (bp.x + 0.5)) < 5 && ctl) {
         f.blockHint2 = true;
-        this.hud.toast('An ancient carved block, and a glowing foundation outline beside the terrace. Walk into the block to push it.', 7000);
+        this.hud.toast('Walk into the carved block to push it.', 3500);
       }
     }
 
@@ -687,9 +689,8 @@ export class Game {
       document.getElementById('goal-text').innerHTML = goal;
       document.getElementById('goal-hint').innerHTML = hint;
       this.showHint(false);
-      if (prevGoal !== undefined && goal !== prevGoal && !/^Keep heading/.test(goal)) {
-        this.hud.toast(`<b>New goal:</b> ${goal} <small>(${touchActive() ? 'Menu' : 'I'} for details)</small>`, 4500);
-      }
+      // a new goal: a quiet dot on the Menu button rather than more text
+      if (prevGoal !== undefined && goal !== prevGoal && !/^Keep heading/.test(goal)) document.body.classList.add('goal-new');
     }
     this.shiftGrace = Math.max(0, (this.shiftGrace || 0) - dt);
 
@@ -698,9 +699,11 @@ export class Game {
     let ai = 0;
     for (let i = 0; i < AREAS.length; i++) if (bx >= AREAS[i].x) ai = i;
     if (ai !== this.areaIdx) {
-      const first = this.areaIdx === -1;
       this.areaIdx = ai;
-      if (!first || this.mode === 'play') this.hud.showBanner(AREAS[ai].name, this.era);
+      // each area's name shows once, the first time you walk in
+      this.seenAreas ||= new Set();
+      if (!this.seenAreas.has(ai) && this.mode === 'play') this.hud.showBanner(AREAS[ai].name, this.era);
+      this.seenAreas.add(ai);
     }
   }
 
@@ -723,7 +726,7 @@ export class Game {
     const fv = FAVOURS.find((x) => x.id === id);
     if (!fv) return;
     audio.sfx('ui');
-    this.hud.toast(`<b>New favour:</b> ${fv.title}<br><small>${fv.todo} (See the Menu.)</small>`, 6500);
+    this.hud.toast(`New favour: <b>${fv.title}</b>`, 3500);
     this.save();
   }
 
@@ -739,7 +742,7 @@ export class Game {
     audio.sfx('checkpoint');
     const b = p.body;
     this.bursts.emit(b.x, b.y + 1, b.z, 40, { color: [0xff6080, 0xffd070, 0xffffff], speed: 3.5, life: 1 });
-    this.hud.toast(`<b>A kindness repaid.</b> Your heart grows stronger: +1 heart. <small>(${s.kindness.length}/${FAVOURS.length} favours)</small>`, 6000);
+    this.hud.toast('A kindness repaid: <b>+1 heart</b>', 3500);
     this.save();
   }
 
@@ -914,6 +917,10 @@ export class Game {
       return;
     }
     const keys = Object.keys(this.sockets).length;
+    // right after a key goes in, the stutter flares: bursts come back to back, twice as strong
+    this.towerSurge = Math.max(0, (this.towerSurge || 0) - dt);
+    const surge = this.towerSurge > 0;
+    if (surge) g.t = Math.min(g.t, 0.05);
     g.t -= dt;
     if (g.on <= 0 && g.t <= 0) {
       g.on = 0.12 + Math.random() * (0.25 + keys * 0.08);
@@ -932,7 +939,7 @@ export class Game {
       tu.glitchSeed.value = Math.random() * 100;
       if (Math.random() < 0.25) g.era = [0, 1, 2].filter((e) => e !== this.era)[Math.floor(Math.random() * 2)];
     }
-    tu.glitch.value = prox * (0.25 + Math.random() * 0.3 + keys * 0.08);
+    tu.glitch.value = prox * (0.25 + Math.random() * 0.3 + keys * 0.08) * (surge ? 2 : 1);
     tu.glitchTint.value.setHex(ERA_RING[g.era]);
     // screen-space bounds of the tower
     const cam = r.camera, v = new THREE.Vector3();

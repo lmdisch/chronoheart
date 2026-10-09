@@ -77,12 +77,13 @@ export const L = {
   farWallX0: 225, farWallX1: 226,
   // The Echo Gallery (Present): buttons raise stone steps up a 4-high wall, while held
   echoX0: 230,
-  galleryX0: 246, galleryX1: 252,
+  gatesX0: 234, gatesX1: 238, // the gate section (solid wall in the Past and Future)
+  galleryX0: 248, galleryX1: 252,
   // The Warden's Courtyard: the Clocktower key, in the Future, on a patrolled path
   yardX0: 254,
   keySpot: { x: 273.5, z: 2.5 },
   towerX0: 284,
-  cameraBounds: [10, W - 11],
+  cameraBounds: [10, W - 8],
 };
 /** Tower details were laid out when the Clocktower started at x = 182; this shifts them. */
 const TO = L.towerX0 - 182;
@@ -94,14 +95,30 @@ const TO = L.towerX0 - 182;
  * while its whole row is lit. So an echo has to walk the row in order, 1 -> 2 -> 3, within its loop.
  */
 export const ECHO_STEPS = [
-  { x0: 240, x1: 241, z0: 1, z1: 5, h: 1 },
-  { x0: 242, x1: 243, z0: 1, z1: 5, h: 2 },
-  { x0: 244, x1: 245, z0: 1, z1: 5, h: 3 },
+  { x0: 242, x1: 243, z0: 1, z1: 5, h: 1 },
+  { x0: 244, x1: 245, z0: 1, z1: 5, h: 2 },
+  { x0: 246, x1: 247, z0: 1, z1: 5, h: 3 },
 ];
 export const ECHO_BUTTONS = [
-  ...[1, 3, 5].map((z, order) => ({ x: 237, z, y: 0, step: 0, order })), // on the ground
-  ...[1, 3, 5].map((z, order) => ({ x: 240, z, y: 1, step: 1, order })), // on step 1
-  ...[5, 3, 1].map((z, order) => ({ x: 242, z, y: 2, step: 2, order })), // on step 2 (runs the other way)
+  ...[1, 3, 5].map((z, order) => ({ x: 240, z, y: 0, step: 0, order })), // on the ground
+  ...[1, 3, 5].map((z, order) => ({ x: 242, z, y: 1, step: 1, order })), // on step 1
+  ...[5, 3, 1].map((z, order) => ({ x: 244, z, y: 2, step: 2, order })), // on step 2 (runs the other way)
+];
+
+/**
+ * Before the steps, two gate stages (Present). Gate buttons only count while something is on
+ * them. The gold gate stands open while the gold button is held: leave an echo on it. The green
+ * gates are an airlock: the first is open while the green button is held, the second only while
+ * it isn't, so you need an echo whose loop stands on the button and then steps off.
+ */
+export const GATE_BUTTONS = [
+  { id: 'gold', x: 232, z: 5, y: 0, color: 0xffc040 },
+  { id: 'green', x: 232, z: 1, y: 0, color: 0x5cff8a },
+];
+export const ECHO_GATES = [
+  { x: 234, button: 'gold' },
+  { x: 236, button: 'green' },
+  { x: 238, button: 'green', inverted: true },
 ];
 
 /** Things the Stasis Seal can hold in their moment. */
@@ -110,7 +127,13 @@ export const SEALABLES = [
     id: 'bridge', era: P, x0: L.gorgeX0 - 1, x1: L.gorgeX1 + 1, needs: 'bridgeBuilt', flag: 'bridgeSealed', name: "Tamsin's bridge",
     glint: { x0: L.gorgeX0, x1: L.gorgeX1 + 1, y: 0.1, z0: 2, z1: 5 }, // where the "this can be sealed" shimmer plays
     focus: [(L.gorgeX0 + L.gorgeX1 + 1) / 2, 0.5, 3.5], caption: 'Sealed in its moment, the bridge waits out the centuries...',
-    after: 'The bridge stands in every age now. In the <b>Present</b> a city wall blocks the far bank, but in the <b>Future</b> that wall is rubble.',
+    after: 'The bridge stands in every age now.',
+  },
+  {
+    id: 'belfry', era: M, x0: L.towerX0 + 8, x1: L.towerX0 + 13, yMin: 11.5, needs: 'towerUnlocked', flag: 'belfrySealed', name: 'the belfry floor',
+    glint: { x0: L.towerX0 + 8, x1: L.towerX0 + 14, y: 12.1, z0: 0, z1: 3 },
+    focus: [L.towerX0 + 11, 12.5, 1.5], caption: 'Sealed in its moment, the belfry floor outlasts the centuries...',
+    after: 'The belfry floor stands in the Future now.',
   },
 ];
 
@@ -494,7 +517,7 @@ function backdrop(world) {
 // Special areas
 // ---------------------------------------------------------------------------
 function hub(world) {
-  // PRESENT: Eugene's workshop
+  // PRESENT: Donald Eugene's workshop
   let b = world.staticBuilder(M);
   b.solid(1, 0, -5, 12, 2, -1, jitter(C.stone));
   b.solid(1, 3, -5, 12, 7, -1, jitter(C.plaster));
@@ -570,7 +593,7 @@ function hub(world) {
   filler(b, F, 13, 37, 31);
 }
 
-// Sun-lilies: golden flowers that grew in the square in the oldest days (Louise's favour).
+// Sun-lilies: golden flowers that grew in the square in the oldest days (Karen Louise's favour).
 function lilyCluster(b, x, z, n, glow = false) {
   for (let i = 0; i < n; i++) {
     const ox = x + hash3(i, 3, z * 7) * 0.8, oz = z + hash3(i, 5, x * 3) * 0.8;
@@ -588,7 +611,7 @@ function lilies(world) {
   // PAST: wild sun-lilies, on the very spot the square's flower bed will be
   const bp = world.staticBuilder(P);
   for (let x = LILY_BED.x0; x <= LILY_BED.x1; x++) lilyCluster(bp, x + 0.1, LILY_BED.z + 0.1, 4);
-  // PRESENT: Louise's flower bed, empty until the seeds come back
+  // PRESENT: Karen Louise's flower bed, empty until the seeds come back
   world.addFeature({
     id: 'lilyBed', eras: [M], key: (s) => String(!!s.flags.liliesPlanted),
     build: (b, era, s) => {
@@ -875,6 +898,43 @@ function rampart(world) {
       b.light(92.9, 1, 4.6, NEON.cyan, 4, 6, 0);
     },
   });
+}
+
+// The Everspring: a secret in Smithy Lane. In the Present and the Future, a walled garden you
+// can't enter; in the Past, before the walls were built, an open spring. Drinking from it stops
+// the Chronoheart from draining. (Michelle the Wise mentions it, very quietly.)
+const GARDEN = { x0: 120, x1: 124, z0: 4 };
+function everspring(world) {
+  const { x0, x1, z0 } = GARDEN, cx = (x0 + x1) / 2;
+  const ring = (b, y, col) => {
+    for (const [ox, oz] of [[-0.9, 0], [0.9, 0], [0, -0.9], [0, 0.9], [-0.65, -0.65], [0.65, -0.65], [-0.65, 0.65], [0.65, 0.65]])
+      b.deco(cx + ox - 0.2, y, 5.5 + oz - 0.2, 0.4, 0.3, 0.4, col);
+  };
+  // PAST: open ground, the spring flowing
+  let b = world.staticBuilder(P);
+  ring(b, 0, C.sandstone[1]);
+  // plain water with only a faint glint: a secret, not a beacon
+  b.deco(cx - 0.55, 0.0, 4.95, 1.1, 0.1, 1.1, 0x4a9ad8);
+  b.glow(cx - 0.12, 0.1, 5.38, 0.24, 0.03, 0.24, 0x9fe8ff);
+  // PRESENT: a walled garden, gate rusted shut, the spring dry
+  b = world.staticBuilder(M);
+  const walls = (b, pal) => {
+    b.solid(x0, 0, z0, x1, 2, z0, jitter(pal));
+    b.solid(x0, 0, z0 + 1, x0, 2, 6, jitter(pal));
+    b.solid(x1, 0, z0 + 1, x1, 2, 6, jitter(pal));
+  };
+  walls(b, C.stone);
+  b.deco(cx - 0.6, 0.0, z0 - 0.06, 1.2, 2.0, 0.08, 0x3a2a1a); // the old gate
+  for (let i = 0; i < 5; i++) b.deco(cx - 0.5 + i * 0.25, 0.1, z0 - 0.1, 0.06, 1.8, 0.06, 0x4a4a52);
+  ring(b, 0, C.stone[3]);
+  b.deco(cx - 0.55, 0.0, 4.95, 1.1, 0.04, 1.1, 0x4a3a2a); // dry basin
+  for (let i = 0; i < 6; i++) b.deco(x0 + hash3(i, 9, 2) * 4.5, 1 + hash3(i, 8, 2) * 1.6, z0 - 0.04, 0.3, 0.3, 0.05, C.leaves[i % 5]); // ivy
+  // FUTURE: the same walls, sealed
+  b = world.staticBuilder(F);
+  walls(b, C.stoneMoss);
+  b.deco(cx - 0.6, 0.0, z0 - 0.06, 1.2, 2.0, 0.08, 0x3a404c);
+  b.glow(cx - 0.5, 2.1, z0 - 0.08, 1.0, 0.25, 0.04, 0xffb03a); // "HERITAGE SITE"
+  ring(b, 0, C.stoneMoss[2]);
 }
 
 function smithy(world) {
@@ -1318,16 +1378,18 @@ function echoGallery(world) {
     b.solid(L.galleryX0, 4, ZMIN, L.galleryX1, 9, -1, jitter(pals[era])); // the gallery's back wall
     if (era === F) b.glow(L.galleryX0 - 0.03, 3.8, 0, 0.05, 0.12, 7, NEON.cyan);
   }
-  // PAST / FUTURE: filler only, nothing to climb
+  // PAST / FUTURE: the gate section is a solid wall, so the gates can't be skipped by changing era
+  for (const era of [P, F]) world.staticBuilder(era).solid(L.gatesX0, 0, 0, L.gatesX1, 4, 6, jitter(pals[era]));
   let b = world.staticBuilder(P);
   filler(b, P, L.pastCliffX1 + 1, L.galleryX0 - 1, 111);
   wallTorch(b, L.galleryX0 - 0.1, 1.5, 3.0);
   b = world.staticBuilder(F);
   filler(b, F, L.echoX0 + 2, L.galleryX0 - 1, 115);
-  // PRESENT: Eugene's lectern by the entrance, and the sockets the steps rise out of
+  // PRESENT: Donald Eugene's lectern by the entrance, and the sockets the steps rise out of
   b = world.staticBuilder(M);
-  b.deco(233.15, 0, 0.1, 0.7, 1.0, 0.6, C.wood[1]);
-  b.deco(233.05, 1.0, 0.05, 0.9, 0.08, 0.7, C.wood[2]);
+  b.deco(230.15, 0, 0.1, 0.7, 1.0, 0.6, C.wood[1]);
+  b.deco(230.05, 1.0, 0.05, 0.9, 0.08, 0.7, C.wood[2]);
+  for (const g of ECHO_GATES) b.deco(g.x + 0.3, 0, 0, 0.4, 0.03, 7, 0x1a1a20); // slots the gates rise out of
   for (const s of ECHO_STEPS) b.deco(s.x0 + 0.05, 0, s.z0 + 0.05, s.x1 - s.x0 + 0.9, 0.04, s.z1 - s.z0 + 0.9, 0x3a3a42);
   wallTorch(b, L.galleryX0 - 0.1, 1.5, 0.4);
   wallTorch(b, L.galleryX0 - 0.1, 1.5, 6.2);
@@ -1354,7 +1416,8 @@ function echoGallery(world) {
 // can't just pop into the Future on top of the key: you have to get there in the Future,
 // out of the Warden's sight, behind its pillars.
 export const WARDEN_PATH = [[267.5, 0.9], [279.5, 0.9], [279.5, 6.1], [267.5, 6.1]];
-const YARD_PILLARS = [[260, 1], [260, 5], [264, 3], [270, 4], [276, 4], [277, 1]]; // Future cover, 2 high
+// Future cover, 2 high: a trail of pillars from the gate, and a ring of them around the key
+const YARD_PILLARS = [[258, 3], [260, 1], [260, 5], [262, 3], [264, 1], [264, 5], [266, 3], [270, 2], [270, 5], [272, 4], [275, 4], [276, 2], [277, 5]];
 
 function wardenYard(world) {
   const k = L.keySpot;
@@ -1409,14 +1472,34 @@ function wardenYard(world) {
   });
 }
 
+// ---------------------------------------------------------------------------
+// The Clocktower: the finale climb
+// ---------------------------------------------------------------------------
+// Three keys, three heights, three powers. The Sun pedestal stands on a high west ledge that
+// only the Past's ancient stair still reaches. Placing it wakes the Tower, and its great piston
+// (Present) rises while its button is held: an echo rides you up to the belfry and the bell.
+// The reactor deck is above that, in the Future, where the belfry floor has long rotted away:
+// seal it in the Present, then climb the Future gantry.
+export const TOWER = {
+  ledge: { x0: L.towerX0 + 1, x1: L.towerX0 + 4, z1: 2, top: 6 }, // the Sun pedestal's ledge
+  stairX0: L.towerX0 + 5, // Past stair: 5 steps climbing west to the ledge
+  belfry: { x0: L.towerX0 + 8, x1: L.towerX0 + 13, z1: 2, top: 12 },
+  piston: { x0: L.towerX0 + 14, x1: L.towerX0 + 15, z0: 2, z1: 4, h: 12 },
+  pistonButton: { x: L.towerX0 + 6, z: 5, y: 0 },
+  deck: { x0: L.towerX0 + 17, x1: L.towerX0 + 19, z1: 3, top: 16 }, // Future reactor deck
+};
+
 function tower(world) {
   const X = (x) => x + TO;
+  const T = TOWER;
   for (let era = 0; era < 3; era++) {
     const b = world.staticBuilder(era);
     const pal = era === P ? C.sandstone : era === M ? C.stone : C.metalL;
     b.solid(L.towerX0, 0, ZMIN, W - 1, 22, -1, jitter(pal));
     b.solid(L.towerX0, 4, 0, L.towerX0, 12, 6, jitter(pal));
     b.solid(W - 2, 0, 0, W - 1, 22, 6, jitter(pal));
+    // the high west ledge stands in every age; only the Past has a way up
+    b.solid(T.ledge.x0, 0, 0, T.ledge.x1, T.ledge.top - 1, T.ledge.z1, jitter(pal));
     if (era === P) {
       b.glow(X(189), 5, 0.0, 6, 6, 0.04, 0xe8b040);
       b.deco(X(189.6), 5.6, 0.04, 4.8, 4.8, 0.04, 0x8a5a1a);
@@ -1424,31 +1507,34 @@ function tower(world) {
       for (const cx of [184, 195, 200]) b.solid(X(cx), 0, -1, X(cx), 10, -1, jitter(C.sandDark));
       wallTorch(b, X(185), 2, 0.0);
       wallTorch(b, X(199), 2, 0.0);
-      // sun pedestal
-      b.solid(X(186), 0, 1, X(186), 0, 1, jitter(C.sandDark));
-      b.glow(X(186.1), 1.0, 1.1, 0.8, 0.05, 0.8, 0xffcf5a);
+      // the ancient stair, climbing west to the ledge
+      for (let i = 0; i < 5; i++) b.solid(T.stairX0 + 4 - i, 0, 0, T.stairX0 + 4 - i, i, 1, jitter(C.sandDark));
+      // the Sun pedestal on the ledge
+      b.solid(T.ledge.x0 + 1, T.ledge.top, 1, T.ledge.x0 + 1, T.ledge.top, 1, jitter(C.sandDark));
+      b.glow(T.ledge.x0 + 1.1, T.ledge.top + 1.0, 1.1, 0.8, 0.05, 0.8, 0xffcf5a);
     } else if (era === M) {
       b.deco(X(186), 6, 0.0, 9, 9, 0.06, 0x6a4a1a);
-      b.glow(X(186.3), 6.3, 0.04, 8.4, 8.4, 0.04, 0xfff0c8);
+      b.glow(X(186.3), 6.3, 0.04, 8.4, 8.4, 0.04, 0x8a7a58); // the clock face: lit, but not blinding
       for (let i = 0; i < 12; i++) {
         const a = (i / 12) * Math.PI * 2;
         b.deco(X(190.5) + Math.cos(a) * 3.5 - 0.2, 10.5 + Math.sin(a) * 3.5 - 0.2, 0.1, 0.4, 0.4, 0.04, 0x2a2014);
       }
       b.deco(X(190.4), 10.5, 0.12, 0.2, 3, 0.04, 0x2a2014);
       b.deco(X(190.4), 10.4, 0.12, 2.2, 0.2, 0.04, 0x2a2014);
-      for (const [gx, gy, gr] of [[184, 4, 1.2], [198, 6, 1.6], [200, 2, 0.9]]) b.deco(X(gx), gy, -0.3, gr * 2, gr * 2, 0.3, 0xa8843a);
-      // balcony + ladder
-      b.solid(X(190), 3, 0, X(194), 3, 2, jitter(C.wood));
-      b.ladder(X(189), 0, 1, X(189), 4, 1);
-      for (let y = 0; y < 5; y++) b.deco(X(189.1), y + 0.4, 1.2, 0.8, 0.1, 0.12, C.wood[0]);
-      b.deco(X(189.1), 0, 1.15, 0.1, 5, 0.12, C.wood[1]);
-      b.deco(X(189.8), 0, 1.15, 0.1, 5, 0.12, C.wood[1]);
-      // bell
-      b.deco(X(191.7), 6.3, 0.6, 1.6, 0.3, 1.2, 0x3a2614);
-      b.deco(X(191.8), 5.0, 0.7, 1.4, 1.3, 1.0, 0xc9a44a);
-      b.deco(X(191.6), 4.8, 0.5, 1.8, 0.3, 1.4, 0xb8933a);
-      b.light(X(190), 8, 2, 0xffd8a0, 7, 12, 0);
+      // the stair that collapsed long ago
+      for (let i = 0; i < 6; i++) b.deco(T.stairX0 + hash3(i, 3, 3) * 4, 0, 0.1 + hash3(i, 4, 3) * 1.6, 0.6, 0.3, 0.5, C.stone[i % 5]);
+      // the belfry: a timber floor high up, the great bell hanging over it
+      b.solid(T.belfry.x0, T.belfry.top - 1, 0, T.belfry.x1, T.belfry.top - 1, T.belfry.z1, jitter(C.wood));
+      for (const x of [T.belfry.x0, T.belfry.x1]) b.deco(x + 0.4, T.belfry.top, 0.1, 0.2, 3.2, 0.2, C.wood[1]);
+      b.deco(T.belfry.x0 + 0.4, T.belfry.top + 3.0, 0.1, T.belfry.x1 - T.belfry.x0 + 0.2, 0.25, 0.25, C.wood[0]);
+      const bx = T.belfry.x0 + 2.5;
+      b.deco(bx - 0.1, T.belfry.top + 2.6, 0.6, 0.2, 0.45, 0.2, 0x3a2614);
+      b.deco(bx - 0.75, T.belfry.top + 1.3, 0.35, 1.5, 1.3, 1.0, 0xc9a44a);
+      b.deco(bx - 0.95, T.belfry.top + 1.1, 0.15, 1.9, 0.3, 1.4, 0xb8933a);
+      b.light(bx, T.belfry.top + 2, 2, 0xffd8a0, 7, 12, 0);
       b.light(X(185), 2.5, 2, 0xffb060, 5, 8, 0.05);
+      // the piston's shaft in the floor
+      b.deco(T.piston.x0 + 0.05, 0, T.piston.z0 + 0.05, 1.9, 0.04, 2.9, 0x1a1a20);
     } else {
       for (let i = 0; i < 36; i++) {
         const a = (i / 36) * Math.PI * 2;
@@ -1456,12 +1542,29 @@ function tower(world) {
       }
       b.glow(X(191.4), 8.4, 0.06, 1.2, 1.2, 0.04, 0xc8fcff);
       for (let y = 1; y < 20; y += 4) b.glow(L.towerX0 + 0.5, y, 0.0, 19, 0.08, 0.04, NEON.magenta);
-      b.solid(X(197), 0, 3, X(197), 0, 3, jitter(C.panel));
-      b.glow(X(197.1), 1.0, 3.1, 0.8, 0.05, 0.8, NEON.cyan);
-      b.light(X(192), 9, 2, NEON.cyan, 10, 14, 0);
-      b.light(X(197.5), 1.5, 3.5, NEON.cyan, 6, 7, 0);
+      // the gantry up from the belfry's height to the reactor deck
+      const d = T.deck, top = T.belfry.top;
+      for (let i = 0; i < 3; i++) b.solid(T.belfry.x1 + 1 + i, top - 1, 0, T.belfry.x1 + 1 + i, top + i, 1, jitter(C.metalL));
+      b.solid(d.x0, top - 1, 0, d.x1, d.top - 1, d.z1, jitter(C.metal));
+      b.glow(d.x0, d.top + 0.01, d.z1 + 0.9, d.x1 - d.x0 + 1, 0.04, 0.08, NEON.cyan);
+      // the reactor socket on the deck
+      b.solid(d.x0 + 1, d.top, 1, d.x0 + 1, d.top, 1, jitter(C.panel));
+      b.glow(d.x0 + 1.1, d.top + 1.0, 1.1, 0.8, 0.05, 0.8, NEON.cyan);
+      b.light(d.x0 + 1.5, d.top + 1.5, 1.5, NEON.cyan, 6, 8, 0);
+      // a broken stub where the belfry floor used to be
+      b.deco(T.belfry.x1 - 0.5, top - 1, 0.1, 1.4, 0.3, 1.8, C.rust[0]);
     }
   }
+  // the belfry floor survives into the Future only if it was sealed in its moment
+  world.addFeature({
+    id: 'belfryF', eras: [F], key: (s) => String(!!s.flags.belfrySealed),
+    build: (b, era, s) => {
+      if (!s.flags.belfrySealed) return;
+      const bf = TOWER.belfry;
+      b.solid(bf.x0, bf.top - 1, 0, bf.x1, bf.top - 1, bf.z1, jitter(C.wood));
+      b.glow(bf.x0, bf.top - 0.02, bf.z1 + 0.96, bf.x1 - bf.x0 + 1, 0.03, 0.04, 0xbff6ff);
+    },
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -1469,7 +1572,7 @@ function tower(world) {
 // ---------------------------------------------------------------------------
 export const SPAWNS = [
   // NPCs
-  { type: 'npc', id: 'louise', era: M, x: 20.5, z: 1.8, sheet: 'louise', name: 'Elder Louise' },
+  { type: 'npc', id: 'louise', era: M, x: 20.5, z: 1.8, sheet: 'louise', name: 'Elder Karen Louise' },
   { type: 'npc', id: 'samaria', era: P, x: 18.5, z: 2.0, sheet: 'samaria', name: 'Samaria the Sun-Keeper' },
   { type: 'npc', id: 'tick', era: F, x: 12.5, z: 2.0, sheet: 'tick', name: 'TICK (Archivist Unit)', hover: true },
   { type: 'npc', id: 'holo', era: F, x: 16.9, y: 1, z: 0.5, sheet: 'eugene', name: 'Memorial Hologram', holo: true },
@@ -1497,15 +1600,18 @@ export const SPAWNS = [
   { type: 'interact', id: 'glyphF', era: F, x: 136.5, y: 0, z: 0.5, prompt: 'Reset beacon', resets: 'crate' },
   { type: 'interact', id: 'glyphMill', era: P, x: L.millX0 + 6.5, y: 0, z: 0.5, prompt: 'Rewind glyph', resets: 'boulder' },
   { type: 'interact', id: 'sluice', era: M, x: L.rimX + 0.5, y: 3, z: 5.6, prompt: 'Sluice gate' },
-  { type: 'interact', id: 'satchel', era: M, x: 208.5, y: 0, z: 0.6, prompt: "Eugene's satchel", icon: 'satchel', goneFlag: 'hasSeal' },
-  { type: 'interact', id: 'echoLens', era: M, x: 233.5, y: 1, z: 0.5, prompt: "Eugene's lectern", icon: 'lens', goneFlag: 'hasEcho' },
+  { type: 'interact', id: 'satchel', era: M, x: 208.5, y: 0, z: 0.6, prompt: "Donald Eugene's satchel", icon: 'satchel', goneFlag: 'hasSeal' },
+  { type: 'interact', id: 'gardenM', era: M, x: 122.5, y: 0, z: 3.4, prompt: 'Old garden gate' },
+  { type: 'interact', id: 'gardenF', era: F, x: 122.5, y: 0, z: 3.4, prompt: 'Sealed garden' },
+  { type: 'interact', id: 'everspring', era: P, x: 122.5, y: 0, z: 5.5, prompt: 'Ancient spring' },
+  { type: 'interact', id: 'echoLens', era: M, x: 230.5, y: 1, z: 0.5, prompt: "Donald Eugene's lectern", icon: 'lens', goneFlag: 'hasEcho' },
   { type: 'interact', id: 'lockM', era: M, x: L.towerX0 - 0.6, y: 0, z: 3.5, prompt: 'Clocktower door' },
   { type: 'interact', id: 'lockP', era: P, x: L.towerX0 - 0.6, y: 0, z: 3.5, prompt: 'Stone door' },
   { type: 'interact', id: 'lockF', era: F, x: L.towerX0 - 0.6, y: 0, z: 3.5, prompt: 'Rusted door' },
   { type: 'interact', id: 'postern', era: M, x: 182.7, y: 0, z: 5.4, prompt: 'Old postern lever' },
-  { type: 'interact', id: 'socketSun', era: P, x: 186.5 + TO, y: 1, z: 1.5, prompt: 'Sun pedestal' },
-  { type: 'interact', id: 'socketBell', era: M, x: 192.5 + TO, y: 4, z: 1.5, prompt: 'Great bell' },
-  { type: 'interact', id: 'socketCore', era: F, x: 197.5 + TO, y: 1, z: 3.5, prompt: 'Reactor socket' },
+  { type: 'interact', id: 'socketSun', era: P, x: L.towerX0 + 2.5, y: 7, z: 1.5, prompt: 'Sun pedestal' },
+  { type: 'interact', id: 'socketBell', era: M, x: L.towerX0 + 10.5, y: 12, z: 1.5, prompt: 'Great bell' },
+  { type: 'interact', id: 'socketCore', era: F, x: L.towerX0 + 18.5, y: 17, z: 1.5, prompt: 'Reactor socket' },
 
   // Pickups (items)
   { type: 'pickup', id: 'acorn', era: M, x: 85.5, y: 2.4, z: 1.5, item: 'acorn' },
@@ -1526,7 +1632,7 @@ export const SPAWNS = [
   // branch of the petrified tree in the Future if it went in the Present planter (one cog)
   { type: 'cog', id: 'cogM2', era: M, x: 95.5, y: 8.7, z: 3.5, needs: 'acornPlanted' },
   { type: 'cog', id: 'cogM2', era: F, x: 95.5, y: 8.7, z: 3.5, needs: 'acornPlantedM', unless: 'acornPlanted' },
-  { type: 'cog', id: 'cogM3', era: M, x: 193.5 + TO, y: 4.7, z: 1.5 },
+  { type: 'cog', id: 'cogM3', era: M, x: L.towerX0 + 12.5, y: 12.7, z: 0.6 }, // up in the belfry
   { type: 'cog', id: 'cogF1', era: F, x: 29.5, y: 3.7, z: 2.5 },
   { type: 'cog', id: 'cogF2', era: F, x: 65.5, y: -2.4, z: 3.5, needs: 'springOpen' },
   { type: 'cog', id: 'cogF3', era: F, x: 92.9, y: 0.6, z: 4.6, needs: ['acornPlanted', 'acornPlantedM'] },
@@ -1570,6 +1676,7 @@ export function buildLevel(world, state) {
   cliffs(world);
   rampart(world);
   smithy(world);
+  everspring(world);
   terrace(world);
   gatehouse(world);
   millHollow(world);

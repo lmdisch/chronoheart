@@ -22,12 +22,12 @@ export function currentGoal(game) {
   const hasHammer = has('hammer') || taken.includes('hammerGift');
   const hasCore = has('core') || taken.includes('core');
 
-  if (!f.hasAmulet) return step('Find out what happened to Master Eugene.', 'Search his workshop at the west end of the square. Something on the workbench is glowing.');
+  if (!f.hasAmulet) return step('Find out what happened to Master Donald Eugene.', 'Search his workshop at the west end of the square. Something on the workbench is glowing.');
 
   // ---- Hollowmere Square & the Old Ford
   if (x < X.fordFar) {
-    if (x < X.ford) return step('Head east, toward the river.', 'Follow the road east to the Old Ford. Elder Louise in the square may have advice.');
-    return step('Find a way across the river.', 'Elder Louise said people once crossed on stepping stones in the oldest days. Try the <b>Past</b>.');
+    if (x < X.ford) return step('Head east, toward the river.', 'Follow the road east to the Old Ford. Elder Karen Louise in the square may have advice.');
+    return step('Find a way across the river.', 'Elder Karen Louise said people once crossed on stepping stones in the oldest days. Try the <b>Past</b>.');
   }
   // ---- Sandstone Cliffs
   if (x < X.rampart) {
@@ -94,7 +94,7 @@ export function currentGoal(game) {
   // ---- Tamsin's Crossing
   if (x < X.gallery) {
     if (x >= L.farWallX1 + 1) return step('Keep heading east.', 'The Echo Gallery is just ahead.');
-    if (!f.hasSeal) return step('Look around the old crossing.', "Something of Eugene's was left in the reeds on this bank, in the <b>Present</b>.");
+    if (!f.hasSeal) return step('Look around the old crossing.', "Something of Donald Eugene's was left in the reeds on this bank, in the <b>Present</b>.");
     if (!f.bridgeBuilt) {
       if (inv.includes('cable')) return step('Bring the cable to Tamsin.', 'Tamsin the Ropewright is on this bank in the <b>Past</b>. Steel cable never rots.');
       if (f.bridgeQuest) return step('Find rope that never rots.', 'In the <b>Future</b>, there is a scrapyard on this bank. A spool of steel cable would do nicely.');
@@ -107,11 +107,23 @@ export function currentGoal(game) {
   if (x < X.yard) {
     if (x > L.galleryX1 || b.y >= 3.9) return step('Keep heading east.', "The Clocktower's courtyard is just past the gallery.");
     if (f.galleryClimbed) return step('Climb the gallery wall.', 'Climb the rope ladder you kicked down earlier.');
-    if (!f.hasEcho) return step('Find a way up the gallery wall.', "The wall is too high to climb. Eugene left something on the lectern by the entrance, in the <b>Present</b>.");
-    if (game.era !== ERA.PRESENT) return step('Climb the gallery wall.', 'The steps and your echoes only exist in the <b>Present</b>.');
+    if (!f.hasEcho) return step('Find a way up the gallery wall.', "The wall is too high to climb. Donald Eugene left something on the lectern by the entrance, in the <b>Present</b>.");
+    if (game.era !== ERA.PRESENT) return step('Get through the gallery.', 'The gates, the steps and your echoes only exist in the <b>Present</b>.');
+    if (x < L.gatesX0 + 1) {
+      return step(
+        'Get through the gold gate.',
+        `Gates open while their matching button is held. Stand on the gold button and record an echo there (${keys.echo} to start, again to stop): it keeps holding the gate open for you.`,
+      );
+    }
+    if (x < L.gatesX1 + 1) {
+      return step(
+        'Get through the green airlock.',
+        `The first green gate opens while the green button is held; the dashed one only while it is NOT. Back at the green button, record an echo that stands on it for two seconds, then steps off for two. Walk through each gate as it opens. You can keep up to 3 echoes, and the oldest fades when you record another.`,
+      );
+    }
     return step(
       'Climb the gallery wall.',
-      `Each step rises while its row of three buttons is lit. Buttons light in order (count the dots: 1, 2, 3) and fade a few seconds after you step off. Record an echo walking a row in order (${keys.echo} to start, again to stop, within 5 seconds) and it keeps the row lit. Start on the ground row, then the row on step 1, then step 2, then climb.`,
+      `Each step rises while its row of three buttons is lit. Buttons light in order (count the dots: 1, 2, 3) and fade a few seconds after you step off. Record an echo walking a row in order (${keys.echo} to start, again to stop, within 5 seconds) and it keeps the row lit. Start on the ground row, then the row on step 1, then step 2, then climb. Your older gate echoes will fade as you record new ones: that's fine, you're past them.`,
     );
   }
   // ---- The Warden's Courtyard
@@ -139,7 +151,21 @@ export function currentGoal(game) {
     const back = f.posternOpen ? 'The postern passage leads back west through the rubble.' : 'Pull the old postern lever just past the gatehouse vault (<b>Present</b>) to open a way back west.';
     return step('The Tower needs all three Era Keys.', `You still need ${missing.join(' and ')}. ${back}`);
   }
-  return step('Restart the Clocktower.', 'Place all three keys quickly: the Sun pedestal (<b>Past</b>), the great bell (<b>Present</b>) and the reactor socket (<b>Future</b>).');
+  // the finale climb: one key at a time, each higher up and in a different age
+  const sockets = game.sockets;
+  if (!sockets.socketSun) {
+    return step('Wake the Clocktower.', 'The Sun pedestal stands on the high ledge by the door. Nothing reaches it now, but in the <b>Past</b> an ancient stair still climbs there.');
+  }
+  if (!sockets.socketBell) {
+    return step(
+      'Ring the great bell.',
+      `The bell hangs in the belfry, high above. In the <b>Present</b>, the great piston rises only while its brass button is held, and sinks when it's released. Record an echo that waits beside the button for a few seconds, then stands on it (${keys.echo}). Stand on the piston's base while it's down and ride it up.`,
+    );
+  }
+  if (!f.belfrySealed) {
+    return step('Reach the reactor.', `The reactor deck is above the belfry, in the <b>Future</b>, but by then the wooden belfry floor has rotted away. Stand on it in the <b>Present</b> and use the Stasis Seal (${keys.seal}).`);
+  }
+  return step('Reach the reactor.', 'From the sealed belfry floor, switch to the <b>Future</b> and climb the gantry to the reactor deck.');
 }
 
 function missingEarlier(hasHammer, hasDisc = true) {

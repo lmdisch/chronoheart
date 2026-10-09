@@ -22,7 +22,7 @@ export const ITEMS = {
 /** Kindness side quests. `start` is the flag set when the favour is asked. */
 export const FAVOURS = [
   { id: 'chart', title: "Samaria's star chart", start: 'chartQuest', todo: "A storm carried off the Sun-Keeper's star chart. Someone, somewhen, must have found it.", done: 'You returned the star chart to Samaria.' },
-  { id: 'lilies', title: "Louise's sun-lilies", start: 'lilyQuest', todo: "Sun-lilies once grew in the square, in the oldest days. Bring some back to Louise's flower bed.", done: 'Sun-lilies bloom in the square again.' },
+  { id: 'lilies', title: "Karen Louise's sun-lilies", start: 'lilyQuest', todo: "Sun-lilies once grew in the square, in the oldest days. Bring some back to Karen Louise's flower bed.", done: 'Sun-lilies bloom in the square again.' },
   { id: 'keepsake', title: "Lillian's keepsake", start: 'keepsakeQuest', todo: 'Lillian has nothing her ancestor Aria ever held. Perhaps Aria could spare something.', done: "Lillian wears Aria's medallion at the bench." },
 ];
 
@@ -32,17 +32,17 @@ const Wr = (text) => ({ who: 'vivienne', name: 'Vivienne', text });
 export const INTRO = [
   N('Hollowmere. A valley where the river bends, and where the great Clocktower has kept time for five hundred years.'),
   N('This morning, for the first time anyone can remember... it stopped.'),
-  Wr('Master Eugene? ...Master?'),
+  Wr('Master Donald Eugene? ...Master?'),
   Wr("Three days gone, and now the Tower's gone silent. He'd never leave his workshop this long."),
   Wr("Wait. Something's glowing on his workbench..."),
 ];
 
 export const ENDING = [
   N('Across three ages at once, the Clocktower shudders... and begins to tick.'),
-  { who: 'eugene', name: 'Eugene', text: "Vivienne! I knew you'd find your way. I've been stuck between the ages since the Tower stopped. Your keys pulled me back through." },
-  Wr('Master Eugene! You\'re all right! And the amulet... look, the crack is gone!'),
-  { who: 'eugene', name: 'Eugene', text: "Mended by the Tower's heart. That means it's yours now, apprentice. Time always needs someone to look after it." },
-  { who: 'eugene', name: 'Eugene', text: 'Now then. Shall we go and see what else has come loose?' },
+  { who: 'eugene', name: 'Donald Eugene', text: "Vivienne! I knew you'd find your way. I've been stuck between the ages since the Tower stopped. Your keys pulled me back through." },
+  Wr('Master Donald Eugene! You\'re all right! And the amulet... look, the crack is gone!'),
+  { who: 'eugene', name: 'Donald Eugene', text: "Mended by the Tower's heart. That means it's yours now, apprentice. Time always needs someone to look after it." },
+  { who: 'eugene', name: 'Donald Eugene', text: 'Now then. Shall we go and see what else has come loose?' },
 ];
 
 function npcLines(game, id) {
@@ -50,12 +50,12 @@ function npcLines(game, id) {
   const S = (who, name) => (text) => ({ who, name, text });
   switch (id) {
     case 'louise': {
-      const m = S('louise', 'Elder Louise');
-      if (!f.hasAmulet) return [m("Vivienne, dear. The Tower's stopped and Eugene's vanished. People say the old ages are bleeding through. I saw a lizard the size of a dog in the square at dawn!"), m('Have you looked in his workshop? He always kept his secrets on that bench.')];
+      const m = S('louise', 'Elder Karen Louise');
+      if (!f.hasAmulet) return [m("Vivienne, dear. The Tower's stopped and Donald Eugene's vanished. People say the old ages are bleeding through. I saw a lizard the size of a dog in the square at dawn!"), m('Have you looked in his workshop? He always kept his secrets on that bench.')];
       if (game.state.kindness.includes('lilies')) return [m('Look at them, Vivienne. Sun-lilies, right here in the square, just like Grandmother said. Thank you, dear.')];
       if (inv.includes('lilySeeds')) return [m('Are those... sun-lily seeds? But they died out centuries ago! Plant them in my old flower bed by the road, would you?')];
       if (game.player.body.x < 50) {
-        const lines = [m("That glow... Eugene's amulet! So you have the gift too."), m("Listen. The river ford washed out long ago, but in the oldest days people crossed it on stepping stones."), Wr('The oldest days... the Past!')];
+        const lines = [m("That glow... Donald Eugene's amulet! So you have the gift too."), m("Listen. The river ford washed out long ago, but in the oldest days people crossed it on stepping stones."), Wr('The oldest days... the Past!')];
         if (!f.lilyQuest) {
           f.lilyQuest = true;
           lines.push(m("One more thing, dear, if you have a moment. That empty flower bed by the road was my grandmother's pride."), m('She said golden sun-lilies grew in this square in the oldest days. None have bloomed here in living memory.'), { favour: 'lilies' });
@@ -104,13 +104,14 @@ function npcLines(game, id) {
     case 'michelle': {
       const m = S('michelle', 'Michelle the Wise');
       if (f.metMichelle && game.state.kindness.length >= FAVOURS.length)
-        return [m("Samaria's calendar, Louise's lilies, Lillian's keepsake... You helped people in every age, Vivienne."), m('Every age remembers a kindness. And so do I.')];
+        return [m("Samaria's calendar, Karen Louise's lilies, Lillian's keepsake... You helped people in every age, Vivienne."), m('Every age remembers a kindness. And so do I.')];
       if (f.metMichelle)
         return [m('Use the power of time wisely, Vivienne. And whatever age you find yourself in, always remember to help others.')];
       f.metMichelle = true;
       return [
         m('Ah. The clockmaker\'s apprentice, right on time. The river has been expecting you.'),
         m('A little advice before you cross. Time is a great power, and great powers are easy to waste. Use it wisely.'),
+        m('Before Hollowmere had any walls, they say the smiths drew their water from a spring that never once ran dry.'),
         m('And whatever age you find yourself in, always remember to help others. Every age remembers a kindness.'),
         Wr("I'll remember. Thank you, Michelle."),
       ];
@@ -146,8 +147,8 @@ function npcLines(game, id) {
       if (f.hammerLeft) return [b("It's in the vault now. My grandkids' grandkids can fish it out, eh?")];
       if (inv.includes('hammerBroken')) return [b("If you know a way to give it a few centuries, my quench-vault's right there.")];
       return [
-        b("Eugene's apprentice! You've got his look, like you're late for something that hasn't happened yet."),
-        b('The Tower\'s bell hammer cracked last winter. Eugene brought it to me, but tempering star-iron properly takes a lifetime in the quench-vault. Longer than I\'ve got left.'),
+        b("Donald Eugene's apprentice! You've got his look, like you're late for something that hasn't happened yet."),
+        b('The Tower\'s bell hammer cracked last winter. Donald Eugene brought it to me, but tempering star-iron properly takes a lifetime in the quench-vault. Longer than I\'ve got left.'),
         b("Take it. If you know a way to buy it a few centuries, you're welcome to use my vault."),
         { give: 'hammerBroken' },
       ];
@@ -212,7 +213,7 @@ function npcLines(game, id) {
       if (f.bridgeSealed) return [t('Look at it. Not a fray, not a speck of rot, and it hums like a plucked string.'), t('Whatever you did, spirit, my bridge will outlive us all.')];
       if (f.bridgeBuilt) {
         const lines = [t("Strong as I could make it. Mind, the planks will rot and the posts will go soft. A lifetime, maybe two, and it'll be gone.")];
-        if (f.hasSeal) lines.push(Wr("Unless it never ages at all. Eugene's Stasis Seal..."));
+        if (f.hasSeal) lines.push(Wr("Unless it never ages at all. Donald Eugene's Stasis Seal..."));
         return lines;
       }
       if (inv.includes('cable')) {
@@ -267,12 +268,12 @@ export async function interact(game, ent) {
   const say = (lines) => game.dialogue.run(Array.isArray(lines) ? lines : [lines]);
   switch (ent.id) {
     case 'workbench':
-      if (f.hasAmulet) return say(Wr("Eugene's tools, all neatly arranged. Except his favourite wrench, which is in my apron."));
+      if (f.hasAmulet) return say(Wr("Donald Eugene's tools, all neatly arranged. Except his favourite wrench, which is in my apron."));
       await say([
-        Wr("Eugene's amulet, the Chronoheart! He never let me touch it."),
+        Wr("Donald Eugene's amulet, the Chronoheart! He never let me touch it."),
         N("There's a note folded underneath it:"),
         N('"Vivienne. The Tower\'s heart has stopped and the ages are coming loose. The Chronoheart is cracked, but it will carry you for a little while."'),
-        N('"Find the three Era Keys: the Sun Disc of the first age, the Bell Hammer of ours, and the Fusion Core of the last. Restart the Tower. ~O."'),
+        N('"Find the three Era Keys: the Sun Disc of the first age, the Bell Hammer of ours, and the Fusion Core of the last. Restart the Tower. ~D.E."'),
         Wr('The first age... and the last? He means the PAST and the FUTURE?!'),
       ]);
       f.hasAmulet = true;
@@ -281,11 +282,11 @@ export async function interact(game, ent) {
       game.bursts.emit(ent.x, ent.y + 0.3, ent.z, 40, { color: [0x7ff6ff, 0xffd070], speed: 4, life: 0.9 });
       game.hud.toast(
         touchActive()
-          ? '<b>Chronoheart obtained!</b> <b>Swipe</b> across the screen to travel: swipe left toward the Future, right toward the Past. You can also tap the era names at the top.'
-          : '<b>Chronoheart obtained!</b> Press <kbd>Q</kbd> to go to the Past and <kbd>E</kbd> to go to the Future. Hold <kbd>Tab</kbd> to peek at another era.',
-        7000,
+          ? '<b>Chronoheart!</b> Swipe left for the Future, right for the Past.'
+          : '<b>Chronoheart!</b> <kbd>Q</kbd> Past · <kbd>E</kbd> Future · hold <kbd>Tab</kbd> to peek.',
+        6000,
       );
-      setTimeout(() => game.hud.toast('The amulet drains while you\'re away from the Present, and recharges when you come back.', 6000), 7200);
+      setTimeout(() => game.hud.toast('It drains away from the Present, and recharges there.', 4000), 6200);
       game.save();
       return;
     case 'lever':
@@ -345,12 +346,12 @@ export async function interact(game, ent) {
     case 'wildLilies':
       if (s.kindness.includes('lilies') || inv.includes('lilySeeds') || f.liliesPlanted) return say(N('Wild sun-lilies, nodding in the warm wind.'));
       if (!f.lilyQuest) return say(N('A clump of wild golden flowers, heavy with seeds.'));
-      await say([N('Wild sun-lilies, heavy with golden seeds. You gather a handful.'), Wr('Louise said these grew in the square in the oldest days. This must be the very spot!')]);
+      await say([N('Wild sun-lilies, heavy with golden seeds. You gather a handful.'), Wr('Karen Louise said these grew in the square in the oldest days. This must be the very spot!')]);
       game.giveItem('lilySeeds');
       return;
     case 'lilyBed':
       if (f.liliesPlanted) return say(N('Golden sun-lilies, swaying by the road.'));
-      if (!inv.includes('lilySeeds')) return say(N(f.lilyQuest ? 'Louise\'s empty flower bed. Nothing has bloomed here in living memory.' : 'An empty flower bed by the road.'));
+      if (!inv.includes('lilySeeds')) return say(N(f.lilyQuest ? 'Karen Louise\'s empty flower bed. Nothing has bloomed here in living memory.' : 'An empty flower bed by the road.'));
       game.removeItem('lilySeeds');
       f.liliesPlanted = true;
       audio.sfx('grow');
@@ -398,25 +399,25 @@ export async function interact(game, ent) {
       game.refreshWorld();
       await say([N('You fit the brass wheel onto the spindle and wind. With a long groan, the sluice gate drops shut.'), Wr('Now the pond can fill all the way up!')]);
       await game.timelapse({ to: ERA.FUTURE, focus: [195.5, 1.5, 3], years: 300, caption: 'The millpond fills to the brim, and in time becomes a reservoir...', grow: ['millF'] });
-      game.hud.toast("The pond is full, and the mill's old log boom has floated up level with the banks. Hop across the logs, and don't fall in: the water is deep and cold.", 7000);
+      game.hud.toast('The log boom floats level with the banks. Hop across!', 4000);
       game.save();
       return;
     case 'satchel':
-      if (f.hasSeal) return say(N("Eugene's satchel, empty now apart from a few bent cogs."));
+      if (f.hasSeal) return say(N("Donald Eugene's satchel, empty now apart from a few bent cogs."));
       await say([
-        N("Half-hidden in the reeds by the old crossing: Eugene's battered leather satchel."),
+        N("Half-hidden in the reeds by the old crossing: Donald Eugene's battered leather satchel."),
         N('Inside is a brass ring etched with an hourglass, and another note:'),
-        N('"Vivienne. If you have come this far, the Chronoheart can do more than carry you. Touch this ring to it and you can hold a thing in its moment, so the years pass it by. I call it the Stasis Seal. ~E."'),
+        N('"Vivienne. If you have come this far, the Chronoheart can do more than carry you. Touch this ring to it and you can hold a thing in its moment, so the years pass it by. I call it the Stasis Seal. ~D.E."'),
         Wr('Hold a thing in its moment... so it never ages at all?'),
       ]);
       game.abilities.unlock('seal');
       game.save();
       return;
     case 'echoLens':
-      if (f.hasEcho) return say(N("Eugene's lectern. A scrawled diagram of three stone steps, and the words: \"Be in three places at once.\""));
+      if (f.hasEcho) return say(N("Donald Eugene's lectern. A scrawled diagram of three stone steps, and the words: \"Be in three places at once.\""));
       await say([
-        N("A lectern stands by the gallery wall, and on it, Eugene's handwriting:"),
-        N('"Vivienne. The Gallery steps rise only while their buttons are held. I could never hold three at once... but you can. This lens lets the Chronoheart remember you: where you stood, how you moved. ~E."'),
+        N("A lectern stands by the gallery wall, and on it, Donald Eugene's handwriting:"),
+        N('"Vivienne. The Gallery steps rise only while their buttons are held. I could never hold three at once... but you can. This lens lets the Chronoheart remember you: where you stood, how you moved. ~D.E."'),
         Wr('A lens that remembers me... so I can leave a copy of myself standing on a button?'),
         N('The lens clicks neatly into the Chronoheart.'),
       ]);
@@ -452,6 +453,24 @@ export async function interact(game, ent) {
       return say([N('A sealed slab of stone. There is no lock, no handle: the door has not been made yet.'), Wr("The lock doesn't exist in this age. It has to be the Present.")]);
     case 'lockF':
       return say([N('The great lock has rusted into one solid lump. It will never turn again.'), Wr("No key will open this one. It has to be the Present.")]);
+    case 'gardenM':
+      return say(N("An old walled garden beside the forge, its gate rusted shut. Through the bars: a ring of stones around a spring, dry for centuries."));
+    case 'gardenF':
+      return say(N('A rusted plaque on the wall: "HERITAGE SITE. NO ENTRY." Through the grille, moss grows over a ring of old stones.'));
+    case 'everspring':
+      if (f.steadyHeart) return say(N("The spring bubbles on, cold and clear. It has never once run dry."));
+      await say([
+        N('A spring wells up between the stones, cold and clear, glinting with a light of its own.'),
+        N('You drink. A slow warmth spreads from your chest, and the Chronoheart\'s ring settles into a steady gold glow.'),
+        Wr("It's... not draining any more. I could stay in any age for as long as I like!"),
+      ]);
+      f.steadyHeart = true;
+      game.meter = 1;
+      audio.sfx('key');
+      game.bursts.emit(ent.x, 1, ent.z, 40, { color: [0xffd070, 0x9ff4ff], speed: 3, life: 1 });
+      game.hud.toast('<b>Steady Heart!</b> The Chronoheart no longer drains.', 5000);
+      game.save();
+      return;
     case 'socketSun':
     case 'socketBell':
     case 'socketCore': {

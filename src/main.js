@@ -65,7 +65,10 @@ function openOverlay(name) {
   audio.init();
   audio.sfx('ui');
   if (!overlay && game.mode === 'play') pauseGame(true);
-  if (name === 'menu') game.renderMenu();
+  if (name === 'menu') {
+    game.renderMenu();
+    document.body.classList.remove('goal-new');
+  }
   show(name);
 }
 function closeOverlay() {

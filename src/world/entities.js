@@ -473,7 +473,9 @@ export class Enemy extends EraEntity {
  * unless something solid is in the way. Spotted, it winds up and charges; caught, you're thrown
  * out of the courtyard. Hide behind pillars, or slip into another era to lose it.
  */
-const WARDEN = { range: 6.5, halfAngle: (50 * Math.PI) / 180, walk: 1.9, charge: 4.4, turn: 3.2, pause: 1.1 };
+// tuned to be fair: a short, narrow cone, a slow walk, long looks around at each corner, a
+// clear wind-up before it charges, and it gives up quickly once you're out of sight
+const WARDEN = { range: 4.6, halfAngle: (36 * Math.PI) / 180, walk: 1.45, charge: 3.6, turn: 2.6, pause: 1.8, windup: 0.9, giveUp: 0.8, hear: 0.8 };
 export class Warden extends EraEntity {
   constructor(game, spec) {
     super(game, spec);
@@ -500,7 +502,7 @@ export class Warden extends EraEntity {
     if (g.era !== this.era || g.mode !== 'play' || g.shiftGrace > 0) return false;
     const dx = p.x - this.x, dz = p.z - this.z, d = Math.hypot(dx, dz);
     if (d > WARDEN.range || Math.abs(p.y) > 2) return false;
-    if (d > 1.2) {
+    if (d > WARDEN.hear) {
       let da = Math.atan2(dz, dx) - this.heading;
       da = Math.atan2(Math.sin(da), Math.cos(da));
       if (Math.abs(da) > WARDEN.halfAngle) return false;
@@ -537,7 +539,7 @@ export class Warden extends EraEntity {
         audio.sfx('blocked');
         if (!g.state.flags.wardenHint) {
           g.state.flags.wardenHint = true;
-          g.hud.toast('The Warden spotted you! Break its line of sight, behind a pillar or by slipping into another age.', 6000);
+          g.hud.toast('Spotted! Hide behind a pillar, or slip into another age.', 3500);
         }
       } else if (this.state === 'return') {
         const [tx, tz] = this.path[this.wp];
@@ -559,7 +561,7 @@ export class Warden extends EraEntity {
       const want = Math.atan2(p.z - this.z, p.x - this.x);
       const da = Math.atan2(Math.sin(want - this.heading), Math.cos(want - this.heading));
       this.heading += Math.sign(da) * Math.min(Math.abs(da), WARDEN.turn * 2 * dt);
-      if (this.stateT > 0.45) {
+      if (this.stateT > WARDEN.windup) {
         this.state = 'chase';
         this.stateT = 0;
         audio.sfx('glitch');
@@ -567,7 +569,7 @@ export class Warden extends EraEntity {
     } else if (this.state === 'chase') {
       this.lostT = seen ? 0 : this.lostT + dt;
       if (g.era === this.era) this.moveToward(p.x, p.z, WARDEN.charge, dt);
-      if (this.lostT > 1.2 || this.stateT > 6) {
+      if (this.lostT > WARDEN.giveUp || this.stateT > 5) {
         this.state = 'return';
         let best = 0;
         this.path.forEach(([x, z], i) => {

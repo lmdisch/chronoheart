@@ -116,7 +116,7 @@ export class TouchControls {
 
     const top = document.createElement('div');
     top.className = 'tc-top';
-    const items = make('tc-small', 'Menu', ICON.menu);
+    const items = make('tc-small tc-menu', 'Menu', ICON.menu);
     const help = make('tc-small', 'Help', ICON.help);
     const pause = make('tc-small', 'Pause', ICON.pause);
     top.append(items, help, pause);
