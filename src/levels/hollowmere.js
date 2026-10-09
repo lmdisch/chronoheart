@@ -1430,11 +1430,14 @@ function echoGallery(world) {
     id: 'galleryLadder', eras: [P, M, F], key: (s) => String(!!s.flags.galleryClimbed),
     build: (b, era, s) => {
       if (!s.flags.galleryClimbed) return;
-      b.ladder(L.galleryX0 - 1, 0, 0, L.galleryX0 - 1, 3, 0);
+      // one rope ladder up the front, and one down the far side so you can always come back
       const rope = era === F ? 0x8a94a4 : 0xc8a060;
-      for (let y = 0; y < 4; y++) b.deco(L.galleryX0 - 0.9, y + 0.4, 0.1, 0.8, 0.08, 0.12, rope);
-      b.deco(L.galleryX0 - 0.9, 0, 0.1, 0.06, 4, 0.1, rope);
-      b.deco(L.galleryX0 - 0.16, 0, 0.1, 0.06, 4, 0.1, rope);
+      for (const lx of [L.galleryX0 - 1, L.yardX0 - 1]) {
+        b.ladder(lx, 0, 0, lx, 3, 0);
+        for (let y = 0; y < 4; y++) b.deco(lx + 0.1, y + 0.4, 0.1, 0.8, 0.08, 0.12, rope);
+        b.deco(lx + 0.1, 0, 0.1, 0.06, 4, 0.1, rope);
+        b.deco(lx + 0.84, 0, 0.1, 0.06, 4, 0.1, rope);
+      }
     },
   });
 }

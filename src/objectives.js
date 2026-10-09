@@ -137,7 +137,7 @@ export function currentGoal(game) {
       );
     }
     if (eraMissing.length) {
-      const back = f.posternOpen ? 'The postern passage past the gatehouse vault leads back west.' : 'Pull the old postern lever just past the gatehouse vault (<b>Present</b>) to open a way back west.';
+      const back = f.posternOpen ? 'The postern passage past the gatehouse vault leads back west.' : 'The old postern passage (<b>Present</b>) opens once you reach Millrace Hollow, so you can always walk back west.';
       return step('The lock needs all three Era Keys too.', `The great lock has four keyholes. You still need ${eraMissing.join(' and ')}. ${back}`);
     }
     return step('Unlock the Clocktower.', 'Use the keys on the Clocktower door, in the <b>Present</b>. The lock has not been made yet in the Past, and it has rusted solid in the Future.');
@@ -148,7 +148,7 @@ export function currentGoal(game) {
   if (!hasHammer) missing.push('the Bell Hammer (Smithy Lane)');
   if (!hasCore) missing.push('the Fusion Core (Gatehouse vault, in the Future)');
   if (missing.length) {
-    const back = f.posternOpen ? 'The postern passage leads back west through the rubble.' : 'Pull the old postern lever just past the gatehouse vault (<b>Present</b>) to open a way back west.';
+    const back = f.posternOpen ? 'The postern passage leads back west through the rubble.' : 'The old postern passage (<b>Present</b>) opens once you reach Millrace Hollow, so you can always walk back west.';
     return step('The Tower needs all three Era Keys.', `You still need ${missing.join(' and ')}. ${back}`);
   }
   // the finale climb: one key at a time, each higher up and in a different age
@@ -159,7 +159,7 @@ export function currentGoal(game) {
   if (!sockets.socketBell) {
     return step(
       'Ring the great bell.',
-      `The bell hangs in the belfry, high above. In the <b>Present</b>, the great piston rises only while its brass button is held, and sinks when it's released. Record an echo that waits beside the button for a few seconds, then stands on it (${keys.echo}). Stand on the piston's base while it's down and ride it up.`,
+      `The bell hangs in the belfry, high above. In the <b>Present</b>, the great piston rises the moment its brass button is pressed, far too soon to run over and board it. Record an echo that steps on the button (${keys.echo}), then stand on the piston's base while it's down and wait for your echo to send you up. At the top, step west onto the belfry.`,
     );
   }
   if (!f.belfrySealed) {

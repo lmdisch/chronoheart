@@ -648,6 +648,14 @@ export class Game {
     } else this.meter = Math.min(1, this.meter + dt / 2.5);
     this.hud.setMeter(this.meter, this.era, !!f.steadyHeart);
 
+    // once you reach Millrace Hollow, the old postern passage opens: a way back west in the Present
+    if (!f.posternOpen && this.player.body.x > L.millX0 + 1.5 && this.mode === 'play') {
+      f.posternOpen = true;
+      this.refreshWorld();
+      this.save();
+      this.hud.toast('<b>A way back:</b> the old postern passage behind you is open, in the Present.', 5000);
+    }
+
     // walking out of Donald Eugene's hideaway
     if (this.world.pocket && ctl && this.player.body.z > -0.7) this.leaveStudy();
 

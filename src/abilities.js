@@ -331,9 +331,14 @@ export class Abilities {
       btn.top.position.y = btn.y + (btn.pressed ? 0.04 : 0.07);
     }
     const pb = g.player.body;
+    // once you're through, the gates stay open behind you, so you can always go back
+    if (!f.galleryGatesPassed && g.era === P && pb.x > L.gatesX1 + 1.5 && pb.x < L.galleryX0) {
+      f.galleryGatesPassed = true;
+      g.save();
+    }
     for (const gt of this.gates) {
       const held = this.gateButtons.find((b) => b.id === gt.button).pressed;
-      let open = !!f.galleryClimbed || (gt.inverted ? !held : held);
+      let open = !!f.galleryClimbed || !!f.galleryGatesPassed || (gt.inverted ? !held : held);
       // never close on top of the player
       if (!open && gt.open && g.era === P && pb.x + pb.hw > gt.x && pb.x - pb.hw < gt.x + 1) open = true;
       if (open !== gt.open || !gt.init) {

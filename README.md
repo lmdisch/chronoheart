@@ -151,7 +151,7 @@ The road runs west to east. Each area below lists what you need and how to get i
 
 - In the Present, the road beyond the gatehouse is buried under rubble.
 - In the **Future**, a security corridor runs through to a vault. Get past the two drones, and hop onto the vault pedestal for the **Fusion Core**.
-- The **postern lever** just past the vault (Present) opens a passage back west, in case you missed anything.
+- Once you reach Millrace Hollow, the old **postern passage** opens behind you (Present), so you can always walk back west.
 
 ### 8. Millrace Hollow
 
@@ -199,7 +199,7 @@ Everything here happens in the **Present**: the gates, the steps and your echoes
 The finale is a climb. Each Era Key goes in higher up, in a different age, using a different power. There's no timer, and placed keys are saved.
 
 1. **The Sun Disc (Past): wake the Tower.** The Sun pedestal stands on a high ledge just inside the door. Nothing reaches it in the Present or the Future, but in the **Past** an ancient stair still climbs to it. Place the disc and the Tower lurches awake: its great gears begin to turn, and the **piston** gets power.
-2. **The Bell Hammer (Present): ride the piston.** The bell hangs in the belfry, 12 blocks up. Beside it, the great piston rises only while its **brass button** is held, and sinks when it's released. Record an **echo** that waits beside the button for a few seconds and then stands on it. Stand on the piston's base while it's down, ride it up, and step onto the belfry.
+2. **The Bell Hammer (Present): ride the piston.** The bell hangs in the belfry, 12 blocks up. Beside it, the great piston rises the moment its **brass button** is pressed: far too soon to run over and board it. Record an **echo** that steps on the button. Then stand on the piston's base while it's down, and your echo sends you up. The piston waits at the top while you're standing on it, so there's no rush to step west onto the belfry. (After each trip it rests a few seconds at the bottom; the button glows when it's ready again.)
 3. **The Fusion Core (Future): seal and climb.** The reactor deck is above the belfry, but only in the **Future**, where the old wooden belfry floor has rotted away. Stand on the belfry in the Present and use the **Stasis Seal**. Then switch to the **Future** and climb the gantry to the reactor.
 
 Every key you place makes the Tower lurch, its gears turn faster, and its time-stutter flare. Then enjoy the ending.
@@ -259,6 +259,7 @@ src/
   main.js               start-up, title screen, the pause / Controls / Menu overlays
   game.js               the game: modes, era shifting, the amulet meter, saving, time-lapses, the ending
   abilities.js          the Stasis Seal, the Echo, and the Echo Gallery's gates, buttons and steps
+  finale.js             the Clocktower finale: the great piston, the gears, the lurch as each key goes in
   objectives.js         the goal and hint for wherever you are and whatever you've done
   story.js              items, favours, all dialogue, and every interaction
   core/                 input (keyboard + virtual keys), small utilities
@@ -267,7 +268,17 @@ src/
   render/               renderer, post-processing, procedural textures and sprites, water, foliage, particles
   audio/                procedural music (one layer per age) and sound effects
   ui/                   HUD and dialogue, touch controls, styles
+tools/
+  reachability.js       dev check: from every place you can reach, can you still walk back to the start?
 ```
+
+**Checking you can always go back.** With the dev server running, open the game and run this in the browser console:
+
+```js
+const r = await import('/tools/reachability.js'); r.checkAll(window.__game)
+```
+
+It replays the story one stage at a time and, for each, maps everywhere the player can get to (walking, jumping, ladders, swimming, era switches within the Chronoheart's 10 seconds) and lists any place you can reach but not get back from. Every stage should say `stuck: []`. Start a new game afterwards, since it changes the save state.
 
 ### How the level works
 

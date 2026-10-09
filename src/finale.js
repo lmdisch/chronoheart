@@ -6,7 +6,13 @@ import { audio } from './audio/audio.js';
 import { T } from './world/world.js';
 import { TOWER, L } from './levels/hollowmere.js';
 
-const STEP_TIME = 0.16; // the piston moves one cell this often: a clunky clockwork lift
+// The piston: press its button and it makes one full trip. It rises all the way (whether or not
+// the button is still held), waits at the top for as long as you stand on it and a few seconds
+// more, sinks, then rests before it can go again. It starts the instant the button is pressed,
+// far too soon to run over and board it, so an echo has to press it for you.
+const STEP_TIME = 0.09; // one cell per step: about a second to the top
+const TOP_WAIT = 3; // seconds at the top once nobody's on it
+const REST = 2.5; // seconds at the bottom before it can go again
 
 const onButton = (b, p) => Math.abs(b.x - (p.x + 0.5)) < 0.65 && Math.abs(b.z - (p.z + 0.5)) < 0.65 && Math.abs(b.y - p.y) < 0.4;
 
@@ -31,6 +37,8 @@ export class Finale {
     this.h = 0; // collision height, whole cells
     this.shown = 0;
     this.stepT = 0;
+    this.phase = 'rest'; // rest -> rise -> top -> sink -> rest
+    this.phaseT = 0;
     // its button: a big brass plate
     const bt = TOWER.pistonButton;
     this.btnMat = new THREE.MeshBasicMaterial({ color: 0xffc040 });
@@ -63,6 +71,11 @@ export class Finale {
     this.lurchT = 0;
   }
 
+  setPhase(p) {
+    this.phase = p;
+    this.phaseT = 0;
+  }
+
   get keysPlaced() {
     return Object.keys(this.game.sockets).length;
   }
@@ -76,16 +89,26 @@ export class Finale {
     const powered = !!g.sockets.socketSun;
     const bt = TOWER.pistonButton;
     const held = powered && ((g.era === P && onButton(g.player.body, bt)) || g.abilities.echoes.some((e) => onButton(e.pos, bt)));
-    this.btnMat.color.setHex(0xffc040).multiplyScalar(!powered ? 0.25 : held ? 2.2 : 0.6);
+    const b = g.player.body;
+    const onTop = g.era === P && b.x + b.hw > pc.x0 && b.x - b.hw < pc.x1 + 1 && b.z + b.hd > pc.z0 && b.z - b.hd < pc.z1 + 1;
+    const riding = onTop && b.y > this.h - 0.3 && b.y < this.h + 0.6;
+    this.phaseT += dt;
+    if (this.phase === 'rest' && held && this.phaseT >= REST) this.setPhase('rise');
+    else if (this.phase === 'rise' && this.h === pc.h) this.setPhase('top');
+    else if (this.phase === 'top') {
+      if (riding) this.phaseT = 0;
+      else if (this.phaseT >= TOP_WAIT) this.setPhase('sink');
+    } else if (this.phase === 'sink' && this.h === 0) this.setPhase('rest');
+    // the button: dark without power, dim while the piston is busy or resting, bright when ready
+    const ready = powered && this.phase === 'rest' && this.phaseT >= REST;
+    this.btnMat.color.setHex(0xffc040).multiplyScalar(!powered ? 0.25 : held ? 2.2 : ready ? 0.9 + Math.sin(g.time * 4) * 0.25 : 0.35);
     this.btnTop.position.y = held ? 0.06 : 0.08;
-    // one cell at a time, up while held, down when released
+    // one cell at a time
     this.stepT -= dt;
-    const want = held ? pc.h : 0;
+    const want = this.phase === 'rise' || this.phase === 'top' ? pc.h : 0;
     if (this.stepT <= 0 && want !== this.h) {
       this.stepT = STEP_TIME;
       const next = this.h + Math.sign(want - this.h);
-      const b = g.player.body;
-      const onTop = g.era === P && b.x + b.hw > pc.x0 && b.x - b.hw < pc.x1 + 1 && b.z + b.hd > pc.z0 && b.z - b.hd < pc.z1 + 1;
       for (let x = pc.x0; x <= pc.x1; x++)
         for (let z = pc.z0; z <= pc.z1; z++) {
           if (next > this.h) w.setDyn(P, x, this.h, z, T.SOLID);
