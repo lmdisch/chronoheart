@@ -232,6 +232,7 @@ body.letterbox #hud { opacity: 0.25; }
 .stats img { width: 16px; height: 16px; image-rendering: pixelated; }
 .stats strong { font: 700 1.6rem var(--font-title); color: var(--gold-2); }
 .bonus { color: var(--gold-2); font-weight: 600; }
+.to-be-continued { color: #ffe8b0; font-style: italic; letter-spacing: 0.03em; }
 .memorial { margin: 36px 0 0; font: italic 500 1.05rem var(--font-title, serif); letter-spacing: 0.04em; color: #f4ead2; opacity: 0; }
 #credits.in .memorial { animation: memorialIn 2.5s ease 3s forwards; }
 @keyframes memorialIn { to { opacity: 0.92; } }
@@ -385,6 +386,8 @@ body.touch #toasts { top: calc(66px + env(safe-area-inset-top, 0px)); right: cal
 #goal-text b { color: var(--era); font-weight: 700; }
 #inventory-panel { max-height: calc(100dvh - 32px); overflow-y: auto; }
 #inventory-panel .btn { display: block; margin: 4px auto 0; }
+#inventory-panel .menu-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 4px; }
+#inventory-panel .menu-actions .btn { margin: 0; }
 body.touch .hud-right { display: none; } /* items live behind the Items button on touch */
 @media (max-height: 520px) {
 }
@@ -568,8 +571,19 @@ body.in-gearworks .tc-seal, body.in-gearworks .tc-echo { display: none; }
 body:not(.has-tempo) .needs-tempo { display: none !important; }
 /* Tempo: a cool vignette when slowing time, a warm one when speeding it up */
 #app::after { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 5; opacity: 0; transition: opacity 0.25s; }
-body.tempo-slow #app::after { opacity: 1; background: radial-gradient(ellipse at center, transparent 55%, rgba(80, 170, 255, 0.28)); }
-body.tempo-fast #app::after { opacity: 1; background: radial-gradient(ellipse at center, transparent 55%, rgba(255, 160, 50, 0.28)); }
+body.tempo-slow #app::after { opacity: 1; background: radial-gradient(ellipse at center, transparent 45%, rgba(80, 170, 255, 0.42)); }
+body.tempo-fast #app::after { opacity: 1; background: radial-gradient(ellipse at center, transparent 45%, rgba(255, 160, 50, 0.42)); }
+/* the whole picture cools and fades when time slows, warms and sharpens when it races */
+#app canvas { transition: filter 0.25s; }
+body.tempo-slow #app canvas { filter: saturate(0.5) brightness(0.92) hue-rotate(-8deg); }
+body.tempo-fast #app canvas { filter: saturate(1.4) contrast(1.08); }
+/* inside the clock, the era dial becomes the Tempo dial */
+#tempo-badge { position: absolute; left: 50%; top: calc(100% + 6px); transform: translate(-50%, -4px); padding: 4px 12px; border-radius: 999px; font: 700 0.78rem var(--font-ui, sans-serif); letter-spacing: 0.12em; text-transform: uppercase; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.15s, transform 0.15s; }
+body.tempo-slow #tempo-badge, body.tempo-fast #tempo-badge { opacity: 1; transform: translate(-50%, 0); animation: tempoPulse 0.9s ease-in-out infinite; }
+body.tempo-slow #tempo-badge { color: #0e1a24; background: #7fd8ff; box-shadow: 0 0 18px rgba(127, 216, 255, 0.8); animation-duration: 2.2s; }
+body.tempo-fast #tempo-badge { color: #241405; background: #ffb84a; box-shadow: 0 0 18px rgba(255, 184, 74, 0.8); animation-duration: 0.45s; }
+@keyframes tempoPulse { 50% { filter: brightness(1.25); } }
+@media (prefers-reduced-motion: reduce) { #tempo-badge { animation: none !important; } }
 body.recording .tc-echo { color: #ffd6e0; border-color: #ff3a5a; box-shadow: 0 0 22px rgba(255, 58, 90, 0.7); }
 @media (max-height: 520px) {
   #ability-status { top: calc(112px + env(safe-area-inset-top, 0px)); }

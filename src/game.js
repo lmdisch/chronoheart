@@ -1027,14 +1027,16 @@ export class Game {
       return;
     }
     const keys = Object.keys(this.sockets).length;
-    // right after a key goes in, the stutter flares: bursts come back to back, twice as strong
+    // calmer inside the clock, where the puzzles need your eyes, and for reduced-motion players
+    const calm = (this.gearworks.active ? 0.6 : 1) * (matchMedia('(prefers-reduced-motion: reduce)').matches ? 0.5 : 1);
+    // right after a key goes in, the stutter flares: bursts come back to back, a little stronger
     this.towerSurge = Math.max(0, (this.towerSurge || 0) - dt);
     const surge = this.towerSurge > 0;
     if (surge) g.t = Math.min(g.t, 0.05);
     g.t -= dt;
     if (g.on <= 0 && g.t <= 0) {
-      g.on = 0.12 + Math.random() * (0.25 + keys * 0.08);
-      g.t = (1.4 + Math.random() * 3.2) / (1 + keys * 0.8) / (0.5 + prox * 0.5);
+      g.on = 0.1 + Math.random() * (0.16 + keys * 0.03);
+      g.t = (2.2 + Math.random() * 3.5) / (1 + keys * 0.3) / (0.5 + prox * 0.5) / calm;
       const others = [0, 1, 2].filter((e) => e !== this.era);
       g.era = others[Math.floor(Math.random() * others.length)];
       if (prox > 0.5) audio.sfx('glitch');
@@ -1049,7 +1051,7 @@ export class Game {
       tu.glitchSeed.value = Math.random() * 100;
       if (Math.random() < 0.25) g.era = [0, 1, 2].filter((e) => e !== this.era)[Math.floor(Math.random() * 2)];
     }
-    tu.glitch.value = prox * (0.25 + Math.random() * 0.3 + keys * 0.08) * (surge ? 2 : 1);
+    tu.glitch.value = prox * (0.18 + Math.random() * 0.18 + keys * 0.03) * (surge ? 1.4 : 1) * calm;
     tu.glitchTint.value.setHex(ERA_RING[g.era]);
     // screen-space bounds of the tower
     const cam = r.camera, v = new THREE.Vector3();

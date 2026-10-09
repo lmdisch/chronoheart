@@ -19,6 +19,15 @@ const REWIND_EVERY = 5.5; // the lift room: the Tower's stutter throws the lift 
 const P = ERA.PRESENT;
 const COL = { slow: 0x7fd8ff, fast: 0xffb84a };
 
+/** Machines inside your bubble glow in the tempo's colour, so you can see exactly what you're bending. */
+function tintAll(mats, k) {
+  const col = k < 1 ? COL.slow : k > 1 ? COL.fast : 0x000000;
+  for (const m of mats) {
+    m.emissive.setHex(col);
+    m.emissiveIntensity = k === 1 ? 0 : 0.55;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Machines. Each runs on its own clock (machine time), advanced by dt x its tempo factor.
 // ---------------------------------------------------------------------------
@@ -41,6 +50,7 @@ class Hammer {
     const shaft = new THREE.Mesh(new THREE.BoxGeometry(0.3, 8, 0.3), iron);
     shaft.position.set(0.5, 6, 3.5);
     this.head.add(block, band, shaft);
+    this.mats = [iron, brass];
     this.head.position.set(this.x, this.y + 3, 0);
     gw.group.add(this.head);
     this.shown = 3;
@@ -67,6 +77,9 @@ class Hammer {
   unsafe(x, y) {
     return Math.abs(x - this.cx) < 1.4 && Math.abs(y - this.y) < 1;
   }
+  tint(k) {
+    tintAll(this.mats, k);
+  }
 }
 
 /** A spring plate on an escapement: it kicks every beat, harder the faster it runs. */
@@ -84,6 +97,11 @@ class Spring {
     this.coil.rotation.x = Math.PI / 2;
     this.coil.position.set(this.x + 0.5, this.y + 0.03, this.z0 + depth / 2);
     gw.group.add(this.plate, this.coil);
+    this.mats = [brass, this.coil.material];
+  }
+  tint(k) {
+    tintAll(this.mats, k);
+    if (k === 1) this.mats[0].emissive.setHex(0x3a2400), (this.mats[0].emissiveIntensity = 1);
   }
   update(mdt, f) {
     this.t += mdt;
@@ -128,6 +146,10 @@ class Lift {
     this.cap.position.set(this.x0 + w / 2, this.y + 0.07, this.z0 + d / 2);
     gw.group.add(this.col, this.cap);
     this.shown = 0;
+    this.mats = [this.col.material, this.cap.material];
+  }
+  tint(k) {
+    tintAll(this.mats, k);
   }
   height() {
     const m = this.m;
@@ -282,6 +304,37 @@ export class Gearworks {
     if (running) for (const m of this.machines) {
       const k = this.factor(m);
       m.update(dt * k, k);
+      if (k !== m.k) m.tint(k), (m.k = k);
+    }
+    // motes inside the bubble: drifting lazily when slow, streaking past when fast
+    if (inside && this.mode && running) {
+      const bb = g.player.body, n = this.mode > 0 ? 4 : 2;
+      for (let i = 0; i < n; i++) {
+        if (Math.random() > dt * 30) continue;
+        const a = Math.random() * Math.PI * 2, r = Math.random() * RADIUS * 0.9;
+        g.bursts.emit(bb.x + Math.cos(a) * r, bb.y + 0.3 + Math.random() * 4, Math.min(6.5, Math.max(0.2, bb.z + Math.sin(a) * r * 0.5)), 1, this.mode > 0
+          ? { color: [COL.fast, 0xffe0a0], speed: 7, life: 0.25, gravity: 0, jitter: 0.2 }
+          : { color: [COL.slow, 0xd8f4ff], speed: 0.25, life: 1.8, gravity: -0.1, jitter: 0.2 });
+      }
+    }
+    // inside the clock, the era dial reads Slow / Tempo / Fast, and the music keeps your time
+    if (inside !== this.wasInside) {
+      this.wasInside = inside;
+      const pills = document.querySelectorAll('#chrono .era-pill');
+      const names = inside ? ['Slow', 'Tempo', 'Fast'] : ['Past', 'Present', 'Future'];
+      pills.forEach((p) => (p.textContent = names[Number(p.dataset.e)]));
+      if (!inside) g.hud.setEra(g.era);
+    }
+    if (inside) document.querySelectorAll('#chrono .era-pill').forEach((p) => p.classList.toggle('active', Number(p.dataset.e) === this.mode + 1));
+    if (this.mode !== this.shownMode) {
+      this.shownMode = this.mode;
+      const badge = document.getElementById('tempo-badge');
+      if (badge) badge.textContent = this.mode < 0 ? '◀◀ Time slowed' : this.mode > 0 ? 'Time sped up ▶▶' : '';
+      audio.setTempoScale(this.mode < 0 ? 0.5 : this.mode > 0 ? 1.6 : 1);
+      if (this.mode && !g.state.flags.tempoExplained) {
+        g.state.flags.tempoExplained = true;
+        g.hud.toast(`Everything glowing inside the ring is <b>${this.mode < 0 ? 'slowed down' : 'sped up'}</b>. You move as normal.`, 4500);
+      }
     }
     // the Tower's stutter throws the lift back down; a flicker warns you just before
     if (running) {

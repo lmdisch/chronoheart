@@ -178,10 +178,11 @@ Everything here happens in the **Present**: the gates, the steps and your echoes
 - **Donald Eugene's lectern** by the entrance gives you the **Echo**.
 - **The gold gate** stands open only while the **gold button** is held. Stand on the gold button and record an echo standing still: it holds the gate open for you.
 - **The green airlock** is two gates worked by one **green button**. The first (solid green band) is open while the button is held; the second (dashed band) only while it's **not**. Record an echo that stands on the green button for about two seconds and then steps off for two. Walk through the first gate while the echo is on the button, wait in the gap, and go through the second when it steps off.
-- **The wall:** three stone steps rise out of the floor up a 4-high wall. Each step is raised by a **row of three buttons**. The dots beside each button show its number (1, 2, 3). A button only lights if the one before it is lit, and stays lit for a few seconds after you step off. The step stands while its **whole row** is lit.
-- So: stand on button 1, start recording (`V`), walk the row 1 → 2 → 3 and back, and stop recording. Your echo keeps walking the row, and the step stays up.
-- Do this for the ground row (step 1), then the row **on** step 1 (step 2), then the row **on** step 2, which runs the other way (step 3). Then climb up the steps onto the gallery.
-- Your gate echoes will fade as you record the row echoes. That's fine: you're past the gates.
+- **The wall:** three stone steps rise out of the floor up a 4-high wall. Each step is raised by a **ring of six buttons**: one on the ground, one on top of step 1, one on top of step 2. A bright ring marks where each ring starts, and arrows on the floor show its direction: **clockwise** on the ground, **counterclockwise** on step 1, **clockwise** on step 2 (as you see it on screen). A button only lights if the one before it is lit.
+- **Buttons you press yourself go dark the moment you step off.** Buttons an echo presses stay glowing for a few seconds. The step stands while its **whole ring** is lit, so every ring needs an echo walking it.
+- So: stand on the ringed button, start recording (`V`), walk the ring following the arrows, and stop recording (all within 5 seconds). Your echo keeps walking the ring, and the step stays up.
+- Do this for the ground ring (step 1), then the ring **on** step 1 (step 2), then the ring **on** step 2 (step 3). Then climb up the steps onto the gallery.
+- You can keep 3 echoes, and the climb needs all three at once. If a recording goes wrong, stand on that echo and press **Interact** to dispel it before you try again. Otherwise the oldest echo (the one holding up your first step) fades. Your gate echoes fading is fine: the gates stay open once you're past them.
 - At the top you kick down a rope ladder, and the gates stay open for good, so the way back never needs echoes again.
 
 ### 11. The Warden's Courtyard: the Escapement Key

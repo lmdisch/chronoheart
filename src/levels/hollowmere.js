@@ -91,20 +91,27 @@ export const L = {
 const TO = L.towerX0 - 182;
 
 /**
- * The Echo Gallery: three stone steps up a 4-high wall. Each step is raised by a row of three
- * numbered buttons (rows on the ground, on step 1 and on step 2). A button only lights if the one
- * before it in its row is lit, and stays lit for a few seconds after you step off; the step stands
- * while its whole row is lit. So an echo has to walk the row in order, 1 -> 2 -> 3, within its loop.
+ * The Echo Gallery: three stone steps up a 4-high wall. Each step is raised by a ring of six
+ * buttons: on the ground, on top of step 1, and on top of step 2. A button only lights if the one
+ * before it in the ring is lit, so the ring has to be walked in its direction (arrows on the floor:
+ * clockwise, counterclockwise, clockwise). Buttons you press yourself go dark the moment you step
+ * off; buttons an echo presses glow on for a few seconds. The step stands while its whole ring is
+ * lit, so each ring needs an echo walking it, and the three echoes together hold up the climb.
+ * (Directions as seen on screen: the back of the platform, low z, is "up".)
  */
 export const ECHO_STEPS = [
   { x0: 242, x1: 243, z0: 1, z1: 5, h: 1 },
   { x0: 244, x1: 245, z0: 1, z1: 5, h: 2 },
   { x0: 246, x1: 247, z0: 1, z1: 5, h: 3 },
 ];
+const ring = (step, y, cells) => cells.map(([x, z], order) => ({ x, z, y, step, order }));
 export const ECHO_BUTTONS = [
-  ...[1, 3, 5].map((z, order) => ({ x: 240, z, y: 0, step: 0, order })), // on the ground
-  ...[1, 3, 5].map((z, order) => ({ x: 242, z, y: 1, step: 1, order })), // on step 1
-  ...[5, 3, 1].map((z, order) => ({ x: 244, z, y: 2, step: 2, order })), // on step 2 (runs the other way)
+  // on the ground, clockwise
+  ...ring(0, 0, [[239, 1], [241, 1], [241, 3], [241, 5], [239, 5], [239, 3]]),
+  // on top of step 1, counterclockwise
+  ...ring(1, 1, [[242, 1], [242, 3], [242, 5], [243, 5], [243, 3], [243, 1]]),
+  // on top of step 2, clockwise
+  ...ring(2, 2, [[244, 1], [245, 1], [245, 3], [245, 5], [244, 5], [244, 3]]),
 ];
 
 /**

@@ -123,7 +123,7 @@ export function currentGoal(game) {
     }
     return step(
       'Climb the gallery wall.',
-      `Each step rises while its row of three buttons is lit. Buttons light in order (count the dots: 1, 2, 3) and fade a few seconds after you step off. Record an echo walking a row in order (${keys.echo} to start, again to stop, within 5 seconds) and it keeps the row lit. Start on the ground row, then the row on step 1, then step 2, then climb. Your older gate echoes will fade as you record new ones: that's fine, you're past them.`,
+      `Each step rises while its ring of six buttons is lit. Buttons light in order: start at the ringed button and follow the arrows (clockwise on the ground, counterclockwise on step 1, clockwise on step 2). A button you press yourself goes dark the moment you step off, but an echo leaves it glowing, so each ring needs an echo walking it (${keys.echo} to start, again to stop, within 5 seconds). Ground ring first, then step 1's, then step 2's, then climb. You can keep 3 echoes and you'll need all three: if one goes wrong, stand on it and press Interact to dispel it before recording again, or the oldest (holding up your first step) fades.`,
     );
   }
   // ---- The Warden's Courtyard

@@ -12,7 +12,7 @@ import { touchActive } from './ui/touch.js';
 const ECHO_MAX = 5; // seconds of movement an echo can hold
 const ECHO_LIMIT = 3; // echoes at once; a new one replaces the oldest
 const ECHO_TONE = 0xbff6ff;
-const LIT_TIME = 4.5; // seconds a gallery button stays lit after you step off it
+const LIT_TIME = 5.2; // seconds a gallery button glows on after an echo steps off it (longer than any echo's loop)
 
 // on a button: within 0.65 of its centre (generous, so a step onto its edge still counts)
 const standsOn = (b, p) => Math.abs(b.x - (p.x + 0.5)) < 0.65 && Math.abs(b.z - (p.z + 0.5)) < 0.65 && Math.abs(b.y - p.y) < 0.4;
@@ -77,21 +77,36 @@ export class Abilities {
     this.rec = null;
     this.setStatus(null);
     const g = this.game.world.groups[ERA.PRESENT];
+    // gallery buttons ride on top of their platform (the ground, or a step), so nothing floats
+    // while a step is down. Arrows on the floor point from each button to the next in its ring.
+    const arrowMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xfff2c8).multiplyScalar(1.2) });
     this.buttons = ECHO_BUTTONS.map((p) => {
+      const group = new THREE.Group();
+      group.position.set(p.x + 0.5, 0, p.z + 0.5);
       const base = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.06, 0.9), new THREE.MeshStandardMaterial({ color: 0x3a3440, roughness: 0.7 }));
-      base.position.set(p.x + 0.5, p.y + 0.03, p.z + 0.5);
+      base.position.y = 0.03;
       const mat = new THREE.MeshBasicMaterial({ color: ECHO_TONE });
       const glow = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.08, 16), mat);
-      glow.position.set(p.x + 0.5, p.y + 0.06, p.z + 0.5);
-      // number pips (1, 2, 3) beside the button, so the order reads at a glance
-      const pipMat = new THREE.MeshBasicMaterial({ color: 0xfff2c8 });
-      for (let i = 0; i <= p.order; i++) {
-        const pip = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.04, 0.1), pipMat);
-        pip.position.set(p.x + 0.12, p.y + 0.08, p.z + 0.3 + i * 0.2);
-        g.add(pip);
+      glow.position.y = 0.06;
+      group.add(base, glow);
+      // the first button of each ring wears a bright ring: start here
+      if (p.order === 0) {
+        const start = new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.04, 6, 24).rotateX(Math.PI / 2), arrowMat);
+        start.position.y = 0.08;
+        group.add(start);
       }
-      g.add(base, glow);
-      return { ...p, mat, glow, pressed: false, lit: 0 };
+      // an arrowhead on the floor, halfway to the next button
+      const next = ECHO_BUTTONS.find((q) => q.step === p.step && q.order === p.order + 1);
+      if (next) {
+        const dx = next.x - p.x, dz = next.z - p.z;
+        const arrow = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.34, 3).rotateX(Math.PI / 2), arrowMat);
+        arrow.position.set(dx * 0.5, 0.05, dz * 0.5);
+        arrow.rotation.y = Math.atan2(dx, dz);
+        arrow.scale.y = 0.3;
+        group.add(arrow);
+      }
+      g.add(group);
+      return { ...p, mat, glow, group, pressed: false, lit: 0 };
     });
     // gate buttons: plain square plates in their gate's colour
     this.gateButtons = GATE_BUTTONS.map((p) => {
@@ -307,21 +322,24 @@ export class Abilities {
 
   // ------------------------------------------------------------------ Echo Gallery
   /** One-time explanations: first button stepped on, and first out-of-order press. */
-  galleryHint(outOfOrder) {
-    const f = this.game.state.flags;
-    if (outOfOrder && !f.galleryOrderHint) {
+  galleryHint(kind) {
+    const f = this.game.state.flags, hud = this.game.hud;
+    if (kind === 'order' && !f.galleryOrderHint) {
       f.galleryOrderHint = true;
-      this.game.hud.toast('They light in order: <b>1 → 2 → 3</b>.', 3000);
-    } else if (!outOfOrder && !f.galleryHint) {
+      hud.toast('They light in order: start at the ringed button and follow the arrows.', 3500);
+    } else if (kind === 'self' && !f.gallerySelfHint) {
+      f.gallerySelfHint = true;
+      hud.toast('A button you press yourself goes dark when you step off. An echo leaves it glowing.', 4500);
+    } else if (kind === 'row' && !f.galleryHint) {
       f.galleryHint = true;
-      this.game.hud.toast('The step rises while its whole row is lit.', 3500);
+      hud.toast('The step rises while its whole ring is lit.', 3500);
     }
   }
 
   /**
-   * Each step has a row of numbered buttons. A button lights when pressed, but only if the one
-   * before it in its row is lit, and it stays lit for LIT_TIME after you step off. The step
-   * stands while its whole row is lit: walk the row in order, or record an echo that does.
+   * Each step has a ring of buttons. A button lights when pressed, but only if the one before it
+   * in its ring is lit. An echo leaves it lit for LIT_TIME; you light it only while you stand on
+   * it. The step stands while its whole ring is lit: record an echo that walks the ring.
    */
   updateGallery(dt) {
     const g = this.game, f = g.state.flags, w = g.world, P = ERA.PRESENT;
@@ -353,18 +371,26 @@ export class Abilities {
       gt.group.visible = gt.shown < 0.99;
     }
     for (const btn of this.buttons) {
-      const on = (g.era === P && standsOn(g.player.body, btn)) || this.echoes.some((e) => standsOn(e.pos, btn));
+      // a ring on a step only works while that step is up; its buttons ride on the step's top
+      const surface = btn.step === 0 ? null : this.steps[btn.step - 1];
+      const up = !surface || surface.cur >= surface.h;
+      btn.group.position.y = surface ? surface.shown : 0;
+      const byYou = up && g.era === P && standsOn(g.player.body, btn);
+      const byEcho = up && this.echoes.some((e) => standsOn(e.pos, btn));
+      const on = byYou || byEcho;
       const prev = this.buttons.find((b) => b.step === btn.step && b.order === btn.order - 1);
-      if (on && (!prev || prev.lit > 0)) {
+      const inOrder = !prev || prev.lit > 0;
+      if (!up) btn.lit = 0;
+      else if (on && inOrder) {
         if (btn.lit <= 0) audio.sfx('ui');
-        btn.lit = LIT_TIME;
+        // an echo leaves a button glowing for a while; you only light it while you stand on it
+        btn.lit = byEcho ? LIT_TIME : Math.max(btn.lit, 0.05);
       } else btn.lit = Math.max(0, btn.lit - dt);
-      if (on && !btn.pressed && prev && prev.lit <= 0) this.galleryHint(true);
-      else if (on && !btn.pressed) this.galleryHint(false);
+      if (on && !btn.pressed) this.galleryHint(!inOrder ? 'order' : byYou && !byEcho ? 'self' : 'row');
       btn.pressed = on;
-      // brightness shows how much lit time is left
-      btn.mat.color.setHex(ECHO_TONE).multiplyScalar(0.3 + 2.2 * (btn.lit / LIT_TIME));
-      btn.glow.position.y = btn.y + (on ? 0.035 : 0.06);
+      // brightness shows how much lit time is left; dark when its step is down
+      btn.mat.color.setHex(ECHO_TONE).multiplyScalar(!up ? 0.08 : 0.3 + 2.2 * Math.min(1, btn.lit / LIT_TIME + (btn.lit > 0 ? 0.25 : 0)));
+      btn.glow.position.y = on ? 0.035 : 0.06;
     }
     this.steps.forEach((s, i) => {
       const row = this.buttons.filter((b) => b.step === i);

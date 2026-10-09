@@ -41,6 +41,7 @@
             <span class="kbd-hint">E</span>
           </div>
           <span class="era-pill present-pill active" data-e="1">Present</span>
+          <div id="tempo-badge" aria-live="polite"></div>
         </div>
 
         <div class="hud-right">
@@ -96,7 +97,10 @@
           <h3 class="menu-title">Favours</h3>
           <div class="favour-list"></div>
         </section>
-        <button id="btn-close-menu" class="btn primary">Back to the game</button>
+        <div class="menu-actions">
+          <button class="btn" type="button" data-fullscreen hidden>Fullscreen</button>
+          <button id="btn-close-menu" class="btn primary">Back to the game</button>
+        </div>
       </div>
 
       <!-- Title -->
@@ -164,6 +168,7 @@
           <button id="btn-resume" class="btn primary">Resume</button>
           <button class="btn" data-open-controls>Controls</button>
           <button id="btn-music" class="btn">Music: On</button>
+          <button class="btn" type="button" data-fullscreen hidden>Fullscreen</button>
           <button id="btn-restart-cp" class="btn">Return to last shrine</button>
           <button id="btn-quit" class="btn">Quit to title</button>
         </nav>
@@ -185,6 +190,7 @@
             <div><span><img data-icon="heart" alt="" /> Kindness</span><strong id="stat-kind">0/3</strong></div>
           </div>
           <p id="credits-bonus" class="bonus" hidden>You found every Lost Cog! Donald Eugene's old pocketwatch starts ticking again... but that's a story for another time.</p>
+          <p class="to-be-continued">Somewhere, another clock is ticking. To be continued...</p>
           <p class="muted">Every world, sprite, melody and sound in this game was generated from code.</p>
           <button id="btn-credits-title" class="btn primary">Return to Title</button>
           <p class="memorial">In loving memory of Donald Disch</p>

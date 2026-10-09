@@ -56,7 +56,10 @@ export const ENDING = [
   DE("Not the hours on a clock face. The hours you spend with the people you love. Those are the ones you can never wind back, not even with a Chronoheart."),
   DE('So spend your time well, Vivienne. Spend it on them.'),
   Wr('I will. I promise.'),
-  DE('Good. Now then... I believe we are both late for supper. Shall we go home?'),
+  DE("Good. Though... while I was lost between the ages, I saw something I can't explain. Another clock, far older than ours, ticking somewhere no clock should be."),
+  Wr('Another clock? Where?'),
+  DE("That, apprentice, is a puzzle for another day. Our work isn't finished, not by a long way. And I have a feeling you'll be the one to finish it."),
+  DE('Now then... I believe we are both late for supper. Shall we go home?'),
 ];
 
 function npcLines(game, id) {
@@ -431,7 +434,7 @@ export async function interact(game, ent) {
       if (f.hasEcho) return say(N("Donald Eugene's lectern. A scrawled diagram of three stone steps, and the words: \"Be in three places at once.\""));
       await say([
         N("A lectern stands by the gallery wall, and on it, Donald Eugene's handwriting:"),
-        N('"Vivienne. The Gallery steps rise only while their buttons are held. I could never hold three at once... but you can. This lens lets the Chronoheart remember you: where you stood, how you moved. ~D.E."'),
+        N('"Vivienne. The Gallery steps rise only while their rings of buttons glow, and a button forgets you the moment you step off it. I could never be in three places at once... but you can. This lens lets the Chronoheart remember you: where you stood, how you moved. ~D.E."'),
         Wr('A lens that remembers me... so I can leave a copy of myself standing on a button?'),
         N('The lens clicks neatly into the Chronoheart.'),
       ]);

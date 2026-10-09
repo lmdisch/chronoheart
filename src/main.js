@@ -102,6 +102,35 @@ $('btn-music').addEventListener('click', () => {
 });
 $('btn-quit').addEventListener('click', () => location.reload());
 
+// Fullscreen, from the Menu or the Pause screen (hidden where the browser doesn't allow it)
+{
+  const root = document.documentElement;
+  const request = root.requestFullscreen || root.webkitRequestFullscreen;
+  const exit = document.exitFullscreen || document.webkitExitFullscreen;
+  const enabled = !!request && (document.fullscreenEnabled ?? document.webkitFullscreenEnabled ?? false);
+  const isFull = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+  const buttons = [...document.querySelectorAll('[data-fullscreen]')];
+  const sync = () => buttons.forEach((b) => {
+    b.hidden = !enabled;
+    b.textContent = isFull() ? 'Exit fullscreen' : 'Fullscreen';
+  });
+  buttons.forEach((b) =>
+    b.addEventListener('click', async () => {
+      audio.sfx('ui');
+      try {
+        if (isFull()) await exit.call(document);
+        else await request.call(root);
+      } catch {
+        // refused (e.g. an embedding page without permission): nothing to do
+      }
+      sync();
+    }),
+  );
+  document.addEventListener('fullscreenchange', sync);
+  document.addEventListener('webkitfullscreenchange', sync);
+  sync();
+}
+
 // start music quietly on first interaction with the title
 window.addEventListener(
   'pointerdown',

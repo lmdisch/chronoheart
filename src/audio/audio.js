@@ -30,6 +30,11 @@ class AudioEngine {
     this.tempo = 84;
   }
 
+  /** Tempo, inside the clock: the music slows down or speeds up with time around you. */
+  setTempoScale(k) {
+    this.tempo = 84 * k;
+  }
+
   init() {
     if (this.ctx) {
       if (this.ctx.state === 'suspended') this.ctx.resume();
