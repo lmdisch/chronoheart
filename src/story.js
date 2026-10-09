@@ -111,7 +111,7 @@ function npcLines(game, id) {
       return [
         m('Ah. The clockmaker\'s apprentice, right on time. The river has been expecting you.'),
         m('A little advice before you cross. Time is a great power, and great powers are easy to waste. Use it wisely.'),
-        m('Before Hollowmere had any walls, they say the smiths drew their water from a spring that never once ran dry.'),
+        m('Your master used to vanish for days at a time, you know. He once told me he kept a room in the oldest age, behind a door no one would ever think to knock on.'),
         m('And whatever age you find yourself in, always remember to help others. Every age remembers a kindness.'),
         Wr("I'll remember. Thank you, Michelle."),
       ];
@@ -453,22 +453,32 @@ export async function interact(game, ent) {
       return say([N('A sealed slab of stone. There is no lock, no handle: the door has not been made yet.'), Wr("The lock doesn't exist in this age. It has to be the Present.")]);
     case 'lockF':
       return say([N('The great lock has rusted into one solid lump. It will never turn again.'), Wr("No key will open this one. It has to be the Present.")]);
-    case 'gardenM':
-      return say(N("An old walled garden beside the forge, its gate rusted shut. Through the bars: a ring of stones around a spring, dry for centuries."));
-    case 'gardenF':
-      return say(N('A rusted plaque on the wall: "HERITAGE SITE. NO ENTRY." Through the grille, moss grows over a ring of old stones.'));
+    case 'studyDoor':
+      if (!f.studyFound) {
+        await say([
+          N('You knock on the old door. Silence... and then, from somewhere inside, a faint ticking.'),
+          N('The door swings open on its own. Above the latch, a tiny brass gear has been pressed into the wood.'),
+          Wr("That's Master Donald Eugene's mark! What's it doing here, in the oldest age?"),
+        ]);
+        f.studyFound = true;
+        game.save();
+      }
+      return game.enterStudy();
     case 'everspring':
-      if (f.steadyHeart) return say(N("The spring bubbles on, cold and clear. It has never once run dry."));
+      if (f.steadyHeart) return say(N('The workbench is tidy now. Above it, the chalk Clocktower is covered in notes, most of them crossed out.'));
       await say([
-        N('A spring wells up between the stones, cold and clear, glinting with a light of its own.'),
-        N('You drink. A slow warmth spreads from your chest, and the Chronoheart\'s ring settles into a steady gold glow.'),
-        Wr("It's... not draining any more. I could stay in any age for as long as I like!"),
+        N('A hidden room: a cot, a lantern, maps of the valley in three different ages, and the Clocktower chalked on the wall, covered in notes.'),
+        N('On the workbench lies a letter, held down by a coil of bright star-iron.'),
+        N('"Vivienne. If you found this room, you\'ve been paying attention. I\'ve been hopping between the ages trying to work out why the Tower is failing, and I needed somewhere to rest where no one would ever think to knock."'),
+        N('"This is the Everspring: a mainspring of star-iron that never runs down. Fit it to the Chronoheart and it will never need to recharge again. I\'d hoped to finish the job myself. ~D.E."'),
+        Wr('A secret workshop in the oldest age... Of course he had one.'),
+        N("You fit the Everspring into the Chronoheart. A slow warmth spreads from your chest, and the amulet's ring settles into a steady gold glow."),
       ]);
       f.steadyHeart = true;
       game.meter = 1;
       audio.sfx('key');
-      game.bursts.emit(ent.x, 1, ent.z, 40, { color: [0xffd070, 0x9ff4ff], speed: 3, life: 1 });
-      game.hud.toast('<b>Steady Heart!</b> The Chronoheart no longer drains.', 5000);
+      game.bursts.emit(ent.x, 1.2, ent.z, 40, { color: [0xffd070, 0x9ff4ff], speed: 3, life: 1 });
+      game.hud.toast('<b>The Everspring!</b> The Chronoheart never runs down now.', 5000);
       game.save();
       return;
     case 'socketSun':

@@ -241,11 +241,11 @@ Three optional side quests. Each completed favour gives you **+1 heart** (and so
 
 > **Big spoilers.** Michelle the Wise drops the only hint, in her very first conversation.
 
-### The Everspring (Smithy Lane)
+### Donald Eugene's hideaway (Rampart Row)
 
-In the **Present** and the **Future**, a small walled garden stands beside the street in Smithy Lane, its gate rusted shut. Through the bars you can see a ring of stones around a dry spring. The walls were built later: in the **Past** there are no walls, just open ground and a spring that has never run dry.
+Michelle the Wise mentions that your master "kept a room in the oldest age, behind a door no one would ever think to knock on." While he hopped between the ages trying to fix the Tower, Donald Eugene needed somewhere to rest.
 
-Walk in, in the **Past**, and drink. You gain the **Steady Heart**: the Chronoheart's ring turns gold and **never drains again**, so you can stay in any age for as long as you like.
+In the **Past**, look closely at the houses along the back of **Rampart Row**. One door looks just like the others, except for a tiny **brass gear** pressed into the wood above the latch. Stand right in front of it and **knock**. Inside is his secret workshop, and on the workbench, the **Everspring**: a mainspring that never runs down. Fit it to the Chronoheart and its ring turns gold and **never drains again**, so you can stay in any age for as long as you like.
 
 Michelle's hint, at the Old Ford: *"Before Hollowmere had any walls, they say the smiths drew their water from a spring that never once ran dry."*
 

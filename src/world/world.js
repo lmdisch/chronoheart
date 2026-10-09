@@ -296,9 +296,16 @@ export class World {
 
   /** Collision lookup: outside the playable strip counts as solid walls. */
   cell(era, x, y, z) {
+    if (z < PLAY_Z0 && this.inPocket(era, x, z)) return y >= YMAX ? T.AIR : this.raw(era, x, y, z);
     if (x < 0 || x >= W || z < PLAY_Z0 || z >= PLAY_Z1) return T.SOLID;
     if (y >= YMAX) return T.AIR;
     return this.raw(era, x, y, z);
+  }
+
+  /** A secret room behind the street, open only while the player is inside it (see Game.enterStudy). */
+  inPocket(era, x, z) {
+    const p = this.pocket;
+    return !!p && era === p.era && x >= p.x0 && x <= p.x1 && z >= p.z0;
   }
 
   solidAt(era, x, y, z) {

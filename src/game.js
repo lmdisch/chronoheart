@@ -8,7 +8,7 @@ import { Post } from './render/post.js';
 import { Ambient, Bursts } from './render/particles.js';
 import { World, T, W } from './world/world.js';
 import { hits } from './world/physics.js';
-import { buildLevel, SPAWNS, CHECKPOINTS, AREAS, L, COG_TOTAL } from './levels/hollowmere.js';
+import { buildLevel, SPAWNS, CHECKPOINTS, AREAS, L, COG_TOTAL, STUDY } from './levels/hollowmere.js';
 import { Player, NPC, Enemy, Warden, Pushable, Pickup, Interactable, Shrine } from './world/entities.js';
 import { HUD, Dialogue, showInventoryPanel, setFade, letterbox } from './ui/ui.js';
 import { talk, interact, ITEMS, INTRO, ENDING, FAVOURS } from './story.js';
@@ -122,6 +122,33 @@ export class Game {
     this.player.place(cp.x + 1.2, 0, 3.5);
     this.abilities.attach();
     this.finale.attach();
+  }
+
+  /** Through the door with the brass gear, into the hidden room (Past only). */
+  async enterStudy() {
+    this.mode = 'cutscene';
+    setFade(1);
+    await new Promise((r) => setTimeout(r, 350));
+    this.world.pocket = STUDY.pocket;
+    this.refreshWorld();
+    this.player.place(STUDY.door - 0.4, 0, -1.4);
+    this.player.body.vx = this.player.body.vz = 0;
+    audio.sfx('lever');
+    setFade(0);
+    this.mode = 'play';
+    this.lockT = 0.3;
+  }
+
+  async leaveStudy() {
+    this.mode = 'cutscene';
+    setFade(1);
+    await new Promise((r) => setTimeout(r, 300));
+    this.world.pocket = null;
+    this.refreshWorld();
+    this.player.place(STUDY.door - 0.4, 0, 0.8);
+    setFade(0);
+    this.mode = 'play';
+    this.lockT = 0.2;
   }
 
   /** Era Keys placed in the Clocktower, keyed by socket id. */
@@ -576,7 +603,7 @@ export class Game {
     for (const e of [...this.npcs, ...this.interactables]) {
       if (!e.active()) continue;
       const d = e.distTo(b);
-      if (d < bd) {
+      if (d < Math.min(bd, e.spec.reach ?? 1.7)) {
         bd = d;
         best = e;
       }
@@ -604,6 +631,7 @@ export class Game {
 
     // meter
     if (f.steadyHeart) this.meter = 1; // the Everspring: the Chronoheart never drains again
+    else if (this.world.pocket) this.meter = Math.max(this.meter, 0.3); // time stands still in the hideaway
     else if (this.era !== ERA.PRESENT && this.mode === 'play') {
       this.meter -= dt / DRAIN_TIME;
       if (this.meter < 0.25) {
@@ -619,6 +647,9 @@ export class Game {
       }
     } else this.meter = Math.min(1, this.meter + dt / 2.5);
     this.hud.setMeter(this.meter, this.era, !!f.steadyHeart);
+
+    // walking out of Donald Eugene's hideaway
+    if (this.world.pocket && ctl && this.player.body.z > -0.7) this.leaveStudy();
 
     // entities
     this.player.update(dt);

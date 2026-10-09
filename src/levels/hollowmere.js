@@ -797,7 +797,8 @@ function rampart(world) {
   let b = world.staticBuilder(P);
   b.solid(L.wallX0, 0, ZMIN, L.wallX1, 7, 6, (x, y, z) => jitter(z % 2 ? C.log : C.wood)(x, y, z));
   for (let z = ZMIN; z <= 6; z += 1) b.deco(L.wallX0 + 0.25, 8, z + 0.25, 0.5 + 1, 0.6, 0.5, C.log[z & 1 ? 0 : 2]);
-  filler(b, P, 79, 96, 51);
+  filler(b, P, 79, STUDY.x0 - 1, 51);
+  filler(b, P, STUDY.x1 + 1, L.wallX0, 57);
   filler(b, P, 100, 104, 52);
   // PRESENT: town wall + crates
   b = world.staticBuilder(M);
@@ -900,41 +901,71 @@ function rampart(world) {
   });
 }
 
-// The Everspring: a secret in Smithy Lane. In the Present and the Future, a walled garden you
-// can't enter; in the Past, before the walls were built, an open spring. Drinking from it stops
-// the Chronoheart from draining. (Michelle the Wise mentions it, very quietly.)
-const GARDEN = { x0: 120, x1: 124, z0: 4 };
-function everspring(world) {
-  const { x0, x1, z0 } = GARDEN, cx = (x0 + x1) / 2;
-  const ring = (b, y, col) => {
-    for (const [ox, oz] of [[-0.9, 0], [0.9, 0], [0, -0.9], [0, 0.9], [-0.65, -0.65], [0.65, -0.65], [-0.65, 0.65], [0.65, 0.65]])
-      b.deco(cx + ox - 0.2, y, 5.5 + oz - 0.2, 0.4, 0.3, 0.4, col);
-  };
-  // PAST: open ground, the spring flowing
-  let b = world.staticBuilder(P);
-  ring(b, 0, C.sandstone[1]);
-  // plain water with only a faint glint: a secret, not a beacon
-  b.deco(cx - 0.55, 0.0, 4.95, 1.1, 0.1, 1.1, 0x4a9ad8);
-  b.glow(cx - 0.12, 0.1, 5.38, 0.24, 0.03, 0.24, 0x9fe8ff);
-  // PRESENT: a walled garden, gate rusted shut, the spring dry
-  b = world.staticBuilder(M);
-  const walls = (b, pal) => {
-    b.solid(x0, 0, z0, x1, 2, z0, jitter(pal));
-    b.solid(x0, 0, z0 + 1, x0, 2, 6, jitter(pal));
-    b.solid(x1, 0, z0 + 1, x1, 2, 6, jitter(pal));
-  };
-  walls(b, C.stone);
-  b.deco(cx - 0.6, 0.0, z0 - 0.06, 1.2, 2.0, 0.08, 0x3a2a1a); // the old gate
-  for (let i = 0; i < 5; i++) b.deco(cx - 0.5 + i * 0.25, 0.1, z0 - 0.1, 0.06, 1.8, 0.06, 0x4a4a52);
-  ring(b, 0, C.stone[3]);
-  b.deco(cx - 0.55, 0.0, 4.95, 1.1, 0.04, 1.1, 0x4a3a2a); // dry basin
-  for (let i = 0; i < 6; i++) b.deco(x0 + hash3(i, 9, 2) * 4.5, 1 + hash3(i, 8, 2) * 1.6, z0 - 0.04, 0.3, 0.3, 0.05, C.leaves[i % 5]); // ivy
-  // FUTURE: the same walls, sealed
-  b = world.staticBuilder(F);
-  walls(b, C.stoneMoss);
-  b.deco(cx - 0.6, 0.0, z0 - 0.06, 1.2, 2.0, 0.08, 0x3a404c);
-  b.glow(cx - 0.5, 2.1, z0 - 0.08, 1.0, 0.25, 0.04, 0xffb03a); // "HERITAGE SITE"
-  ring(b, 0, C.stoneMoss[2]);
+// Donald Eugene's hideaway: a secret. In the Past, one plain house in Rampart Row has a tiny
+// brass gear pressed into its door. Knock, and it opens onto the room he rested in while he
+// hopped between the ages. The Everspring waits on his workbench: the Chronoheart never runs
+// down again. (Michelle the Wise mentions it, very quietly.)
+// While the player is inside, the front wall is cut away and the room joins the playable strip.
+export const STUDY = { x0: 87, x1: 92, h: 4, door: 89, pocket: { era: P, x0: 87, x1: 92, z0: -4 } };
+function hideaway(world) {
+  // bare earth under the house, so no grass grows through the floor
+  world.staticBuilder(P).solid(STUDY.x0, -1, -4, STUDY.x1, -1, -1, jitter(C.sandDark));
+  world.addFeature({
+    id: 'hideaway', eras: [P], key: () => String(!!world.pocket),
+    build: (b) => {
+      const { x0, x1, h, door } = STUDY;
+      const wall = (x, y, z) => (y === h - 1 ? jitter(C.sandDark)(x, y, z) : jitter(C.sandstone)(x, y, z));
+      if (!world.pocket) {
+        // outside: an ordinary old house, just like its neighbours
+        b.solid(x0, 0, -4, x1, h - 1, -1, wall);
+        for (let x = x0; x <= x1; x += 2) b.solid(x, h, -4, x, h, -4, jitter(C.sandstone));
+        b.solid(x0, h, -1, x1, h, -1, jitter(C.sandstone));
+        b.deco(door - 0.9, 0, 0.0, 1.0, 1.8, 0.06, 0x2a1810);
+        b.deco(door - 1.1, 1.8, 0.0, 1.4, 0.2, 0.1, C.sandDark[0]);
+        // the only clue: a little brass gear above the latch
+        b.deco(door - 0.52, 1.28, 0.06, 0.24, 0.24, 0.03, 0xc9a44a);
+        b.deco(door - 0.44, 1.36, 0.09, 0.08, 0.08, 0.02, 0x2a1810);
+        for (let i = 0; i < 3; i++) b.deco(x0 + 0.4 + i * 1.9, 0.6 + (i % 2) * 1.6, 0.0, 0.35, 0.4, 0.05, C.jungle[i]);
+        return;
+      }
+      // inside: back and side walls only, so the camera looks straight in
+      b.solid(x0, 0, -4, x1, h - 1, -4, wall);
+      b.solid(x0, 0, -3, x0, h - 1, -1, wall);
+      b.solid(x1, 0, -3, x1, h - 1, -1, wall);
+      b.deco(x0 + 1, 0.0, -3, x1 - x0 - 1, 0.03, 2.9, 0x5a3a22); // plank floor
+      b.deco(x0 + 1.6, 0.03, -2.6, 2.2, 0.02, 1.4, 0x8a2a2a); // a worn rug
+      // the cot, against the west wall
+      b.deco(x0 + 1.05, 0, -3, 0.9, 0.45, 2.0, C.wood[1]);
+      b.deco(x0 + 1.1, 0.45, -2.95, 0.8, 0.12, 1.9, 0xd8cca8);
+      b.deco(x0 + 1.15, 0.57, -2.9, 0.7, 0.14, 0.45, 0xf0e8d0);
+      // shelves of jars, gears and bent springs
+      for (const y of [1.2, 2.2]) {
+        b.deco(x0 + 2.0, y, -3.0, 2.6, 0.1, 0.45, C.wood[0]);
+        for (let i = 0; i < 5; i++) b.deco(x0 + 2.15 + i * 0.5, y + 0.1, -2.9, 0.26, 0.2 + hash3(i, y * 3, 7) * 0.2, 0.26, [0xc9a44a, 0x3ab0a0, 0x8a6a3a, 0xa8843a, 0x4a4a52][(i + y * 2) % 5]);
+      }
+      // the Clocktower, chalked on the back wall and covered in notes
+      const cx = x0 + 3.4;
+      b.glow(cx - 0.4, 2.7, -2.96, 0.06, 1.2, 0.02, 0xe8e4d8);
+      b.glow(cx + 0.4, 2.7, -2.96, 0.06, 1.2, 0.02, 0xe8e4d8);
+      b.glow(cx - 0.4, 3.85, -2.96, 0.86, 0.06, 0.02, 0xe8e4d8);
+      b.glow(cx - 0.12, 3.25, -2.96, 0.3, 0.3, 0.02, 0xe8e4d8);
+      for (let i = 0; i < 4; i++) b.deco(cx + 0.8 + (i % 2) * 0.5, 2.8 + Math.floor(i / 2) * 0.55, -2.97, 0.4, 0.4, 0.02, 0xe8dcb0);
+      // three maps: one valley in three ages
+      [0xd9b77a, 0x86a843, 0x3a404c].forEach((col, i) => b.deco(x0 + 1.1 + i * 0.75, 2.6, -2.97, 0.6, 0.5, 0.02, col));
+      // a clock with its hands stopped
+      b.deco(x1 - 1.8, 2.9, -2.97, 0.6, 0.6, 0.02, 0x8a6a2a);
+      b.deco(x1 - 1.72, 2.98, -2.95, 0.44, 0.44, 0.02, 0xeadfc0);
+      b.deco(x1 - 1.52, 3.2, -2.93, 0.04, 0.18, 0.02, 0x2a2014);
+      // the workbench, where the Everspring waits
+      b.solid(x1 - 2, 0, -3, x1 - 1, 0, -3, jitter(C.wood));
+      b.deco(x1 - 2.05, 0.95, -3.05, 2.1, 0.1, 1.1, 0x5a3a22);
+      b.deco(x1 - 1.3, 1.05, -2.6, 0.4, 0.05, 0.3, 0xe8dcb0); // his letter
+      // a lantern, and a crate by the door
+      b.glow(x0 + 1.3, 1.6, -3.0, 0.2, 0.3, 0.2, NEON.warm);
+      b.light(x0 + 2.8, 2.2, -1.6, 0xffc070, 6, 7, 0.08);
+      crate(b, x1 - 1, 0, -1);
+    },
+  });
 }
 
 function smithy(world) {
@@ -1601,9 +1632,8 @@ export const SPAWNS = [
   { type: 'interact', id: 'glyphMill', era: P, x: L.millX0 + 6.5, y: 0, z: 0.5, prompt: 'Rewind glyph', resets: 'boulder' },
   { type: 'interact', id: 'sluice', era: M, x: L.rimX + 0.5, y: 3, z: 5.6, prompt: 'Sluice gate' },
   { type: 'interact', id: 'satchel', era: M, x: 208.5, y: 0, z: 0.6, prompt: "Donald Eugene's satchel", icon: 'satchel', goneFlag: 'hasSeal' },
-  { type: 'interact', id: 'gardenM', era: M, x: 122.5, y: 0, z: 3.4, prompt: 'Old garden gate' },
-  { type: 'interact', id: 'gardenF', era: F, x: 122.5, y: 0, z: 3.4, prompt: 'Sealed garden' },
-  { type: 'interact', id: 'everspring', era: P, x: 122.5, y: 0, z: 5.5, prompt: 'Ancient spring' },
+  { type: 'interact', id: 'studyDoor', era: P, x: STUDY.door - 0.4, y: 0, z: 0.1, prompt: 'Knock', reach: 0.95 },
+  { type: 'interact', id: 'everspring', era: P, x: STUDY.x1 - 1.5, y: 1, z: -2.4, prompt: "Donald Eugene's workbench", icon: 'everspring', goneFlag: 'steadyHeart' },
   { type: 'interact', id: 'echoLens', era: M, x: 230.5, y: 1, z: 0.5, prompt: "Donald Eugene's lectern", icon: 'lens', goneFlag: 'hasEcho' },
   { type: 'interact', id: 'lockM', era: M, x: L.towerX0 - 0.6, y: 0, z: 3.5, prompt: 'Clocktower door' },
   { type: 'interact', id: 'lockP', era: P, x: L.towerX0 - 0.6, y: 0, z: 3.5, prompt: 'Stone door' },
@@ -1676,7 +1706,7 @@ export function buildLevel(world, state) {
   cliffs(world);
   rampart(world);
   smithy(world);
-  everspring(world);
+  hideaway(world);
   terrace(world);
   gatehouse(world);
   millHollow(world);

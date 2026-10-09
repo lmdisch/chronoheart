@@ -1019,6 +1019,17 @@ const ICONS = {
     px(c, 6, 6, '#ffffff');
     rect(c, 7, 14, 2, 2, '#8a6a3a');
   },
+  everspring: (c) => {
+    // a coiled mainspring of bright star-iron
+    const pts = [];
+    for (let a = 0; a < Math.PI * 7; a += 0.12) {
+      const r = 0.8 + a * 0.28;
+      pts.push([Math.round(8 + Math.cos(a) * r), Math.round(8 + Math.sin(a) * r)]);
+    }
+    for (const [x, y] of pts) px(c, x, y, '#ffd070');
+    for (const [x, y] of pts.slice(-12)) px(c, x, y, '#fff2c0');
+    rect(c, 13, 7, 2, 2, '#c9a44a');
+  },
   amulet: (c) => {
     disc(c, 8, 9, 5, '#c9a44a');
     disc(c, 8, 9, 3, '#36f0ff');
