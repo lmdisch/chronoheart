@@ -85,9 +85,9 @@ export class HUD {
     }, ms);
     while (this.toasts.children.length > 3) this.toasts.firstChild.remove();
   }
-  showBanner(name, era) {
+  showBanner(name, era, subtitle) {
     this.banner.querySelector('.area-name').textContent = name;
-    this.banner.querySelector('.area-era').textContent = ERA_NAMES[era];
+    this.banner.querySelector('.area-era').textContent = subtitle || ERA_NAMES[era];
     this.banner.classList.remove('in');
     void this.banner.offsetWidth;
     this.banner.classList.add('in');

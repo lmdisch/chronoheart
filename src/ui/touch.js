@@ -10,6 +10,8 @@ const ICON = {
   attack: '<svg viewBox="0 0 24 24"><path d="M15.5 3.5a4.5 4.5 0 0 0-4.3 5.8L4 16.5 7.5 20l7.2-7.2a4.5 4.5 0 0 0 5.8-4.3l-2.7 2.7-2.5-.7-.7-2.5z"/></svg>',
   roll: '<svg viewBox="0 0 24 24"><path d="M12 4a8 8 0 1 0 8 8h-3a5 5 0 1 1-5-5v3l5-4.5L12 1z"/></svg>',
   talk: '<svg viewBox="0 0 24 24"><path d="M4 5h16v10H10l-5 4v-4H4z"/></svg>',
+  slow: '<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm0 2.2a6.8 6.8 0 1 1 0 13.6 6.8 6.8 0 0 1 0-13.6zM11 7v5.6l4 2.4 1-1.6-3-1.8V7z"/></svg>',
+  fast: '<svg viewBox="0 0 24 24"><path d="M4 6l7 6-7 6zm8 0l7 6-7 6z"/></svg>',
   menu: '<svg viewBox="0 0 24 24"><path d="M4 6h16v2.5H4zm0 4.75h16v2.5H4zM4 15.5h16V18H4z"/></svg>',
   help: '<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm1 14h-2v-2h2zm2.1-6.6-.9.9c-.7.7-1.2 1.3-1.2 2.7h-2v-.5c0-1.1.5-2.1 1.2-2.8l1.2-1.3A1.5 1.5 0 1 0 10.5 8.5h-2a3.5 3.5 0 1 1 6.6 1.9z"/></svg>',
   pause: '<svg viewBox="0 0 24 24"><path d="M7 5h3.5v14H7zm6.5 0H17v14h-3.5z"/></svg>',
@@ -129,7 +131,12 @@ export class TouchControls {
     abil.className = 'tc-abil';
     const seal = make('tc-seal', 'Seal', ICON.seal);
     const echo = make('tc-echo', 'Echo', ICON.echo);
-    abil.append(seal, echo);
+    // Tempo, inside the clock: hold to slow or speed up time around you (see body.in-gearworks)
+    const slow = make('tc-slow', 'Slow', ICON.slow);
+    const fast = make('tc-fast', 'Fast', ICON.fast);
+    abil.append(seal, echo, slow, fast);
+    this.hold(slow, 'KeyQ');
+    this.hold(fast, 'KeyE');
     this.sealBtn = seal;
     this.tap(seal, () => this.pulse('KeyR'));
     this.tap(echo, () => this.pulse('KeyV'));

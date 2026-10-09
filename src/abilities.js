@@ -155,6 +155,7 @@ export class Abilities {
     const f = this.game.state.flags;
     document.body.classList.toggle('has-seal', !!f.hasSeal);
     document.body.classList.toggle('has-echo', !!f.hasEcho);
+    document.body.classList.toggle('has-tempo', !!f.hasTempo);
     document.body.classList.toggle('recording', !!this.rec);
   }
 

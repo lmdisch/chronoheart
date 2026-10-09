@@ -37,12 +37,26 @@ export const INTRO = [
   Wr("Wait. Something's glowing on his workbench..."),
 ];
 
+// The third key: the clock face opens, and the Chronoheart learns to turn time faster or slower.
+export const TEMPO_GIFT = [
+  N('The third key slides home. High above, the great clock face splits along its seams and swings open.'),
+  N('Golden light pours down the shaft and into the Chronoheart. Its ring divides in two: one turning slowly, one racing.'),
+  Wr("It isn't just which age any more... I can feel how fast time is running. I can turn it, like a dial."),
+  N("But the Tower's heart still stutters. Somewhere up inside the clock, the great mainspring is running wild."),
+  Wr('Then that is where I am going.'),
+];
+
+const DE = (text) => ({ who: 'eugene', name: 'Donald Eugene', text });
 export const ENDING = [
   N('Across three ages at once, the Clocktower shudders... and begins to tick.'),
-  { who: 'eugene', name: 'Donald Eugene', text: "Vivienne! I knew you'd find your way. I've been stuck between the ages since the Tower stopped. Your keys pulled me back through." },
+  DE("Vivienne! I knew you'd find your way. I've been stuck between the ages since the Tower stopped. You pulled me back through."),
   Wr('Master Donald Eugene! You\'re all right! And the amulet... look, the crack is gone!'),
-  { who: 'eugene', name: 'Donald Eugene', text: "Mended by the Tower's heart. That means it's yours now, apprentice. Time always needs someone to look after it." },
-  { who: 'eugene', name: 'Donald Eugene', text: 'Now then. Shall we go and see what else has come loose?' },
+  DE("Mended by the Tower's heart. That means it's yours now, apprentice. Time always needs someone to look after it."),
+  DE("And let me tell you what all my years among the clocks have taught me. Time is the most precious thing any of us will ever have."),
+  DE("Not the hours on a clock face. The hours you spend with the people you love. Those are the ones you can never wind back, not even with a Chronoheart."),
+  DE('So spend your time well, Vivienne. Spend it on them.'),
+  Wr('I will. I promise.'),
+  DE('Good. Now then... I believe we are both late for supper. Shall we go home?'),
 ];
 
 function npcLines(game, id) {
@@ -453,6 +467,17 @@ export async function interact(game, ent) {
       return say([N('A sealed slab of stone. There is no lock, no handle: the door has not been made yet.'), Wr("The lock doesn't exist in this age. It has to be the Present.")]);
     case 'lockF':
       return say([N('The great lock has rusted into one solid lump. It will never turn again.'), Wr("No key will open this one. It has to be the Present.")]);
+    case 'gearworksDoor':
+      return game.enterGearworks();
+    case 'gearworksExit':
+      return game.leaveGearworks();
+    case 'mainspring':
+      await say([
+        N("The great mainspring thrashes on its post, unwinding far too fast. The whole clock shakes with every beat."),
+        Wr("Easy... easy. Slow down."),
+        N('You press the Chronoheart against the spring. Its two rings turn, one against the other, until the spring\'s wild beat settles into one steady rhythm...'),
+      ]);
+      return game.runEnding();
     case 'studyDoor':
       if (!f.studyFound) {
         await say([

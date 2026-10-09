@@ -2,7 +2,7 @@
 // (revealed only when the player asks for it), based on where the player is and what
 // they've done. Earlier unfinished steps are named when they block the end of the game.
 import { ERA } from './core/util.js';
-import { L } from './levels/hollowmere.js';
+import { L, GEAR } from './levels/hollowmere.js';
 
 const X = {
   ford: 38, fordFar: 48, cliff: 66, rampart: 79, wall: 97, smithy: 105, terrace: 130, gate: 157,
@@ -142,6 +142,24 @@ export function currentGoal(game) {
     }
     return step('Unlock the Clocktower.', 'Use the keys on the Clocktower door, in the <b>Present</b>. The lock has not been made yet in the Past, and it has rusted solid in the Future.');
   }
+  // ---- the Gearworks, inside the clock
+  if (f.gearworksOpen) {
+    const b = game.player.body, G = GEAR;
+    const slow = keys.slow, fast = keys.fast;
+    if (x < L.gearX0) return step('Climb up into the clock.', 'The glowing doorway on the east wall of the Tower floor (<b>Present</b>) leads up into the Gearworks.');
+    if (b.y < G.ledgeA.top - 0.5 && x < G.springs[0].x)
+      return step('Climb the Gearworks.', `The hammers slam far too fast to slip under. Hold ${slow} to slow time around you, then run beneath them. Tempo runs on the Chronoheart's ring: let go and it refills.`);
+    if (b.y < G.ledgeA.top - 0.5)
+      return step('Climb the Gearworks.', `The spring plate kicks harder the faster it runs. Stand on it and hold ${fast}, and steer onto the ledge as it throws you up.`);
+    if (b.y < G.floorB.top - 0.5)
+      return step('Climb the Gearworks.', `More hammers (slow them with ${slow}), then another spring plate to the level above (speed it up with ${fast}).`);
+    if (b.y < G.summit.top - 0.5)
+      return step(
+        'Reach the great mainspring.',
+        `Every few seconds the Tower stutters and throws the lift back down. At normal speed it never reaches the top in time. Stand on it and hold ${fast} to hurry it up, then hold ${slow} at the top so it waits while you step onto the summit.`,
+      );
+    return step('Reach the great mainspring.', 'The mainspring thrashes at the top of the clock. Steady it.');
+  }
   // ---- Clocktower
   const missing = [];
   if (!hasDisc) missing.push('the Sun Disc (Sun Terrace, in the Past)');
@@ -178,5 +196,7 @@ function missingEarlier(hasHammer, hasDisc = true) {
 /** Key / button names for the current input method. */
 function inputNames() {
   const touch = document.body.classList.contains('touch');
-  return touch ? { seal: 'the <b>Seal</b> button', echo: 'the <b>Echo</b> button' } : { seal: '<kbd>R</kbd>', echo: '<kbd>V</kbd>' };
+  return touch
+    ? { seal: 'the <b>Seal</b> button', echo: 'the <b>Echo</b> button', slow: 'the <b>Slow</b> button', fast: 'the <b>Fast</b> button' }
+    : { seal: '<kbd>R</kbd>', echo: '<kbd>V</kbd>', slow: '<kbd>Q</kbd>', fast: '<kbd>E</kbd>' };
 }

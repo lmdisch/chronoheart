@@ -49,6 +49,7 @@ Every world, sprite, melody and sound in the game is generated from code: there 
 | --- | --- | --- |
 | **Stasis Seal** | Donald Eugene's satchel at Tamsin's Crossing (Present) | Hold something in its moment, so it stays exactly the same in every later age. Things that can be sealed shimmer with pale light; stand beside one and a **Seal** prompt appears. |
 | **Echo** | Donald Eugene's lectern at the Echo Gallery (Present) | Record up to 5 seconds of your own movement. Your echo replays it on a loop, forever. Present only, up to 3 echoes at once (a 4th replaces the oldest). Stand on an echo and press **Interact** to dispel it. |
+| **Tempo** | The third Era Key, in the Clocktower | Inside the clock, hold **Q** to slow time around you and **E** to speed it up. Only the machines within a few blocks feel it; you move as usual. It runs on the Chronoheart's ring, which refills when you let go. |
 
 ---
 
@@ -65,7 +66,7 @@ Every world, sprite, melody and sound in the game is generated from code: there 
 | `C` | Dodge-roll |
 | `X` | Swing your wrench |
 | `F` | Interact: talk to people, use things |
-| `Q` / `E` | Travel one era back / forward |
+| `Q` / `E` | Travel one era back / forward. Inside the clock: hold to slow down / speed up time (Tempo) |
 | `Tab` | Hold to peek at another era (`Q`/`E` choose which) |
 | `R` | Stasis Seal *(once learned)* |
 | `V` | Echo: start / stop recording *(once learned)* |
@@ -79,7 +80,7 @@ Every world, sprite, melody and sound in the game is generated from code: there 
 On-screen controls appear automatically on touch screens.
 
 - **Joystick:** touch anywhere on the left half and drag. Push all the way to sprint.
-- **Buttons:** Jump, Attack, Roll, and **Interact** (it lights up when there's someone to talk to or something to use). **Seal** and **Echo** appear once learned; Seal only lights up beside something sealable.
+- **Buttons:** Jump, Attack, Roll, and **Interact** (it lights up when there's someone to talk to or something to use). **Seal** and **Echo** appear once learned; Seal only lights up beside something sealable. Inside the clock they're replaced by **Slow** and **Fast** (hold).
 - **Swipe** anywhere else: left to travel toward the Future, right toward the Past. Drag slowly to preview first. You can also tap the era names at the top.
 - **Top-right:** Menu, Help and Pause.
 - It plays best in landscape, but portrait works too.
@@ -202,7 +203,19 @@ The finale is a climb. Each Era Key goes in higher up, in a different age, using
 2. **The Bell Hammer (Present): ride the piston.** The bell hangs in the belfry, 12 blocks up. Beside it, the great piston rises the moment its **brass button** is pressed: far too soon to run over and board it. Record an **echo** that steps on the button. Then stand on the piston's base while it's down, and your echo sends you up. The piston waits at the top while you're standing on it, so there's no rush to step west onto the belfry. (After each trip it rests a few seconds at the bottom; the button glows when it's ready again.)
 3. **The Fusion Core (Future): seal and climb.** The reactor deck is above the belfry, but only in the **Future**, where the old wooden belfry floor has rotted away. Stand on the belfry in the Present and use the **Stasis Seal**. Then switch to the **Future** and climb the gantry to the reactor.
 
-Every key you place makes the Tower lurch, its gears turn faster, and its time-stutter flare. Then enjoy the ending.
+Every key you place makes the Tower lurch, its gears turn faster, and its time-stutter flare.
+
+### 13. The Gearworks
+
+The third key opens the great clock face, and the Chronoheart learns **Tempo**. You're carried up into the clock itself, where the ages are wound too tightly to pull apart: **Q** and **E** now slow down and speed up the machines around you (see [Abilities](#abilities-you-pick-up-along-the-way)). A clock shrine saves at the entrance, and a glowing doorway on each side links the Gearworks and the Tower floor.
+
+1. **The hammers.** Two hammers slam far too fast to slip under. Hold **Q** to slow them, wait for one to lift, and run.
+2. **The spring plate.** It kicks every beat, but only hard enough to reach the ledge when it runs fast. Stand on it, hold **E**, and steer onto the ledge.
+3. **Both.** Two more hammers (slow), then another spring plate (fast) to the level above.
+4. **The lift.** Every few seconds the Tower stutters and throws the lift back down; at normal speed it never reaches the top in time. Ride it holding **E**, and at the top switch to **Q**, so it waits while you step onto the summit.
+5. **The great mainspring.** Steady it, and the Clocktower ticks again. Then enjoy the ending.
+
+Once you've finished the story, your save is cleared: the next time you play, it's a new game.
 
 ---
 
@@ -259,6 +272,7 @@ src/
   main.js               start-up, title screen, the pause / Controls / Menu overlays
   game.js               the game: modes, era shifting, the amulet meter, saving, time-lapses, the ending
   abilities.js          the Stasis Seal, the Echo, and the Echo Gallery's gates, buttons and steps
+  gearworks.js          Tempo, and the Gearworks' hammers, spring plates and lift
   finale.js             the Clocktower finale: the great piston, the gears, the lurch as each key goes in
   objectives.js         the goal and hint for wherever you are and whatever you've done
   story.js              items, favours, all dialogue, and every interaction
@@ -282,7 +296,7 @@ It replays the story one stage at a time and, for each, maps everywhere the play
 
 ### How the level works
 
-The valley is a voxel grid **306 units long**, built once for each age by `src/levels/hollowmere.js`. Things that change with your actions (the eroded cliff, the oak, the bridge, the millpond...) are **features**: small builders keyed on save flags, rebuilt whenever those flags change. Time-lapses grow or drop those features into place.
+The valley is a voxel grid **346 units long** (the last 40 are the Gearworks, inside the clock), built once for each age by `src/levels/hollowmere.js`. Things that change with your actions (the eroded cliff, the oak, the bridge, the millpond...) are **features**: small builders keyed on save flags, rebuilt whenever those flags change. Time-lapses grow or drop those features into place.
 
 | x range | Area |
 | --- | --- |
@@ -298,6 +312,7 @@ The valley is a voxel grid **306 units long**, built once for each age by `src/l
 | 230 – 253 | The Echo Gallery |
 | 254 – 283 | The Warden's Courtyard |
 | 284 – 305 | The Clocktower |
+| 306 – 345 | The Gearworks |
 
 ---
 

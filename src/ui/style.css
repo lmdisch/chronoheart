@@ -232,6 +232,10 @@ body.letterbox #hud { opacity: 0.25; }
 .stats img { width: 16px; height: 16px; image-rendering: pixelated; }
 .stats strong { font: 700 1.6rem var(--font-title); color: var(--gold-2); }
 .bonus { color: var(--gold-2); font-weight: 600; }
+.memorial { margin: 36px 0 0; font: italic 500 1.05rem var(--font-title, serif); letter-spacing: 0.04em; color: #f4ead2; opacity: 0; }
+#credits.in .memorial { animation: memorialIn 2.5s ease 3s forwards; }
+@keyframes memorialIn { to { opacity: 0.92; } }
+@media (prefers-reduced-motion: reduce) { #credits.in .memorial { animation: none; opacity: 0.92; } }
 #fade { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 35; transition: opacity 0.35s; display: grid; place-items: center; }
 #fade-text { font: 700 2rem var(--font-title); color: #e8dfd0; letter-spacing: 0.15em; opacity: 0; transition: opacity 0.6s 0.3s; }
 
@@ -557,6 +561,15 @@ body:not(.has-seal) .needs-seal, body:not(.has-echo) .needs-echo { display: none
 }
 .tc-abil .tc-btn { width: 54px; height: 54px; }
 body:not(.has-seal) .tc-seal, body:not(.has-echo) .tc-echo { display: none; }
+body:not(.in-gearworks) .tc-slow, body:not(.in-gearworks) .tc-fast { display: none; }
+body.in-gearworks .tc-seal, body.in-gearworks .tc-echo { display: none; }
+.tc-slow.on { color: #0e1a24; background: #7fd8ff; border-color: transparent; box-shadow: 0 0 22px rgba(127, 216, 255, 0.7); }
+.tc-fast.on { color: #241405; background: #ffb84a; border-color: transparent; box-shadow: 0 0 22px rgba(255, 184, 74, 0.7); }
+body:not(.has-tempo) .needs-tempo { display: none !important; }
+/* Tempo: a cool vignette when slowing time, a warm one when speeding it up */
+#app::after { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 5; opacity: 0; transition: opacity 0.25s; }
+body.tempo-slow #app::after { opacity: 1; background: radial-gradient(ellipse at center, transparent 55%, rgba(80, 170, 255, 0.28)); }
+body.tempo-fast #app::after { opacity: 1; background: radial-gradient(ellipse at center, transparent 55%, rgba(255, 160, 50, 0.28)); }
 body.recording .tc-echo { color: #ffd6e0; border-color: #ff3a5a; box-shadow: 0 0 22px rgba(255, 58, 90, 0.7); }
 @media (max-height: 520px) {
   #ability-status { top: calc(112px + env(safe-area-inset-top, 0px)); }

@@ -11,11 +11,12 @@ import { hits } from './world/physics.js';
 import { buildLevel, SPAWNS, CHECKPOINTS, AREAS, L, COG_TOTAL, STUDY } from './levels/hollowmere.js';
 import { Player, NPC, Enemy, Warden, Pushable, Pickup, Interactable, Shrine } from './world/entities.js';
 import { HUD, Dialogue, showInventoryPanel, setFade, letterbox } from './ui/ui.js';
-import { talk, interact, ITEMS, INTRO, ENDING, FAVOURS } from './story.js';
+import { talk, interact, ITEMS, INTRO, ENDING, TEMPO_GIFT, FAVOURS } from './story.js';
 import { touchActive } from './ui/touch.js';
 import { currentGoal } from './objectives.js';
 import { Abilities } from './abilities.js';
 import { Finale } from './finale.js';
+import { Gearworks } from './gearworks.js';
 
 const SAVE_KEY = 'chronoheart-save-v1';
 // Storage can be unavailable (private windows, embedded viewers): the game still runs, it just won't save.
@@ -76,6 +77,7 @@ export class Game {
     this.state = newState();
     this.abilities = new Abilities(this);
     this.finale = new Finale(this);
+    this.gearworks = new Gearworks(this);
     this.buildWorld();
     this.clock = new THREE.Clock();
     this.titleT = 0;
@@ -122,6 +124,7 @@ export class Game {
     this.player.place(cp.x + 1.2, 0, 3.5);
     this.abilities.attach();
     this.finale.attach();
+    this.gearworks.attach();
   }
 
   /** Through the door with the brass gear, into the hidden room (Past only). */
@@ -186,13 +189,26 @@ export class Game {
     } catch {
       return this.startNew();
     }
+    const f = this.state.flags;
+    if (f.finished) return this.startNew();
+    // a save from before the Gearworks, with all three keys in: Tempo, and up into the clock
+    if (Object.keys(this.state.sockets || {}).length === 3 && !f.hasTempo) {
+      f.hasTempo = f.gearworksOpen = true;
+      this.state.checkpoint = 11;
+    }
     this.buildWorld();
     this.beginPlay();
     this.hud.toast('Welcome back, Vivienne.');
   }
 
   hasSave() {
-    return !!store.get(SAVE_KEY);
+    const raw = store.get(SAVE_KEY);
+    if (!raw) return false;
+    try {
+      return !JSON.parse(raw).flags?.finished; // a finished story can't be continued
+    } catch {
+      return false;
+    }
   }
 
   beginPlay() {
@@ -248,6 +264,12 @@ export class Game {
 
   tryShift(target) {
     if (!this.state.flags.hasAmulet || target < 0 || target > 2 || target === this.era) return;
+    if (this.gearworks.active) {
+      audio.sfx('blocked');
+      this.hud.flashBlocked();
+      this.hud.toast('Inside the clock, the ages are wound too tightly to pull apart.', 3000);
+      return;
+    }
     if (this.post.trans < 0.6) return;
     const b = this.player.body;
     if (target !== ERA.PRESENT && this.meter < 0.06) {
@@ -459,11 +481,58 @@ export class Game {
     this.bursts.emit(ent.x, ent.y + 0.6, ent.z, 40, { color: [0xffd070, 0x9ff4ff], speed: 4, life: 0.9 });
     this.renderer.shake = 0.5;
     this.save();
-    if (Object.keys(this.sockets).length === 3) {
-      this.runEnding();
-      return;
-    }
     this.finale.lurch(socketId);
+    if (Object.keys(this.sockets).length === 3) this.giftTempo();
+  }
+
+  /** The third key: the clock face opens, and the Chronoheart learns Tempo. Then up into the clock. */
+  async giftTempo() {
+    this.mode = 'cutscene';
+    this.hud.showPrompt(null);
+    this.abilities.cancelRecording();
+    await new Promise((r) => setTimeout(r, 1600));
+    const f = this.state.flags;
+    f.gearworksOpen = true;
+    this.refreshWorld();
+    this.mode = 'play';
+    await this.cutscene(TEMPO_GIFT);
+    f.hasTempo = true;
+    this.abilities.syncBody();
+    this.state.checkpoint = 11;
+    this.save();
+    await this.enterGearworks();
+    this.hud.toast(touchActive() ? '<b>Tempo!</b> Hold <b>Slow</b> or <b>Fast</b> to bend time around you.' : '<b>Tempo!</b> In the clock, hold <kbd>Q</kbd> to slow time around you, <kbd>E</kbd> to speed it up.', 7000);
+  }
+
+  /** Up through the doorway on the Tower's east wall, into the clock. */
+  async enterGearworks() {
+    this.mode = 'cutscene';
+    setFade(1, '#fff6e0');
+    await new Promise((r) => setTimeout(r, 450));
+    this.applyEra(ERA.PRESENT, true);
+    this.player.place(L.gearX0 + 2.5, 0, 3.5);
+    this.player.facing = 1;
+    this.player.body.vx = this.player.body.vz = 0;
+    setFade(0);
+    this.mode = 'play';
+    this.lockT = 0.3;
+  }
+
+  async leaveGearworks() {
+    this.mode = 'cutscene';
+    setFade(1, '#000');
+    await new Promise((r) => setTimeout(r, 350));
+    this.applyEra(ERA.PRESENT, true);
+    this.player.place(L.towerX1 - 3.5, 0, 4.5);
+    this.player.facing = -1;
+    setFade(0);
+    this.mode = 'play';
+    this.lockT = 0.3;
+  }
+
+  /** Somewhere a crushed or drowned player must never be put back: under a hammer, on the lift. */
+  unsafeSpot(x, y) {
+    return this.gearworks.active && this.gearworks.unsafeAt(x, y);
   }
 
   async runEnding() {
@@ -498,7 +567,7 @@ export class Game {
     await this.dialogue.run(ENDING);
     letterbox(false);
     this.state.flags.finished = true;
-    this.save();
+    store.remove(SAVE_KEY); // the story is told: from here it's a new game
     // fade to white and show credits
     let f = 0;
     await new Promise((r) => {
@@ -625,8 +694,9 @@ export class Game {
       if (input.hit('forward') && this.era < 2) this.peekTarget = this.era + 1;
     } else {
       this.peekTarget = null;
-      if (ctl && input.hit('back')) this.tryShift(this.era - 1);
-      if (ctl && input.hit('forward')) this.tryShift(this.era + 1);
+      // inside the clock, Q and E are the Tempo dial instead (see gearworks.js)
+      if (ctl && !this.gearworks.active && input.hit('back')) this.tryShift(this.era - 1);
+      if (ctl && !this.gearworks.active && input.hit('forward')) this.tryShift(this.era + 1);
     }
 
     // meter
@@ -695,6 +765,7 @@ export class Game {
 
 
     this.finale.update(dt);
+    this.gearworks.update(dt, ctl);
 
     // first time a hostile creature gets close, remind the player how to fight
     if (!f.attackHint && ctl) {
@@ -741,7 +812,7 @@ export class Game {
       this.areaIdx = ai;
       // each area's name shows once, the first time you walk in
       this.seenAreas ||= new Set();
-      if (!this.seenAreas.has(ai) && this.mode === 'play') this.hud.showBanner(AREAS[ai].name, this.era);
+      if (!this.seenAreas.has(ai) && this.mode === 'play') this.hud.showBanner(AREAS[ai].name, this.era, AREAS[ai].subtitle);
       this.seenAreas.add(ai);
     }
   }

@@ -83,6 +83,8 @@ export const L = {
   yardX0: 254,
   keySpot: { x: 273.5, z: 2.5 },
   towerX0: 284,
+  towerX1: 305, // the Tower's east wall
+  gearX0: 306, // the Gearworks, inside the clock (opens with the third key)
   cameraBounds: [10, W - 8],
 };
 /** Tower details were laid out when the Clocktower started at x = 182; this shifts them. */
@@ -150,6 +152,7 @@ export const AREAS = [
   { x: L.echoX0, name: 'The Echo Gallery' },
   { x: L.yardX0, name: "The Warden's Courtyard" },
   { x: L.towerX0, name: 'The Clocktower' },
+  { x: L.gearX0, name: 'The Gearworks', subtitle: 'Inside the clock' },
 ];
 
 // Shrine 6 used to be the Clocktower's; it now opens the new stretch, so old saves resume there.
@@ -165,6 +168,7 @@ export const CHECKPOINTS = [
   { id: 8, x: 231.5, z: 1.2 },
   { id: 9, x: L.towerX0 + 2.5, z: 1.2 },
   { id: 10, x: L.yardX0 + 1.5, z: 1.2 },
+  { id: 11, x: L.gearX0 + 1.5, z: 1.2 },
 ];
 
 /** Cells the spring wears away through the Present cliff (shared with the time-lapse). */
@@ -186,6 +190,8 @@ export function erosionCells() {
 // ---------------------------------------------------------------------------
 function groundColor(era, x, y, z) {
   const h = hash3(x, y, z);
+  // inside the clock: iron deck plates, the same in every age
+  if (x >= L.gearX0) return shade(((x + z) % 2 ? C.metal : C.metalL)[(h * 3) | 0], 0.75);
   if (y < -1) return era === F ? shade(C.metal[(h * 4) | 0], 0.7) : C.dirt[(h * 3) | 0];
   if (era === P) {
     if (z >= 1 && z <= 5) return h < 0.12 ? C.grassA[((h * 40) | 0) % 4] : C.sand[(h * 4) | 0];
@@ -484,8 +490,8 @@ function backdrop(world) {
         b.solid(x, 0, -16, x, hh, -14, jitter(pal));
       }
     }
-    // foreground props
-    for (let x = 1; x < W - 1; x++) {
+    // foreground props (the valley's; the Gearworks has its own railing)
+    for (let x = 1; x < L.gearX0 - 1; x++) {
       if (x >= L.riverX0 - 1 && x <= L.riverX1 + 1) continue;
       if (x >= L.gorgeX0 - 1 && x <= L.gorgeX1 + 1) continue;
       if (x >= L.pitX0 && x <= L.pitX1 && era === F) continue;
@@ -1529,9 +1535,9 @@ function tower(world) {
   for (let era = 0; era < 3; era++) {
     const b = world.staticBuilder(era);
     const pal = era === P ? C.sandstone : era === M ? C.stone : C.metalL;
-    b.solid(L.towerX0, 0, ZMIN, W - 1, 22, -1, jitter(pal));
+    b.solid(L.towerX0, 0, ZMIN, L.towerX1, 22, -1, jitter(pal));
     b.solid(L.towerX0, 4, 0, L.towerX0, 12, 6, jitter(pal));
-    b.solid(W - 2, 0, 0, W - 1, 22, 6, jitter(pal));
+    b.solid(L.towerX1 - 1, 0, 0, L.towerX1, 22, 6, jitter(pal));
     // the high west ledge stands in every age; only the Past has a way up
     b.solid(T.ledge.x0, 0, 0, T.ledge.x1, T.ledge.top - 1, T.ledge.z1, jitter(pal));
     if (era === P) {
@@ -1602,6 +1608,80 @@ function tower(world) {
 }
 
 // ---------------------------------------------------------------------------
+// The Gearworks: inside the clock (opens when the third key goes in)
+// ---------------------------------------------------------------------------
+// Four rooms climbing east and up, each taught by one use of Tempo (see gearworks.js):
+//   hammers that slam too fast to slip under (slow them), a spring plate that only kicks hard
+//   enough when it runs fast, the two together, and a lift the Tower's stutter keeps throwing
+//   back down (hurry it up, then hold it at the top). The great mainspring waits at the summit.
+export const GEAR = {
+  x0: L.gearX0, x1: W - 1,
+  ledgeA: { x0: 321, x1: 330, top: 4 },
+  floorB: { x0: 331, x1: W - 1, top: 8 },
+  summit: { x0: 336, x1: W - 1, top: 14 },
+  hammers: [{ x: 312, y: 0 }, { x: 315, y: 0 }, { x: 325, y: 4 }, { x: 328, y: 4 }],
+  springs: [{ x: 320, y: 0, z0: 2, z1: 4 }, { x: 330, y: 4, z0: 2, z1: 4 }],
+  lift: { x0: 334, x1: 335, z0: 2, z1: 4, y: 8, h: 6 },
+  mainspring: { x: 341.5, y: 14, z: 3.5 },
+};
+
+function gearworks(world) {
+  world.addFeature({
+    id: 'gearworks', eras: [P, M, F], key: (s) => String(!!s.flags.gearworksOpen),
+    build: (b, era, s) => {
+      if (!s.flags.gearworksOpen) return;
+      const G = GEAR;
+      const iron = [0x3a3a44, 0x44444f, 0x34343c, 0x4a4a55];
+      const brass = [0xb8862a, 0xa8782a, 0xc9963a];
+      const wall = jitter(era === F ? C.metal : era === P ? C.sandDark : iron);
+      // the back of the clock case, and its east wall
+      b.solid(G.x0, 0, -3, G.x1, 24, -1, wall);
+      b.solid(G.x1, 0, 0, G.x1, 24, 6, wall);
+      // a brass-plated floor, and the three rising levels
+      b.solid(G.x0, -1, 0, G.x1, -1, 6, jitter(brass));
+      b.solid(G.ledgeA.x0, 0, 0, G.ledgeA.x1, G.ledgeA.top - 1, 6, wall);
+      b.solid(G.floorB.x0, 0, 0, G.floorB.x1, G.floorB.top - 1, 6, wall);
+      b.solid(G.summit.x0, G.floorB.top, 0, G.summit.x1, G.summit.top - 1, 6, wall);
+      // brass trim along every edge you can stand on
+      for (const [x0, x1, top] of [[G.ledgeA.x0, G.ledgeA.x1, G.ledgeA.top], [G.floorB.x0, G.floorB.x1, G.floorB.top], [G.summit.x0, G.summit.x1, G.summit.top]])
+        b.glow(x0, top - 0.06, 6.98, x1 - x0 + 1, 0.06, 0.04, 0xffc860);
+      // rivets and panel seams on the back wall
+      for (let x = G.x0; x <= G.x1; x += 3) b.deco(x + 0.1, 0, -0.02, 0.08, 24, 0.04, 0x22222a);
+      for (let y = 3; y < 24; y += 4) b.deco(G.x0, y, -0.02, G.x1 - G.x0 + 1, 0.08, 0.04, 0x22222a);
+      // the great mainspring at the summit: a coil of bright star-iron on the back wall
+      const ms = G.mainspring;
+      for (let i = 0; i < 40; i++) {
+        const a = i * 0.45, r = 0.3 + i * 0.07;
+        b.glow(ms.x + Math.cos(a) * r - 0.12, ms.y + 3.2 + Math.sin(a) * r - 0.12, -0.04, 0.24, 0.24, 0.05, i % 3 ? 0xffd070 : 0xfff2c0);
+      }
+      b.solid(ms.x - 0.5, ms.y, 1, ms.x - 0.5, ms.y, 1, jitter(brass)); // its winding post
+      b.light(ms.x, ms.y + 3, 1.5, 0xffd070, 8, 10, 0);
+      b.light(G.x0 + 3, 3, 2, 0xffb060, 6, 9, 0.1);
+      b.light(326, 7, 2, 0xffb060, 6, 9, 0.1);
+      // the way back down, beside the shrine
+      b.glow(G.x0 + 0.02, 0, 4, 0.04, 2.2, 1.0, 0xffd8a0);
+      // an iron railing along the front, and lamps to see the machines by
+      b.deco(G.x0, 0.9, 7.3, G.x1 - G.x0 + 1, 0.12, 0.12, 0x55555f);
+      b.deco(G.x0, 0.45, 7.3, G.x1 - G.x0 + 1, 0.08, 0.1, 0x44444f);
+      for (let x = G.x0; x <= G.x1; x += 2) b.deco(x + 0.45, 0, 7.28, 0.1, 1.0, 0.14, 0x3a3a44);
+      for (const [lx, ly] of [[311, 4], [316, 4], [320, 6], [326, 8], [331, 11], [335, 14], [340, 18]]) {
+        b.glow(lx + 0.35, ly, -0.06, 0.3, 0.4, 0.08, 0xffd890);
+        b.light(lx + 0.5, ly, 1.2, 0xffc070, 7, 9, 0.12);
+      }
+    },
+  });
+  // the doorway up into the clock, on the Tower's east wall
+  world.addFeature({
+    id: 'gearDoor', eras: [M], key: (s) => String(!!s.flags.gearworksOpen),
+    build: (b, era, s) => {
+      if (!s.flags.gearworksOpen) return;
+      b.glow(L.towerX1 - 1 - 0.04, 0, 4, 0.04, 2.2, 1.0, 0xffd8a0);
+      b.light(L.towerX1 - 2, 1.5, 4.5, 0xffd070, 5, 7, 0);
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Entity spawns
 // ---------------------------------------------------------------------------
 export const SPAWNS = [
@@ -1644,6 +1724,9 @@ export const SPAWNS = [
   { type: 'interact', id: 'postern', era: M, x: 182.7, y: 0, z: 5.4, prompt: 'Old postern lever' },
   { type: 'interact', id: 'socketSun', era: P, x: L.towerX0 + 2.5, y: 7, z: 1.5, prompt: 'Sun pedestal' },
   { type: 'interact', id: 'socketBell', era: M, x: L.towerX0 + 10.5, y: 12, z: 1.5, prompt: 'Great bell' },
+  { type: 'interact', id: 'gearworksDoor', era: M, x: L.towerX1 - 2.4, y: 0, z: 4.5, prompt: 'Climb into the clockwork', needs: 'gearworksOpen' },
+  { type: 'interact', id: 'gearworksExit', era: M, x: L.gearX0 + 0.7, y: 0, z: 4.5, prompt: 'Back down to the Tower', needs: 'gearworksOpen' },
+  { type: 'interact', id: 'mainspring', era: M, x: GEAR.mainspring.x, y: GEAR.mainspring.y, z: GEAR.mainspring.z, prompt: 'The great mainspring', needs: 'gearworksOpen' },
   { type: 'interact', id: 'socketCore', era: F, x: L.towerX0 + 18.5, y: 17, z: 1.5, prompt: 'Reactor socket' },
 
   // Pickups (items)
@@ -1717,6 +1800,7 @@ export function buildLevel(world, state) {
   echoGallery(world);
   wardenYard(world);
   tower(world);
+  gearworks(world);
   world.finalizeStatic();
   world.refreshFeatures(state);
 }

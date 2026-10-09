@@ -270,9 +270,10 @@ export class Player {
     // safe spot tracking
     // (never on a hazard's bed: you could land there before the respawn kicks in)
     // the last solid footing at all (narrow log rafts never pass the "safe" test below)
-    if (b.onGround && !inWater && !inHazard && !g.respawning && world.cell(era, Math.floor(b.x), Math.floor(b.y + 0.01) - 1, Math.floor(b.z)) === T.SOLID)
+    const machine = g.unsafeSpot?.(b.x, b.y); // never remember a spot under a hammer or on a lift
+    if (b.onGround && !inWater && !inHazard && !g.respawning && !machine && world.cell(era, Math.floor(b.x), Math.floor(b.y + 0.01) - 1, Math.floor(b.z)) === T.SOLID)
       this.lastGround = { x: b.x, y: b.y, z: b.z, era };
-    if (b.onGround && this.state !== 'hurt' && !inWater && !inHazard && !g.respawning) {
+    if (b.onGround && this.state !== 'hurt' && !inWater && !inHazard && !g.respawning && !machine) {
       const fy = Math.floor(b.y) - 1;
       const solidAt = (dx, dz) => world.cell(era, Math.floor(b.x + dx), fy, Math.floor(b.z + dz)) === T.SOLID;
       if (solidAt(0, 0) && solidAt(0.9, 0) && solidAt(-0.9, 0) && solidAt(0, 0.9) && solidAt(0, -0.9)) {
@@ -787,7 +788,8 @@ export class Interactable extends EraEntity {
     return this.spec.prompt;
   }
   active() {
-    return super.active() && !(this.spec.hideIf && this.game.state.flags[this.spec.hideIf]);
+    const f = this.game.state.flags;
+    return super.active() && !(this.spec.hideIf && f[this.spec.hideIf]) && !(this.spec.needs && !f[this.spec.needs]);
   }
   update(dt) {
     const s = this.game.state, t = this.game.time;
