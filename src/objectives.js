@@ -6,7 +6,7 @@ import { L } from './levels/hollowmere.js';
 
 const X = {
   ford: 38, fordFar: 48, cliff: 66, rampart: 79, wall: 97, smithy: 105, terrace: 130, gate: 157,
-  mill: L.millX0, crossing: L.crossingX0, chord: L.chordX0, tower: L.towerX0,
+  mill: L.millX0, crossing: L.crossingX0, gallery: L.echoX0, yard: L.yardX0, tower: L.towerX0,
 };
 
 const step = (goal, hint) => ({ goal, hint });
@@ -21,7 +21,6 @@ export function currentGoal(game) {
   const hasDisc = has('disc') || taken.includes('disc');
   const hasHammer = has('hammer') || taken.includes('hammerGift');
   const hasCore = has('core') || taken.includes('core');
-  const hasRod = inv.includes('rod') || taken.includes('rod') || f.winchFixed; // picked up (or already fitted)
 
   if (!f.hasAmulet) return step('Find out what happened to Master Eugene.', 'Search his workshop at the west end of the square. Something on the workbench is glowing.');
 
@@ -48,14 +47,13 @@ export function currentGoal(game) {
     }
     return step('Keep heading east.', 'Smithy Lane is just ahead.');
   }
-  // ---- Smithy Lane: the Bell Hammer (+ the iron rod for later)
+  // ---- Smithy Lane: the Bell Hammer
   if (x < X.terrace) {
     if (!hasHammer) {
       if (inv.includes('hammerBroken')) return step('Find a way to mend the cracked hammer.', 'Star-iron takes centuries to temper. Seal it in Aria\'s quench-vault, then see what became of it.');
-      if (f.hammerLeft) return step('Find out what became of the hammer.', 'Three hundred years later... visit Lillian\'s repair shop in the <b>Future</b>.');
+      if (f.hammerLeft) return step('Find out what became of the hammer.', 'Three hundred years later... visit Lillian\'s repair shop in the <b>Future</b>. It rests on her display case.');
       return step('The Clocktower\'s bell is silent. Find out why.', 'Talk to Aria the Smith about the Tower\'s bell hammer.');
     }
-    if (!hasRod) return step('Look around the forge before you go.', 'Grab the iron rod from Aria\'s rack. The gate winch further east needs a handle.');
     return step('Keep heading east.', 'The Sun Terrace is just ahead.');
   }
   // ---- Sun Terrace: the Sun Disc
@@ -67,20 +65,15 @@ export function currentGoal(game) {
       if (!pillar) return step('Find a way up the Sun Terrace.', 'In the <b>Past</b>, push the carved block onto the glowing outline by the terrace. Something will be built on it later.');
       return step('Find a way up the Sun Terrace.', 'In the <b>Present</b>, climb the bench, then the pillar, then the terrace.');
     }
-    return missingEarlier(hasHammer, hasRod) || step('Keep heading east.', 'The Gatehouse is just past the terrace.');
+    return missingEarlier(hasHammer) || step('Keep heading east.', 'The Gatehouse is just past the terrace.');
   }
   // ---- Gatehouse: the Fusion Core
   if (x < X.mill) {
     if (!hasCore) {
-      if (!f.winchFixed) {
-        if (!hasRod) return step('Find a way through the Gatehouse.', 'The gate winch has no handle. Aria keeps an iron rod on her rack in Smithy Lane, back west.');
-        return step('Find a way through the Gatehouse.', 'Fit the iron rod to the gate winch in the <b>Present</b>.');
-      }
-      if (!f.gateDown) return step('Something guards the gatehouse in the Future.', 'Lower the portcullis with the winch. Whatever falls now stays down for centuries, maybe on top of something.');
-      if (game.era !== ERA.FUTURE) return step('Reach the vault at the end of the gatehouse.', 'The Fusion Core is in the vault, in the <b>Future</b>. Jump over the fallen gate in the corridor.');
-      return step('Reach the vault at the end of the gatehouse.', 'Jump over the rusted gate in the corridor, get past the Sentinel, and hop onto the pedestal for the Fusion Core.');
+      if (game.era !== ERA.FUTURE) return step('Find a way through the Gatehouse.', 'In the <b>Present</b> the road ends in rubble. In the <b>Future</b>, a security corridor runs through to a vault.');
+      return step('Reach the vault at the end of the gatehouse.', 'Follow the corridor past the drones, and hop onto the vault pedestal for the Fusion Core.');
     }
-    return missingEarlier(hasHammer, hasRod, hasDisc) || step('Keep heading east.', 'The road goes on past the vault, toward the Clocktower.');
+    return missingEarlier(hasHammer, hasDisc) || step('Keep heading east.', 'The road goes on past the vault, toward the Clocktower.');
   }
   // ---- Millrace Hollow
   const keys = inputNames();
@@ -99,8 +92,8 @@ export function currentGoal(game) {
     return step('Cross the millpond.', "The full pond floats the mill's log boom up level with the banks. Hop from log to log to the far side, and don't fall in.");
   }
   // ---- Tamsin's Crossing
-  if (x < X.chord) {
-    if (x >= L.farWallX1 + 1) return step('Keep heading east.', 'The Chord Vault is just ahead.');
+  if (x < X.gallery) {
+    if (x >= L.farWallX1 + 1) return step('Keep heading east.', 'The Echo Gallery is just ahead.');
     if (!f.hasSeal) return step('Look around the old crossing.', "Something of Eugene's was left in the reeds on this bank, in the <b>Present</b>.");
     if (!f.bridgeBuilt) {
       if (inv.includes('cable')) return step('Bring the cable to Tamsin.', 'Tamsin the Ropewright is on this bank in the <b>Past</b>. Steel cable never rots.');
@@ -110,15 +103,33 @@ export function currentGoal(game) {
     if (!f.bridgeSealed) return step('Make the bridge last.', `Tamsin's bridge rots away within a century. Stand by it in the <b>Past</b> and use the Stasis Seal (${keys.seal}).`);
     return step('Cross the gorge.', 'In the <b>Present</b> a city wall blocks the far bank, but in the <b>Future</b> it is only rubble. Cross in the Future, then return to the Present once you are past the wall.');
   }
-  // ---- The Chord Vault
-  if (x < X.tower && !f.chordOpen) {
-    if (!f.hasEcho) return step('Find a way into the vault.', 'The vault door needs three plates pressed at once, one in each age. In the <b>Future</b>, the archive pedestal by the entrance holds something of Eugene\'s.');
+  // ---- The Echo Gallery
+  if (x < X.yard) {
+    if (x > L.galleryX1 || b.y >= 3.9) return step('Keep heading east.', "The Clocktower's courtyard is just past the gallery.");
+    if (f.galleryClimbed) return step('Climb the gallery wall.', 'Climb the rope ladder you kicked down earlier.');
+    if (!f.hasEcho) return step('Find a way up the gallery wall.', "The wall is too high to climb. Eugene left something on the lectern by the entrance, in the <b>Present</b>.");
+    if (game.era !== ERA.PRESENT) return step('Climb the gallery wall.', 'The steps and your echoes only exist in the <b>Present</b>.');
     return step(
-      'Press all three plates at once.',
-      `Each age has one plate. Stand on a plate and record an echo there (${keys.echo} to start and stop): it keeps standing on it in that age. Leave echoes in two ages, then stand on the last plate yourself. The Present plate is up on the stone platform.`,
+      'Climb the gallery wall.',
+      `Each step rises while its row of three buttons is lit. Buttons light in order (count the dots: 1, 2, 3) and fade a few seconds after you step off. Record an echo walking a row in order (${keys.echo} to start, again to stop, within 5 seconds) and it keeps the row lit. Start on the ground row, then the row on step 1, then step 2, then climb.`,
     );
   }
-  if (x < X.tower) return step('Keep heading east.', 'The Clocktower is through the vault.');
+  // ---- The Warden's Courtyard
+  if (x < X.tower) {
+    if (f.towerUnlocked) return step('Enter the Clocktower.', 'The great door is open.');
+    const eraMissing = [!hasDisc && 'the Sun Disc (Sun Terrace, in the Past)', !hasHammer && 'the Bell Hammer (Smithy Lane)', !hasCore && 'the Fusion Core (Gatehouse vault, in the Future)'].filter(Boolean);
+    if (!inv.includes('clockKey')) {
+      return step(
+        "Find the key to the Clocktower's lock.",
+        "The door only opens in the <b>Present</b>, but its key lies in the <b>Future</b> courtyard, guarded by the Warden. Stay out of its sight cone: hide behind the pillars, or slip into the Present when it turns your way. In the Present, the key's spot is inside the fountain.",
+      );
+    }
+    if (eraMissing.length) {
+      const back = f.posternOpen ? 'The postern passage past the gatehouse vault leads back west.' : 'Pull the old postern lever just past the gatehouse vault (<b>Present</b>) to open a way back west.';
+      return step('The lock needs all three Era Keys too.', `The great lock has four keyholes. You still need ${eraMissing.join(' and ')}. ${back}`);
+    }
+    return step('Unlock the Clocktower.', 'Use the keys on the Clocktower door, in the <b>Present</b>. The lock has not been made yet in the Past, and it has rusted solid in the Future.');
+  }
   // ---- Clocktower
   const missing = [];
   if (!hasDisc) missing.push('the Sun Disc (Sun Terrace, in the Past)');
@@ -131,11 +142,10 @@ export function currentGoal(game) {
   return step('Restart the Clocktower.', 'Place all three keys quickly: the Sun pedestal (<b>Past</b>), the great bell (<b>Present</b>) and the reactor socket (<b>Future</b>).');
 }
 
-function missingEarlier(hasHammer, hasRod, hasDisc = true) {
+function missingEarlier(hasHammer, hasDisc = true) {
   // (east of the gatehouse the way back is the Clocktower's postern passage, see above)
   if (!hasHammer) return step('Something\'s still missing back west.', 'You still need the Bell Hammer. Head back to Aria\'s forge in Smithy Lane.');
   if (!hasDisc) return step('Something\'s still missing back west.', 'You still need the Sun Disc from the top of the Sun Terrace, in the Past.');
-  if (!hasRod) return step('Something\'s still missing back west.', 'Don\'t forget the iron rod on Aria\'s rack in Smithy Lane. The gate winch needs it.');
   return null;
 }
 

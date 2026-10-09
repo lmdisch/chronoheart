@@ -20,11 +20,6 @@
         <div class="hud-left glass">
           <div id="hearts" aria-label="Health"></div>
           <div class="cogs"><img id="cog-icon" alt="Lost cogs" /><span id="cog-count">0/10</span></div>
-          <div id="goal" aria-live="polite">
-            <div class="goal-head"><span class="goal-label">Goal</span><button id="goal-hint-btn" type="button" aria-expanded="false" aria-controls="goal-hint">Hint</button></div>
-            <span id="goal-text"></span>
-            <span id="goal-hint" hidden></span>
-          </div>
         </div>
 
         <div id="chrono" class="locked" data-era="present" aria-label="Chronoheart">
@@ -50,7 +45,7 @@
 
         <div class="hud-right">
           <div id="inventory" aria-label="Inventory"></div>
-          <div class="hud-keys kb-only"><kbd>I</kbd> Items · <kbd>Tab</kbd> Peek · <button id="hud-controls" class="hud-key-btn" type="button"><kbd>H</kbd> Controls</button> · <kbd>Esc</kbd> Pause<span class="needs-seal"> · <kbd>R</kbd> Seal</span><span class="needs-echo"> · <kbd>V</kbd> Echo</span></div>
+          <div class="hud-keys kb-only"><kbd>I</kbd> Menu · <kbd>Tab</kbd> Peek · <button id="hud-controls" class="hud-key-btn" type="button"><kbd>H</kbd> Controls</button> · <kbd>Esc</kbd> Pause<span class="needs-seal"> · <kbd>R</kbd> Seal</span><span class="needs-echo"> · <kbd>V</kbd> Echo</span></div>
         </div>
 
         <div id="resonance" hidden>
@@ -85,14 +80,23 @@
         </div>
       </div>
 
+      <!-- the Menu: current goal (with its hint), items and favours; the game pauses while it's open -->
       <div id="inventory-panel" class="glass panel" hidden>
-        <h2>Apron Pockets</h2>
-        <div class="inv-list"></div>
-        <div class="favours" hidden>
-          <h3 class="favours-title">Favours</h3>
+        <h2>Menu</h2>
+        <section id="goal" class="menu-section" aria-live="polite">
+          <div class="goal-head"><h3 class="menu-title">Current goal</h3><button id="goal-hint-btn" type="button" aria-expanded="false" aria-controls="goal-hint">Hint</button></div>
+          <p id="goal-text"></p>
+          <p id="goal-hint" hidden></p>
+        </section>
+        <section class="menu-section">
+          <h3 class="menu-title">Apron Pockets</h3>
+          <div class="inv-list"></div>
+        </section>
+        <section class="favours menu-section" hidden>
+          <h3 class="menu-title">Favours</h3>
           <div class="favour-list"></div>
-        </div>
-        <p class="muted small"><span class="kb-only">Press <kbd>I</kbd> to close</span><span class="touch-only">Tap here to close</span></p>
+        </section>
+        <button id="btn-close-menu" class="btn primary">Back to the game</button>
       </div>
 
       <!-- Title -->
@@ -123,14 +127,14 @@
           <span class="tc-legend">Jump</span><span>Hold for a higher jump · swim upward</span>
           <span class="tc-legend">Attack</span><span>Swing your wrench</span>
           <span class="tc-legend">Roll</span><span>Dodge-roll</span>
-          <span class="tc-legend">Talk</span><span>Talk / interact. It lights up when someone is nearby. You can also tap the prompt.</span>
+          <span class="tc-legend">Interact</span><span>Talk to people and use things. It lights up when there's something to interact with. You can also tap the prompt.</span>
           <span class="tc-legend">Swipe</span><span>Swipe left to travel toward the Future, right toward the Past. Drag slowly to preview first.</span>
           <span class="tc-legend">Past · Future</span><span>Or tap the era names at the top</span>
           <span class="tc-legend">Amulet</span><span>Hold the amulet dial to peek at another era, then tap Past or Future to choose which</span>
           <span class="tc-legend needs-seal">Seal</span><span class="needs-seal">Lights up beside something that shimmers. Tap to hold it in its moment, unchanged in every later age.</span>
-          <span class="tc-legend needs-echo">Echo</span><span class="needs-echo">Tap to start recording, tap again to stop (up to 5 seconds). Your echo repeats those moves, over and over, in that age. Stand on an echo and tap <b>Dispel echo</b> to remove it.</span>
+          <span class="tc-legend needs-echo">Echo</span><span class="needs-echo">In the Present: tap to start recording, tap again to stop (up to 5 seconds). Your echo repeats those moves, over and over. Up to 3 at once. Stand on an echo and tap <b>Dispel echo</b> to remove it.</span>
           <span class="tc-legend">Dialogue</span><span>Tap anywhere to continue</span>
-          <span class="tc-legend">Hint</span><span>Stuck? Tap Hint next to your goal</span>
+          <span class="tc-legend">Menu</span><span>Your current goal (tap Hint if you're stuck), your items and your favours. The game pauses while it's open.</span>
         </div>
         <div class="controls-grid kb-only">
           <span><kbd>A</kbd><kbd>D</kbd></span><span>Move left / right</span>
@@ -139,13 +143,13 @@
           <span><kbd>Shift</kbd></span><span>Sprint</span>
           <span><kbd>C</kbd></span><span>Dodge-roll</span>
           <span><kbd>X</kbd></span><span>Wrench attack</span>
-          <span><kbd>F</kbd></span><span>Talk / interact</span>
+          <span><kbd>F</kbd></span><span>Interact: talk to people, use things</span>
           <span><kbd>Q</kbd> / <kbd>E</kbd></span><span>Travel one era back / forward</span>
           <span><kbd>Tab</kbd></span><span>Hold to peek at another era (Q/E chooses which)</span>
           <span class="needs-seal"><kbd>R</kbd></span><span class="needs-seal">Stasis Seal: hold something in its moment, unchanged in every later age</span>
-          <span class="needs-echo"><kbd>V</kbd></span><span class="needs-echo">Echo: start / stop recording (up to 5 seconds); the echo replays it in that age. Stand on an echo and press <kbd>F</kbd> to dispel it</span>
-          <span><kbd>I</kbd></span><span>Inventory</span>
-          <span><kbd>G</kbd></span><span>Show a hint for your current goal</span>
+          <span class="needs-echo"><kbd>V</kbd></span><span class="needs-echo">Echo (Present only): start / stop recording, up to 5 seconds; up to 3 echoes. Stand on one and press <kbd>F</kbd> to dispel it</span>
+          <span><kbd>I</kbd></span><span>Menu: your goal, items and favours (pauses the game)</span>
+          <span><kbd>G</kbd></span><span>Open the Menu with the hint for your goal showing</span>
           <span><kbd>H</kbd></span><span>Show these controls</span>
           <span><kbd>Esc</kbd></span><span>Pause</span>
         </div>

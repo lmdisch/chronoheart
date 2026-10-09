@@ -75,20 +75,33 @@ export const L = {
   gorgeX0: 213, gorgeX1: 222,
   pastCliffX0: 223, pastCliffX1: 229,
   farWallX0: 225, farWallX1: 226,
-  // The Chord Vault: three pressure plates, one per era, and a door that needs all of them
-  chordX0: 230,
-  vaultDoorX0: 250, vaultDoorX1: 252,
-  towerX0: 254,
+  // The Echo Gallery (Present): buttons raise stone steps up a 4-high wall, while held
+  echoX0: 230,
+  galleryX0: 246, galleryX1: 252,
+  // The Warden's Courtyard: the Clocktower key, in the Future, on a patrolled path
+  yardX0: 254,
+  keySpot: { x: 273.5, z: 2.5 },
+  towerX0: 284,
   cameraBounds: [10, W - 11],
 };
 /** Tower details were laid out when the Clocktower started at x = 182; this shifts them. */
 const TO = L.towerX0 - 182;
 
-/** Pressure plates in the Chord Vault. y is the height of the surface the plate sits on. */
-export const CHORD_PLATES = [
-  { era: P, x: 237, z: 5, y: 0 },
-  { era: M, x: 242, z: 1, y: 2 },
-  { era: F, x: 246, z: 3, y: 0 },
+/**
+ * The Echo Gallery: three stone steps up a 4-high wall. Each step is raised by a row of three
+ * numbered buttons (rows on the ground, on step 1 and on step 2). A button only lights if the one
+ * before it in its row is lit, and stays lit for a few seconds after you step off; the step stands
+ * while its whole row is lit. So an echo has to walk the row in order, 1 -> 2 -> 3, within its loop.
+ */
+export const ECHO_STEPS = [
+  { x0: 240, x1: 241, z0: 1, z1: 5, h: 1 },
+  { x0: 242, x1: 243, z0: 1, z1: 5, h: 2 },
+  { x0: 244, x1: 245, z0: 1, z1: 5, h: 3 },
+];
+export const ECHO_BUTTONS = [
+  ...[1, 3, 5].map((z, order) => ({ x: 237, z, y: 0, step: 0, order })), // on the ground
+  ...[1, 3, 5].map((z, order) => ({ x: 240, z, y: 1, step: 1, order })), // on step 1
+  ...[5, 3, 1].map((z, order) => ({ x: 242, z, y: 2, step: 2, order })), // on step 2 (runs the other way)
 ];
 
 /** Things the Stasis Seal can hold in their moment. */
@@ -111,7 +124,8 @@ export const AREAS = [
   { x: 157, name: 'The Gatehouse' },
   { x: L.millX0, name: 'Millrace Hollow' },
   { x: L.crossingX0, name: "Tamsin's Crossing" },
-  { x: L.chordX0, name: 'The Chord Vault' },
+  { x: L.echoX0, name: 'The Echo Gallery' },
+  { x: L.yardX0, name: "The Warden's Courtyard" },
   { x: L.towerX0, name: 'The Clocktower' },
 ];
 
@@ -127,6 +141,7 @@ export const CHECKPOINTS = [
   { id: 7, x: 207.5, z: 1.2 },
   { id: 8, x: 231.5, z: 1.2 },
   { id: 9, x: L.towerX0 + 2.5, z: 1.2 },
+  { id: 10, x: L.yardX0 + 1.5, z: 1.2 },
 ];
 
 /** Cells the spring wears away through the Present cliff (shared with the time-lapse). */
@@ -896,7 +911,8 @@ function smithy(world) {
   for (let i = 0; i < 6; i++) b.glow(118.6 + i * 1.05, 3.5, 0.18, 0.7, 0.5, 0.02, i % 2 ? NEON.cyan : NEON.amber);
   b.light(121, 3, 1.4, NEON.magenta, 8, 10, 0);
   b.deco(118, 0, 0.1, 1.4, 1.0, 0.8, 0x4a5468);
-  b.glow(118.2, 1.0, 0.2, 1.0, 0.4, 0.6, NEON.amber); // display case with the old hammer
+  b.deco(118.1, 1.0, 0.15, 1.2, 0.05, 0.7, 0x1a1e28); // display case where the hammer rests
+  for (const oz of [0.15, 0.79]) b.glow(118.1, 1.02, oz, 1.2, 0.04, 0.06, NEON.amber);
   filler(b, F, 126, 129, 64);
 }
 
@@ -920,12 +936,17 @@ function terrace(world) {
     b.glow(tx + 0.4, 0.0, tz + 0.4, 0.2, 0.03, 0.2, 0x3ad0c0);
     b.light(tx + 0.5, 0.6, tz + 0.5, 0x3ad0c0, 3, 4, 0.1);
   }
+  // the Sun Disc's dais: dark stone with a thin glowing rim, so the gold disc stands out
   b.solid(150, 3, 0, 152, 3, 1, jitter(C.sandDark));
-  b.glow(150.2, 4.0, 0.2, 2.6, 0.06, 1.6, 0xffcf5a);
-  b.light(151.5, 5, 1.5, 0xffd070, 8, 10, 0.1);
+  b.deco(150.15, 4.0, 0.15, 2.7, 0.05, 1.7, 0x2a1c12);
+  for (const [ox, oz, sx, sz] of [[0.15, 0.15, 2.7, 0.06], [0.15, 1.79, 2.7, 0.06]]) b.glow(150 + ox, 4.02, oz, sx, 0.04, sz, 0xffcf5a);
+  b.light(151.5, 6.2, 2.2, 0xffd070, 3.5, 7, 0.1);
   b.solid(146, 3, -3, 155, 8, -1, jitter(C.sandstone));
-  b.glow(149, 5, 0, 5, 2.6, 0.04, 0xe8b040);
-  b.deco(149.6, 5.3, 0.06, 3.8, 2.0, 0.04, 0x6a4a1a);
+  // carved sun mural behind it: dark relief with a thin gold outline (it used to glow,
+  // which hid the disc against it)
+  b.deco(149, 5, 0, 5, 2.6, 0.04, 0x5a3a1a);
+  b.deco(149.6, 5.3, 0.06, 3.8, 2.0, 0.04, 0x3a2410);
+  for (const [ox, oy, sx, sy] of [[0, 0, 5, 0.08], [0, 2.52, 5, 0.08], [0, 0, 0.08, 2.6], [4.92, 0, 0.08, 2.6]]) b.glow(149 + ox, 5 + oy, 0.07, sx, sy, 0.03, 0xe8b040);
   wallTorch(b, 147, 4.3, 0.0);
   wallTorch(b, 154, 4.3, 0.0);
   b.deco(136.1, 0, 0.0, 0.8, 0.06, 0.8, 0x2a1a10);
@@ -954,15 +975,18 @@ function terrace(world) {
     build: (b, era, s) => {
       const { x, z } = s.blockPos;
       const t = L.pillarTarget;
-      if (x !== t.x || z !== t.z) {
+      // the pillar only rises on the foundation: anywhere else the ancient block is long gone,
+      // so the terrace can't be climbed until the block is set in place in the Past
+      if (x === t.x && z === t.z) {
+        b.solid(x, 0, z, x, 1, z, jitter(era === M ? C.stone : [0x7a7672, 0x6a6662]));
+        b.deco(x - 0.05, 1.9, z - 0.05, 1.1, 0.12, 1.1, era === M ? C.stone[3] : 0x5a5652);
+      } else {
         // the old foundation, waiting for a pillar
         b.deco(t.x + 0.04, 0, t.z + 0.04, 0.92, 0.12, 0.92, era === M ? C.sandstone[0] : 0x4a4652);
         b.deco(t.x + 0.3, 0.12, t.z + 0.3, 0.4, 0.02, 0.4, era === M ? 0x2a8a80 : 0x1a2a3a); // worn glyph, same as the block's
         if (era === F) b.glow(t.x + 0.1, 0.12, t.z + 0.1, 0.8, 0.02, 0.8, 0x3ad0c0);
       }
-      b.solid(x, 0, z, x, 1, z, jitter(era === M ? C.stone : [0x7a7672, 0x6a6662]));
-      b.deco(x - 0.05, 1.9, z - 0.05, 1.1, 0.12, 1.1, era === M ? C.stone[3] : 0x5a5652);
-      if (era === M && !(x === L.benchCell.x && z === L.benchCell.z)) {
+      if (era === M) {
         b.solid(L.benchCell.x, 0, L.benchCell.z, L.benchCell.x, 0, L.benchCell.z, jitter(C.wood));
         b.deco(L.benchCell.x - 0.1, 0.95, L.benchCell.z - 0.05, 1.2, 0.1, 1.1, C.wood[2]);
       }
@@ -984,13 +1008,12 @@ function gatehouse(world) {
   b.deco(163.4, 2, 6.98, 1.2, 2.4, 0.06, 0xb22a2a);
   b.solid(174, 0, ZMIN, 181, 12, -1, jitter(C.stone));
   b.solid(L.rubbleX0, 0, ZMIN, 173, 8, -1, jitter(C.stone));
-  b.deco(167.2, 0, 0.1, 0.6, 1.1, 0.6, 0x5a3a22); // winch drum base
   filler(b, M, 157, 162, 81);
   // FUTURE: security corridor + vault
   b = world.staticBuilder(F);
   b.solid(160, 0, 0, 173, 4, 1, jitter(C.metal));
-  // the front (camera-side) wall is kept low so the corridor, the Sentinel and the
-  // fallen gate stay visible; at 2 high it still can't be jumped
+  // the front (camera-side) wall is kept low so the corridor, its drones and the
+  // vault stay visible; at 2 high it still can't be jumped
   b.solid(160, 0, 5, 173, 1, 6, jitter(C.metal));
   b.solid(160, 0, ZMIN, 173, 9, -1, jitter(C.metalL));
   for (let x = 160; x <= 173; x += 2) {
@@ -1003,8 +1026,9 @@ function gatehouse(world) {
   b.solid(174, 0, 6, 181, 1, 6, jitter(C.metalL));
   b.solid(174, 0, ZMIN, 181, 10, -1, jitter(C.metalL));
   b.solid(177, 0, 3, 179, 0, 3, jitter(C.panel));
-  b.glow(177, 1.0, 3, 3, 0.06, 1, NEON.cyan);
-  b.light(178.5, 2, 3.5, NEON.cyan, 10, 9, 0);
+  b.deco(177.05, 1.0, 3.05, 2.9, 0.05, 0.9, 0x141a24);
+  for (const oz of [3.05, 3.89]) b.glow(177.05, 1.02, oz, 2.9, 0.04, 0.06, NEON.cyan);
+  b.light(178.5, 3.2, 4.2, NEON.cyan, 4, 7, 0);
   b.glow(174.05, 1, 0.98, 7.9, 0.08, 0.04, NEON.cyan);
   filler(b, F, 157, 159, 82);
 
@@ -1041,26 +1065,6 @@ function gatehouse(world) {
         b.deco(181.92, 0, 2.2, 0.1, 3.4, 2.6, C.wood[0]);
         b.deco(181.88, 1.5, 2.0, 0.12, 0.3, 3.0, 0x3a3a42);
       }
-    },
-  });
-  world.addFeature({
-    id: 'portcullis', eras: [M], key: (s) => String(!!s.flags.gateDown),
-    build: (b, era, s) => {
-      const down = !!s.flags.gateDown;
-      const y0 = down ? 0 : 3.0;
-      for (let z = 2; z <= 4; z++) for (let i = 0; i < 3; i++) b.deco(L.gateX + 0.42, y0, z + i * 0.33 + 0.1, 0.16, down ? 4 : 1.1, 0.1, 0x3a3a42);
-      for (let y = 0; y < (down ? 4 : 1); y++) b.deco(L.gateX + 0.42, y0 + y + 0.4, 2, 0.16, 0.12, 3, 0x4a4a52);
-      if (down) b.barrier(L.gateX, 0, 2, L.gateX, 3, 4);
-      // chain to the winch
-      b.deco(166.0, 3.5, 1.4, 1.4, 0.06, 0.06, 0x6a6a72);
-    },
-  });
-  world.addFeature({
-    id: 'grille', eras: [F], key: (s) => String(!!s.flags.gateDown),
-    build: (b, era, s) => {
-      if (!s.flags.gateDown) return;
-      b.solid(L.gateX, 0, 2, L.gateX, 0, 4, jitter(C.rust));
-      for (let z = 2; z <= 4; z++) b.deco(L.gateX + 0.3, 1, z + 0.4, 0.15, 0.4 + hash3(z, 1, 1) * 0.5, 0.15, C.rust[z % 3]);
     },
   });
 }
@@ -1274,7 +1278,7 @@ function crossing(world) {
   for (let i = 0; i < 5; i++) b.deco(208.6 + i * 0.7, 0, 4.3 + hash3(i, 1, 9) * 1.5, 0.6, 0.4 + hash3(i, 2, 9) * 0.7, 0.6, rng5(i));
   b.glow(L.gorgeX0 - 1, 0.02, 1.9, 0.9, 0.04, 3.2, 0xff3040); // "bridge out" floor marking
   filler(b, F, L.crossingX0, L.gorgeX0 - 1, 105);
-  filler(b, F, L.farWallX1 + 1, L.chordX0 + 1, 106);
+  filler(b, F, L.farWallX1 + 1, L.echoX0 + 1, 106);
 
   world.addFeature({
     id: 'bridgeP', eras: [P], key: (s) => `${!!s.flags.bridgeBuilt},${!!s.flags.bridgeSealed}`,
@@ -1300,53 +1304,106 @@ function crossing(world) {
 const rng5 = (i) => [0x5b6472, 0x8a4a2a, 0x3a404c, 0x7a8494, 0x9a5a32][i % 5];
 
 // ---------------------------------------------------------------------------
-// The Chord Vault
+// The Echo Gallery
 // ---------------------------------------------------------------------------
-// The vault door opens only when all three plates are pressed at the same moment, one plate
-// in each age. You can only be in one age at a time, so you leave echoes on the other plates.
-function chordVault(world) {
+// A 4-high gallery wall. In the Present, three buttons each raise a stone step while something
+// stands on them, and echoes (which only form in the Present) can stand there for you. In the
+// Past and the Future the wall is simply there. Once you've climbed it, you kick down a rope
+// ladder so the way back west never needs echoes again.
+function echoGallery(world) {
   const pals = [C.sandstone, C.stone, C.metalL];
-  const tones = [0xffc060, 0xbff6ff, 0xff4fd8];
   for (let era = 0; era < 3; era++) {
     const b = world.staticBuilder(era);
-    const pal = jitter(pals[era]);
-    for (let x = L.vaultDoorX0; x <= L.vaultDoorX1; x++)
-      for (let y = 0; y <= 11; y++)
-        for (let z = ZMIN; z <= 6; z++) if (!(z >= 2 && z <= 4 && y <= 3)) b.setCell(x, y, z, T.SOLID, pal(x, y, z));
-    // three tones carved above the door; the lit one belongs to this age
-    for (let i = 0; i < 3; i++) {
-      const col = tones[i];
-      if (i === era) b.glow(L.vaultDoorX0 - 0.04, 5 + i * 1.2, 2.2, 0.06, 0.5, 2.6, col);
-      else b.deco(L.vaultDoorX0 - 0.04, 5 + i * 1.2, 2.2, 0.06, 0.5, 2.6, era === F ? 0x3a404c : 0x5a4a3a);
-    }
+    b.solid(L.galleryX0, 0, ZMIN, L.galleryX1, 3, 6, jitter(pals[era]));
+    b.solid(L.galleryX0, 4, ZMIN, L.galleryX1, 9, -1, jitter(pals[era])); // the gallery's back wall
+    if (era === F) b.glow(L.galleryX0 - 0.03, 3.8, 0, 0.05, 0.12, 7, NEON.cyan);
   }
-  // PAST: a temple forecourt
+  // PAST / FUTURE: filler only, nothing to climb
   let b = world.staticBuilder(P);
-  wallTorch(b, L.vaultDoorX0 - 0.1, 1.5, 1.2);
-  wallTorch(b, L.vaultDoorX0 - 0.1, 1.5, 5.6);
-  filler(b, P, L.pastCliffX1 + 1, L.vaultDoorX0 - 1, 111);
-  // PRESENT: the platform the Present plate sits on
-  b = world.staticBuilder(M);
-  b.solid(241, 0, 0, 243, 1, 2, jitter(C.stone));
-  b.solid(240, 0, 0, 240, 0, 2, jitter(C.stone));
-  filler(b, M, L.farWallX1 + 1, L.vaultDoorX0 - 1, 113);
-  // FUTURE: the archive pedestal that holds the Echo Lens
+  filler(b, P, L.pastCliffX1 + 1, L.galleryX0 - 1, 111);
+  wallTorch(b, L.galleryX0 - 0.1, 1.5, 3.0);
   b = world.staticBuilder(F);
-  b.deco(234.1, 0, 0.1, 0.8, 0.9, 0.7, 0x3a404c);
-  b.glow(234.1, 0.9, 0.1, 0.8, 0.04, 0.7, NEON.magenta);
-  b.light(234.5, 1.6, 1.0, NEON.magenta, 4, 5, 0);
-  filler(b, F, L.chordX0 + 2, L.vaultDoorX0 - 1, 115);
+  filler(b, F, L.echoX0 + 2, L.galleryX0 - 1, 115);
+  // PRESENT: Eugene's lectern by the entrance, and the sockets the steps rise out of
+  b = world.staticBuilder(M);
+  b.deco(233.15, 0, 0.1, 0.7, 1.0, 0.6, C.wood[1]);
+  b.deco(233.05, 1.0, 0.05, 0.9, 0.08, 0.7, C.wood[2]);
+  for (const s of ECHO_STEPS) b.deco(s.x0 + 0.05, 0, s.z0 + 0.05, s.x1 - s.x0 + 0.9, 0.04, s.z1 - s.z0 + 0.9, 0x3a3a42);
+  wallTorch(b, L.galleryX0 - 0.1, 1.5, 0.4);
+  wallTorch(b, L.galleryX0 - 0.1, 1.5, 6.2);
+  filler(b, M, L.farWallX1 + 1, L.galleryX0 - 1, 113);
 
   world.addFeature({
-    id: 'chordDoor', eras: [P, M, F], key: (s) => String(!!s.flags.chordOpen),
+    id: 'galleryLadder', eras: [P, M, F], key: (s) => String(!!s.flags.galleryClimbed),
     build: (b, era, s) => {
-      if (!s.flags.chordOpen) {
-        const pal = jitter(era === F ? C.panel : C.sandDark);
-        b.solid(L.vaultDoorX0, 0, 2, L.vaultDoorX1, 3, 4, pal);
-        b.glow(L.vaultDoorX0 - 0.04, 1.9, 2.0, 0.06, 0.08, 3.0, tones[era]);
-      } else {
-        b.glow(L.vaultDoorX0 - 0.04, 3.95, 1.95, 0.06, 0.1, 3.1, tones[era]);
-        b.light(L.vaultDoorX0 + 1, 1.5, 3.5, tones[era], 6, 8, 0);
+      if (!s.flags.galleryClimbed) return;
+      b.ladder(L.galleryX0 - 1, 0, 0, L.galleryX0 - 1, 3, 0);
+      const rope = era === F ? 0x8a94a4 : 0xc8a060;
+      for (let y = 0; y < 4; y++) b.deco(L.galleryX0 - 0.9, y + 0.4, 0.1, 0.8, 0.08, 0.12, rope);
+      b.deco(L.galleryX0 - 0.9, 0, 0.1, 0.06, 4, 0.1, rope);
+      b.deco(L.galleryX0 - 0.16, 0, 0.1, 0.06, 4, 0.1, rope);
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// The Warden's Courtyard
+// ---------------------------------------------------------------------------
+// The Clocktower's lock only turns in the Present, but its key lies in the Future courtyard,
+// where the Warden patrols around it. In the Present that spot is inside a fountain, so you
+// can't just pop into the Future on top of the key: you have to get there in the Future,
+// out of the Warden's sight, behind its pillars.
+export const WARDEN_PATH = [[267.5, 0.9], [279.5, 0.9], [279.5, 6.1], [267.5, 6.1]];
+const YARD_PILLARS = [[260, 1], [260, 5], [264, 3], [270, 4], [276, 4], [277, 1]]; // Future cover, 2 high
+
+function wardenYard(world) {
+  const k = L.keySpot;
+  // PAST: a jungle clearing
+  let b = world.staticBuilder(P);
+  filler(b, P, L.yardX0 + 1, L.towerX0 - 1, 121);
+  for (let i = 0; i < 10; i++) b.deco(L.yardX0 + 2 + hash3(i, 3, 7) * 26, 0, 6.2 + hash3(i, 4, 7) * 0.6, 0.5, 0.4 + hash3(i, 5, 7) * 0.5, 0.5, C.jungle[i % 5]);
+  // PRESENT: a courtyard with a fountain over the key's spot
+  b = world.staticBuilder(M);
+  b.solid(272, 0, 1, 275, 1, 4, jitter(C.stone));
+  b.deco(272.3, 2.0, 1.3, 3.4, 0.04, 3.4, 0x4a90c8); // water in the basin
+  b.solid(273, 2, 2, 274, 2, 3, jitter(C.stone));
+  b.glow(273.4, 3.0, 2.4, 1.2, 0.05, 1.2, 0x9fe0ff);
+  for (const x of [259, 266, 280]) lampPost(b, x, 0, M);
+  filler(b, M, L.yardX0 + 1, L.towerX0 - 1, 123);
+  // FUTURE: the patrolled yard, its cover pillars, and the key's pedestal
+  b = world.staticBuilder(F);
+  for (const [x, z] of YARD_PILLARS) {
+    b.solid(x, 0, z, x, 1, z, jitter(C.metalL));
+    b.glow(x + 0.1, 2.0, z + 0.1, 0.8, 0.04, 0.8, NEON.magenta);
+  }
+  for (const [x, z] of WARDEN_PATH) b.glow(x - 0.2, 0.0, z - 0.2, 0.4, 0.03, 0.4, 0xff3040); // patrol markers
+  b.deco(k.x - 0.35, 0, k.z - 0.35, 0.7, 0.75, 0.7, 0x3a404c);
+  b.deco(k.x - 0.33, 0.75, k.z - 0.33, 0.66, 0.05, 0.66, 0x141a24);
+  for (const oz of [-0.33, 0.27]) b.glow(k.x - 0.33, 0.77, k.z + oz, 0.66, 0.04, 0.06, NEON.amber);
+  b.light(k.x, 2.6, k.z + 0.8, NEON.amber, 3, 6, 0);
+  filler(b, F, L.yardX0 + 1, L.towerX0 - 1, 125);
+
+  // The Clocktower door. Only the Present one has a lock that still turns.
+  world.addFeature({
+    id: 'towerDoor', eras: [P, M, F], key: (s) => String(!!s.flags.towerUnlocked),
+    build: (b, era, s) => {
+      const x = L.towerX0;
+      if (era === M && s.flags.towerUnlocked) {
+        // swung open
+        b.deco(x + 0.1, 0, 0.1, 0.9, 3.9, 0.15, C.wood[0]);
+        b.deco(x + 0.1, 0, 6.75, 0.9, 3.9, 0.15, C.wood[0]);
+        b.light(x + 1, 2, 3.5, 0xffd8a0, 5, 8, 0);
+        return;
+      }
+      const pal = era === P ? C.sandDark : era === M ? C.wood : C.rust;
+      b.solid(x, 0, 0, x, 3, 6, jitter(pal));
+      if (era === M) {
+        // the great lock: brass plate and keyhole
+        b.deco(x - 0.08, 1.2, 3.0, 0.1, 1.0, 1.0, 0xc9a44a);
+        b.deco(x - 0.12, 1.45, 3.4, 0.06, 0.45, 0.2, 0x1a1208);
+        b.glow(x - 0.1, 2.3, 3.1, 0.04, 0.06, 0.8, 0xffd070);
+      } else if (era === F) {
+        b.deco(x - 0.08, 1.2, 3.0, 0.1, 1.0, 1.0, 0x5a3a2a); // rusted solid
       }
     },
   });
@@ -1441,20 +1498,24 @@ export const SPAWNS = [
   { type: 'interact', id: 'glyphMill', era: P, x: L.millX0 + 6.5, y: 0, z: 0.5, prompt: 'Rewind glyph', resets: 'boulder' },
   { type: 'interact', id: 'sluice', era: M, x: L.rimX + 0.5, y: 3, z: 5.6, prompt: 'Sluice gate' },
   { type: 'interact', id: 'satchel', era: M, x: 208.5, y: 0, z: 0.6, prompt: "Eugene's satchel", icon: 'satchel', goneFlag: 'hasSeal' },
-  { type: 'interact', id: 'echoLens', era: F, x: 234.5, y: 1, z: 0.5, prompt: 'Archive pedestal', icon: 'lens', goneFlag: 'hasEcho' },
+  { type: 'interact', id: 'echoLens', era: M, x: 233.5, y: 1, z: 0.5, prompt: "Eugene's lectern", icon: 'lens', goneFlag: 'hasEcho' },
+  { type: 'interact', id: 'lockM', era: M, x: L.towerX0 - 0.6, y: 0, z: 3.5, prompt: 'Clocktower door' },
+  { type: 'interact', id: 'lockP', era: P, x: L.towerX0 - 0.6, y: 0, z: 3.5, prompt: 'Stone door' },
+  { type: 'interact', id: 'lockF', era: F, x: L.towerX0 - 0.6, y: 0, z: 3.5, prompt: 'Rusted door' },
   { type: 'interact', id: 'postern', era: M, x: 182.7, y: 0, z: 5.4, prompt: 'Old postern lever' },
-  { type: 'interact', id: 'winch', era: M, x: 167.5, y: 0, z: 0.6, prompt: 'Gate winch' },
   { type: 'interact', id: 'socketSun', era: P, x: 186.5 + TO, y: 1, z: 1.5, prompt: 'Sun pedestal' },
   { type: 'interact', id: 'socketBell', era: M, x: 192.5 + TO, y: 4, z: 1.5, prompt: 'Great bell' },
   { type: 'interact', id: 'socketCore', era: F, x: 197.5 + TO, y: 1, z: 3.5, prompt: 'Reactor socket' },
 
   // Pickups (items)
   { type: 'pickup', id: 'acorn', era: M, x: 85.5, y: 2.4, z: 1.5, item: 'acorn' },
-  { type: 'pickup', id: 'rod', era: M, x: 114.5, y: 1.1, z: 0.6, item: 'rod' },
-  { type: 'pickup', id: 'disc', era: P, x: 151.5, y: 4.5, z: 1.0, item: 'disc' },
-  { type: 'pickup', id: 'core', era: F, x: 178.5, y: 1.6, z: 3.5, item: 'core' },
+  { type: 'pickup', id: 'disc', era: P, x: 151.5, y: 4.7, z: 1.0, item: 'disc' },
+  { type: 'pickup', id: 'core', era: F, x: 178.5, y: 1.8, z: 3.5, item: 'core' },
+  // the Bell Hammer, tempered for three centuries, waits on Lillian's display case
+  { type: 'pickup', id: 'hammerGift', era: F, x: 118.7, y: 1.8, z: 0.5, item: 'hammer', needs: 'hammerLeft' },
   { type: 'pickup', id: 'wheel', era: F, x: 185.05, y: 1.5, z: 4.05, item: 'wheel' },
   { type: 'pickup', id: 'cable', era: F, x: 210.5, y: 1.3, z: 5.2, item: 'cable' },
+  { type: 'pickup', id: 'clockKey', era: F, x: L.keySpot.x, y: 1.3, z: L.keySpot.z, item: 'clockKey' },
 
   // Lost cogs
   { type: 'cog', id: 'cogP1', era: P, x: 24.5, y: 3.7, z: 1.5 },
@@ -1488,7 +1549,9 @@ export const SPAWNS = [
   { type: 'enemy', kind: 'drone', era: F, x: 135, z: 2, range: [132, 141] },
   { type: 'enemy', kind: 'drone', era: F, x: 186, z: 2.5, range: [183, 188] },
   { type: 'enemy', kind: 'drone', era: F, x: 210, z: 3, range: [207, 212] },
-  { type: 'sentinel', era: F, x: 170, z: 3.5, range: [167.5, 172.5] },
+  { type: 'warden', era: F, path: WARDEN_PATH },
+  { type: 'enemy', kind: 'drone', era: F, x: 163, z: 3, range: [161, 167] },
+  { type: 'enemy', kind: 'drone', era: F, x: 171, z: 3.5, range: [168, 173] },
 ];
 
 // ---------------------------------------------------------------------------
@@ -1508,7 +1571,8 @@ export function buildLevel(world, state) {
   gatehouse(world);
   millHollow(world);
   crossing(world);
-  chordVault(world);
+  echoGallery(world);
+  wardenYard(world);
   tower(world);
   world.finalizeStatic();
   world.refreshFeatures(state);

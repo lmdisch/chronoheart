@@ -8,7 +8,7 @@ export const ITEMS = {
   acorn: { name: 'Acorn', desc: "Megan's finest acorn. It just needs time to grow." },
   hammerBroken: { name: 'Cracked Bell Hammer', desc: 'Star-iron that needs a lifetime of tempering.' },
   hammer: { name: 'Bell Hammer', desc: 'Era Key of the Present. Tempered for three hundred years.', key: true },
-  rod: { name: 'Iron Rod', desc: 'A sturdy iron rod. It might fit a winch.' },
+  rod: { name: 'Iron Rod', desc: 'A sturdy iron rod.' }, // no longer used; kept so old saves still show it
   disc: { name: 'Sun Disc', desc: 'Era Key of the Past. Warm to the touch.', key: true },
   core: { name: 'Fusion Core', desc: 'Era Key of the Future. It hums with stored time.', key: true },
   starChart: { name: 'Ancient Star Chart', desc: 'Borrowed from the Future archive. It belongs to Samaria, the Sun-Keeper.' },
@@ -16,6 +16,7 @@ export const ITEMS = {
   medallion: { name: "Aria's Medallion", desc: "A smith's medallion stamped with the family mark. For Lillian." },
   wheel: { name: 'Brass Sluice Wheel', desc: "The old mill's sluice wheel, kept in a museum for three hundred years. It winds the sluice gate shut." },
   cable: { name: 'Steel Cable', desc: 'A spool of cable from the scrapyard. It will not fray or rot for a very, very long time.' },
+  clockKey: { name: 'Escapement Key', desc: "The key to the Clocktower's great lock. Only a lock that still turns will take it.", showcase: true },
 };
 
 /** Kindness side quests. `start` is the flag set when the favour is asked. */
@@ -142,14 +143,13 @@ function npcLines(game, id) {
           b('Then she should have this. My mother stamped our mark in it. Tell her to wear it at the bench.'),
           { give: 'medallion', flag: 'medallionGiven' },
         ];
-      if (f.hammerLeft) return [b("It's in the vault now. My grandkids' grandkids can fish it out, eh?"), b('And take that iron rod off the rack if you need it. The old gate winch lost its handle years ago.')];
+      if (f.hammerLeft) return [b("It's in the vault now. My grandkids' grandkids can fish it out, eh?")];
       if (inv.includes('hammerBroken')) return [b("If you know a way to give it a few centuries, my quench-vault's right there.")];
       return [
         b("Eugene's apprentice! You've got his look, like you're late for something that hasn't happened yet."),
         b('The Tower\'s bell hammer cracked last winter. Eugene brought it to me, but tempering star-iron properly takes a lifetime in the quench-vault. Longer than I\'ve got left.'),
         b("Take it. If you know a way to buy it a few centuries, you're welcome to use my vault."),
         { give: 'hammerBroken' },
-        b('Oh, and grab that iron rod off the rack if you need it. The old gate winch lost its handle years back.'),
       ];
     }
     case 'callie': {
@@ -176,8 +176,7 @@ function npcLines(game, id) {
         return [
           k('Wait. Glowing amulet. Dark hair in a bun. Goggles...'),
           k("Family legend says a girl like you would come for THE hammer. It's Aria's last masterwork, and it's been tempering in her vault for three hundred years."),
-          k("It's been waiting for you. Go on, take it."),
-          { give: 'hammer', taken: 'hammerGift' },
+          k("It's been waiting for you, right there on the display case. Go on, take it."),
           ...(f.keepsakeQuest ? [] : (f.keepsakeQuest = true, [...wish, { favour: 'keepsake' }])),
         ];
       if (!f.keepsakeQuest) {
@@ -190,7 +189,7 @@ function npcLines(game, id) {
       return [{ who: 'brn', name: 'BR-4N', text: 'BZZT. BR-4N ONLINE. LILLIAN SAYS I AM NOT ALLOWED TO HUG CUSTOMERS.' }];
     case 'sheng': {
       const g = S('sheng', 'Sheng the Gatekeeper');
-      return [g('The road past this gate collapsed in the quake a hundred years ago. Nothing but rubble now.'), g("The winch? Its handle's gone missing. Any decent iron rod would do."), g("My grandsire always said the future's wide open. Ha! Whatever that means.")];
+      return [g('The road past this gate collapsed in the quake a hundred years ago. Nothing but rubble now.'), g("My grandsire always said the future's wide open. Ha! Whatever that means.")];
     }
     case 'hobb': {
       const h = S('hobb', 'Hobb the Miller');
@@ -259,6 +258,9 @@ export async function talk(game, npc) {
   npc.talking = false;
   if (npc.id === 'tick') game.state.flags.metTick = true;
 }
+
+/** "a", "a and b", "a, b and c" */
+const listOf = (xs) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
 
 export async function interact(game, ent) {
   const s = game.state, f = s.flags, inv = s.inventory;
@@ -411,34 +413,45 @@ export async function interact(game, ent) {
       game.save();
       return;
     case 'echoLens':
-      if (f.hasEcho) return say(N('"EXHIBIT 0091: ON LOAN TO V., APPRENTICE. PLEASE ENJOY."'));
+      if (f.hasEcho) return say(N("Eugene's lectern. A scrawled diagram of three stone steps, and the words: \"Be in three places at once.\""));
       await say([
-        N('The archive pedestal flickers awake.'),
-        N('"EXHIBIT 0091: THE ECHO LENS. RECORDS A TRAVELLER\'S MOVEMENTS AND REPLAYS THEM, OVER AND OVER, IN THE AGE WHERE THEY WERE MADE. DONATED BY E. THE CLOCKMAKER."'),
-        Wr('Eugene again! He really did think of everything.'),
+        N("A lectern stands by the gallery wall, and on it, Eugene's handwriting:"),
+        N('"Vivienne. The Gallery steps rise only while their buttons are held. I could never hold three at once... but you can. This lens lets the Chronoheart remember you: where you stood, how you moved. ~E."'),
+        Wr('A lens that remembers me... so I can leave a copy of myself standing on a button?'),
         N('The lens clicks neatly into the Chronoheart.'),
       ]);
       game.abilities.unlock('echo');
       game.save();
       return;
-    case 'winch':
-      if (!f.winchFixed) {
-        if (!inv.includes('rod')) return say([N("The winch's handle is missing. Some kind of iron rod might fit.")]);
-        game.removeItem('rod');
-        f.winchFixed = true;
-        await say(N('You slot the iron rod into the winch. A perfect fit.'));
+    case 'lockM': {
+      if (f.towerUnlocked) return say(N('The great door stands open.'));
+      // four keyholes: the Escapement Key, and one for each Era Key
+      const need = [['clockKey', 'a many-toothed key'], ['disc', 'a sun'], ['hammer', 'a bell hammer'], ['core', 'a power core']];
+      const missing = need.filter(([it]) => !inv.includes(it));
+      if (missing.length) {
+        return say([
+          N("The Clocktower's great lock has four keyholes: one for a many-toothed key, and three shaped like a sun, a bell hammer and a power core."),
+          Wr(missing.length === 4 ? "I don't have anything that fits yet." : `I'm still missing ${missing.length === 1 ? 'the one' : 'the ones'} shaped like ${listOf(missing.map(([, d]) => d))}.`),
+        ]);
       }
-      f.gateDown = !f.gateDown;
+      game.removeItem('clockKey');
+      f.towerUnlocked = true;
+      audio.sfx('lever');
       audio.sfx('gate');
-      game.renderer.shake = 0.8;
+      game.renderer.shake = 0.5;
       game.refreshWorld();
-      game.hud.toast(f.gateDown ? 'The portcullis crashes down.' : 'The portcullis grinds back up.');
-      if (f.gateDown && !f.gateHint) {
-        f.gateHint = true;
-        await game.timelapse({ to: ERA.FUTURE, focus: [165.5, 1, 3], years: 300, caption: 'The portcullis rusts where it fell...', drop: ['grille'] });
-      }
+      await say([
+        N('You fit the Sun Disc, the Bell Hammer and the Fusion Core into their keyholes. They hum together. Then the Escapement Key turns with a deep, satisfying clunk, and the great door swings open.'),
+        N('The three Era Keys come loose again in your hands: the Tower needs them inside.'),
+        Wr("Only the Present's lock still turns. Now to restart the Tower!"),
+      ]);
       game.save();
       return;
+    }
+    case 'lockP':
+      return say([N('A sealed slab of stone. There is no lock, no handle: the door has not been made yet.'), Wr("The lock doesn't exist in this age. It has to be the Present.")]);
+    case 'lockF':
+      return say([N('The great lock has rusted into one solid lump. It will never turn again.'), Wr("No key will open this one. It has to be the Present.")]);
     case 'socketSun':
     case 'socketBell':
     case 'socketCore': {

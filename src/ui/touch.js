@@ -10,7 +10,7 @@ const ICON = {
   attack: '<svg viewBox="0 0 24 24"><path d="M15.5 3.5a4.5 4.5 0 0 0-4.3 5.8L4 16.5 7.5 20l7.2-7.2a4.5 4.5 0 0 0 5.8-4.3l-2.7 2.7-2.5-.7-.7-2.5z"/></svg>',
   roll: '<svg viewBox="0 0 24 24"><path d="M12 4a8 8 0 1 0 8 8h-3a5 5 0 1 1-5-5v3l5-4.5L12 1z"/></svg>',
   talk: '<svg viewBox="0 0 24 24"><path d="M4 5h16v10H10l-5 4v-4H4z"/></svg>',
-  items: '<svg viewBox="0 0 24 24"><path d="M8 7V6a4 4 0 0 1 8 0v1h3l1 14H4L5 7zm2 0h4V6a2 2 0 0 0-4 0z"/></svg>',
+  menu: '<svg viewBox="0 0 24 24"><path d="M4 6h16v2.5H4zm0 4.75h16v2.5H4zM4 15.5h16V18H4z"/></svg>',
   help: '<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm1 14h-2v-2h2zm2.1-6.6-.9.9c-.7.7-1.2 1.3-1.2 2.7h-2v-.5c0-1.1.5-2.1 1.2-2.8l1.2-1.3A1.5 1.5 0 1 0 10.5 8.5h-2a3.5 3.5 0 1 1 6.6 1.9z"/></svg>',
   pause: '<svg viewBox="0 0 24 24"><path d="M7 5h3.5v14H7zm6.5 0H17v14h-3.5z"/></svg>',
   seal: '<svg viewBox="0 0 24 24"><path d="M6 2h12v2h-1v3.2L13.6 12l3.4 4.8V20h1v2H6v-2h1v-3.2l3.4-4.8L7 7.2V4H6zm3 2v2.6l3 4.2 3-4.2V4zm3 9.2-3 4.2V20h6v-2.6z"/></svg>',
@@ -28,11 +28,11 @@ export function prefersTouch() {
 }
 
 export class TouchControls {
-  constructor(game, { onHelp, onPause }) {
+  constructor(game, { onHelp, onMenu, onPause }) {
     this.game = game;
     this.root = document.getElementById('touch-controls');
     this.buildSwipe();
-    this.buildButtons({ onHelp, onPause });
+    this.buildButtons({ onHelp, onMenu, onPause });
     this.buildStick();
     this.bindHud();
 
@@ -92,7 +92,7 @@ export class TouchControls {
     requestAnimationFrame(() => input.release(code));
   }
 
-  buildButtons({ onHelp, onPause }) {
+  buildButtons({ onHelp, onMenu, onPause }) {
     const make = (cls, label, icon) => {
       const b = document.createElement('button');
       b.type = 'button';
@@ -106,7 +106,7 @@ export class TouchControls {
     const jump = make('tc-jump', 'Jump', ICON.jump);
     const attack = make('tc-attack', 'Attack', ICON.attack);
     const roll = make('tc-roll', 'Roll', ICON.roll);
-    const talk = make('tc-talk', 'Talk', ICON.talk);
+    const talk = make('tc-talk', 'Interact', ICON.talk);
     pad.append(talk, roll, attack, jump);
     this.hold(jump, 'Space');
     this.hold(attack, 'KeyX');
@@ -116,11 +116,11 @@ export class TouchControls {
 
     const top = document.createElement('div');
     top.className = 'tc-top';
-    const items = make('tc-small', 'Items', ICON.items);
+    const items = make('tc-small', 'Menu', ICON.menu);
     const help = make('tc-small', 'Help', ICON.help);
     const pause = make('tc-small', 'Pause', ICON.pause);
     top.append(items, help, pause);
-    this.tap(items, () => this.pulse('KeyI'));
+    this.tap(items, onMenu);
     this.tap(help, onHelp);
     this.tap(pause, onPause);
 
@@ -288,10 +288,6 @@ export class TouchControls {
     };
     document.getElementById('game-root').addEventListener('pointerdown', advance);
     this.root.addEventListener('pointerdown', advance, true);
-    const inv = document.getElementById('inventory-panel');
-    inv?.addEventListener('pointerdown', () => {
-      if (this.on) this.pulse('KeyI');
-    });
   }
 
   /** Called every frame: highlight Talk when there's something to talk to. */

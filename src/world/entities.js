@@ -1,4 +1,4 @@
-// Game entities: player, NPCs, enemies, sentinel, pushables, pickups, interactables, shrines.
+// Game entities: player, NPCs, enemies, the Warden, pushables, pickups, interactables, shrines.
 import * as THREE from 'three';
 import { input } from '../core/input.js';
 import { clamp, damp, ERA } from '../core/util.js';
@@ -6,6 +6,7 @@ import { audio } from '../audio/audio.js';
 import { moveBody, overlapsType, hits } from './physics.js';
 import { T } from './world.js';
 import { getSheets, SpriteActor, iconTexture } from '../render/sprites.js';
+import { ITEMS } from '../story.js';
 
 const GRAV = 28;
 
@@ -69,6 +70,8 @@ export class Player {
 
   hurt(n, fromX, { force = 6, ignoreRoll = false } = {}) {
     if (this.invuln > 0 || this.game.godMode) return;
+    if (this.game.dialogue.active || this.game.mode !== 'play' || this.game.lockT > 0) return; // never mid-conversation
+    if (this.game.shiftGrace > 0) return; // just arrived in another era
     if (this.state === 'roll' && !ignoreRoll) return;
     this.hp = Math.max(0, this.hp - n);
     this.invuln = 1.1;
@@ -245,7 +248,9 @@ export class Player {
     // pushing
     this.pushing = false;
     if (canAct && b.onGround && this.state === 'normal' && (ix || iz)) {
-      const dir = ix && b.hitX ? [ix, 0] : iz && b.hitZ ? [0, iz] : null;
+      // whole-cell direction: the touch joystick gives analog values like 0.83, which made
+      // the push direction (and its timer) change every frame, so blocks never moved
+      const dir = ix && b.hitX ? [Math.sign(ix), 0] : iz && b.hitZ ? [0, Math.sign(iz)] : null;
       if (dir) {
         const key = dir.join(',');
         if (this.pushDir !== key) {
@@ -264,6 +269,9 @@ export class Player {
 
     // safe spot tracking
     // (never on a hazard's bed: you could land there before the respawn kicks in)
+    // the last solid footing at all (narrow log rafts never pass the "safe" test below)
+    if (b.onGround && !inWater && !inHazard && !g.respawning && world.cell(era, Math.floor(b.x), Math.floor(b.y + 0.01) - 1, Math.floor(b.z)) === T.SOLID)
+      this.lastGround = { x: b.x, y: b.y, z: b.z, era };
     if (b.onGround && this.state !== 'hurt' && !inWater && !inHazard && !g.respawning) {
       const fy = Math.floor(b.y) - 1;
       const solidAt = (dx, dz) => world.cell(era, Math.floor(b.x + dx), fy, Math.floor(b.z + dz)) === T.SOLID;
@@ -380,6 +388,7 @@ const ENEMY = {
 export class Enemy extends EraEntity {
   constructor(game, spec) {
     super(game, spec);
+    this.hostile = true;
     this.cfg = ENEMY[spec.kind];
     this.hp = this.cfg.hp;
     this.body = { x: spec.x, y: spec.y ?? 0, z: spec.z, vx: 0, vy: 0, vz: 0, hw: this.cfg.hw, hd: this.cfg.hd, h: this.cfg.h };
@@ -416,7 +425,7 @@ export class Enemy extends EraEntity {
     this.hurtT = Math.max(0, this.hurtT - dt);
     const [r0, r1] = this.spec.range;
     const dx = p.x - b.x, dz = p.z - b.z;
-    const sees = Math.abs(dx) < cfg.sight && Math.abs(p.y - b.y) < 2.2 && g.controlsEnabled();
+    const sees = Math.abs(dx) < cfg.sight && Math.abs(p.y - b.y) < 2.2 && g.controlsEnabled() && !(g.shiftGrace > 0);
     if (this.hurtT <= 0) {
       if (sees) {
         b.vx = Math.sign(dx) * cfg.chase * (Math.abs(dx) > 0.2 ? 1 : 0);
@@ -458,100 +467,130 @@ export class Enemy extends EraEntity {
 }
 
 // ---------------------------------------------------------------------------
-export class Sentinel extends EraEntity {
+/**
+ * The Warden guards the Clocktower key in the Future courtyard. It walks a loop of waypoints,
+ * pausing at each corner to turn, and sees you inside its vision cone (drawn on the ground)
+ * unless something solid is in the way. Spotted, it winds up and charges; caught, you're thrown
+ * out of the courtyard. Hide behind pillars, or slip into another era to lose it.
+ */
+const WARDEN = { range: 6.5, halfAngle: (50 * Math.PI) / 180, walk: 1.9, charge: 4.4, turn: 3.2, pause: 1.1 };
+export class Warden extends EraEntity {
   constructor(game, spec) {
     super(game, spec);
-    this.body = { x: spec.x, y: 0, z: spec.z, vx: 0, vy: 0, vz: 0, hw: 0.75, hd: 0.7, h: 2.2 };
-    this.home = { ...this.body };
-    this.actor = new SpriteActor(getSheets().sentinel, 3.2);
-    this.shadow = makeShadow(2.2);
-    this.group.add(this.actor.mesh, this.shadow);
-    this.dir = 1;
-    this.dead = !!game.state.flags.sentinelDead;
-    this.clankT = 0;
-    this.alertT = 0;
-    if (this.dead) this.setDead(game.state.sentinelX ?? 165.5);
-  }
-  setDead(x) {
-    this.dead = true;
-    this.body.x = x;
-    this.body.z = 3.5;
+    this.hostile = true; // holds still during conversations
+    this.alwaysUpdate = true; // keeps patrolling while you're in another era
+    this.path = spec.path;
+    this.actor = new SpriteActor(getSheets().sentinel, 2.6);
+    this.shadow = makeShadow(1.8);
+    this.coneMat = new THREE.MeshBasicMaterial({ color: 0xffd040, transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide });
+    this.cone = new THREE.Mesh(new THREE.CircleGeometry(WARDEN.range, 28, -WARDEN.halfAngle, WARDEN.halfAngle * 2).rotateX(-Math.PI / 2), this.coneMat);
+    this.cone.renderOrder = 1;
+    this.group.add(this.actor.mesh, this.shadow, this.cone);
+    this.reset();
   }
   reset() {
-    if (this.dead) return;
-    Object.assign(this.body, { x: this.home.x, z: this.home.z, vx: 0, vz: 0 });
+    const [x, z] = this.path[0];
+    Object.assign(this, { x, z, wp: 1, state: 'patrol', stateT: 0, lostT: 0, pauseT: 0 });
+    const [nx, nz] = this.path[1];
+    this.heading = Math.atan2(nz - z, nx - x);
   }
-  /** Called when the grille state changes / era switches to future. */
-  checkCrush() {
-    if (this.dead || !this.game.state.flags.gateDown) return false;
-    const gx = this.game.L.gateX + 0.5;
-    if (Math.abs(this.body.x - gx) < 1.15) {
-      this.setDead(this.body.x);
-      this.game.state.flags.sentinelDead = true;
-      this.game.state.sentinelX = this.body.x;
-      return true;
+  /** Can it see the player right now? (same era, in range, inside the cone, clear line of sight) */
+  sees() {
+    const g = this.game, p = g.player.body;
+    if (g.era !== this.era || g.mode !== 'play' || g.shiftGrace > 0) return false;
+    const dx = p.x - this.x, dz = p.z - this.z, d = Math.hypot(dx, dz);
+    if (d > WARDEN.range || Math.abs(p.y) > 2) return false;
+    if (d > 1.2) {
+      let da = Math.atan2(dz, dx) - this.heading;
+      da = Math.atan2(Math.sin(da), Math.cos(da));
+      if (Math.abs(da) > WARDEN.halfAngle) return false;
     }
-    return false;
+    const steps = Math.ceil(d / 0.25);
+    for (let i = 1; i < steps; i++) {
+      const t = i / steps;
+      if (g.world.cell(this.era, Math.floor(this.x + dx * t), 1, Math.floor(this.z + dz * t)) === T.SOLID) return false;
+    }
+    return true;
   }
-  bounds() {
-    const gx = this.game.L.gateX;
-    let lo = 160.8, hi = 173.2;
-    if (this.game.state.flags.gateDown) {
-      if (this.body.x < gx + 0.5) hi = gx - 0.8;
-      else lo = gx + 1.8;
-    }
-    return [lo, hi];
-  }
-  damage(n, dir) {
-    if (this.clankT > 0) return;
-    this.clankT = 0.3;
-    audio.sfx('blocked');
-    this.game.bursts.emit(this.body.x - dir * 0.6, this.body.y + 1.3, this.body.z + 0.5, 12, { color: [0xffd070, 0xffffff], speed: 5, life: 0.25 });
-    if (!this.game.state.flags.sentinelHint) {
-      this.game.state.flags.sentinelHint = true;
-      this.game.hud.toast('Your wrench just bounces off its armor. Maybe the old gate could help...');
-    }
+  /** Step toward (tx, tz), sliding along solid cells; returns the remaining distance. */
+  moveToward(tx, tz, speed, dt) {
+    const dx = tx - this.x, dz = tz - this.z, d = Math.hypot(dx, dz);
+    if (d < 0.01) return 0;
+    const want = Math.atan2(dz, dx);
+    let da = Math.atan2(Math.sin(want - this.heading), Math.cos(want - this.heading));
+    this.heading += Math.sign(da) * Math.min(Math.abs(da), WARDEN.turn * dt);
+    const step = Math.min(d, speed * dt);
+    const w = this.game.world, free = (x, z) => w.cell(this.era, Math.floor(x), 0, Math.floor(z)) !== T.SOLID;
+    const nx = this.x + (dx / d) * step, nz = this.z + (dz / d) * step;
+    if (free(nx, this.z)) this.x = nx;
+    if (free(this.x, nz)) this.z = nz;
+    return d - step;
   }
   update(dt) {
-    const g = this.game, b = this.body, p = g.player.body;
-    this.clankT = Math.max(0, this.clankT - dt);
-    const a = this.actor;
-    if (this.dead) {
-      a.play('dead');
-      a.update(dt);
-      a.mesh.position.set(b.x, -0.25, b.z);
-      a.mesh.quaternion.copy(g.renderer.billboardQ);
-      this.shadow.position.set(b.x, 0.02, b.z);
-      if (Math.random() < dt * 3) g.bursts.emit(b.x + (Math.random() - 0.5), 1.2, b.z + 0.4, 3, { color: [0xffb03a, 0xff3040], speed: 2, life: 0.4 });
-      return;
+    const g = this.game, p = g.player.body;
+    this.stateT += dt;
+    const seen = this.sees();
+    if (this.state === 'patrol' || this.state === 'return') {
+      if (seen) {
+        this.state = 'alert';
+        this.stateT = 0;
+        audio.sfx('blocked');
+        if (!g.state.flags.wardenHint) {
+          g.state.flags.wardenHint = true;
+          g.hud.toast('The Warden spotted you! Break its line of sight, behind a pillar or by slipping into another age.', 6000);
+        }
+      } else if (this.state === 'return') {
+        const [tx, tz] = this.path[this.wp];
+        if (this.moveToward(tx, tz, WARDEN.walk, dt) <= 0.05) this.state = 'patrol';
+      } else {
+        const [tx, tz] = this.path[this.wp];
+        if (this.pauseT > 0) {
+          // pause at the corner, turning to face the next leg
+          this.pauseT -= dt;
+          const [nx, nz] = this.path[(this.wp + 1) % this.path.length];
+          const want = Math.atan2(nz - this.z, nx - this.x);
+          const da = Math.atan2(Math.sin(want - this.heading), Math.cos(want - this.heading));
+          this.heading += Math.sign(da) * Math.min(Math.abs(da), WARDEN.turn * 0.6 * dt);
+          if (this.pauseT <= 0) this.wp = (this.wp + 1) % this.path.length;
+        } else if (this.moveToward(tx, tz, WARDEN.walk, dt) <= 0.05) this.pauseT = WARDEN.pause;
+      }
+    } else if (this.state === 'alert') {
+      // a short wind-up: face the player, then charge
+      const want = Math.atan2(p.z - this.z, p.x - this.x);
+      const da = Math.atan2(Math.sin(want - this.heading), Math.cos(want - this.heading));
+      this.heading += Math.sign(da) * Math.min(Math.abs(da), WARDEN.turn * 2 * dt);
+      if (this.stateT > 0.45) {
+        this.state = 'chase';
+        this.stateT = 0;
+        audio.sfx('glitch');
+      }
+    } else if (this.state === 'chase') {
+      this.lostT = seen ? 0 : this.lostT + dt;
+      if (g.era === this.era) this.moveToward(p.x, p.z, WARDEN.charge, dt);
+      if (this.lostT > 1.2 || this.stateT > 6) {
+        this.state = 'return';
+        let best = 0;
+        this.path.forEach(([x, z], i) => {
+          if (Math.hypot(x - this.x, z - this.z) < Math.hypot(this.path[best][0] - this.x, this.path[best][1] - this.z)) best = i;
+        });
+        this.wp = best;
+      }
     }
-    const [lo, hi] = this.bounds();
-    const dx = p.x - b.x;
-    const sees = Math.abs(dx) < 8 && g.controlsEnabled() && p.x > 158;
-    if (sees) {
-      if (this.alertT <= 0) audio.sfx('tick');
-      this.alertT = 1;
-      b.vx = Math.sign(dx) * 3.0 * (Math.abs(dx) > 0.3 ? 1 : 0);
-      b.vz = clamp(p.z - b.z, -1, 1) * 2.2;
-    } else {
-      this.alertT = Math.max(0, this.alertT - dt);
-      const [r0, r1] = this.spec.range;
-      if (b.x < Math.max(lo, r0) || b.x < lo + 0.2) this.dir = 1;
-      if (b.x > Math.min(hi, r1)) this.dir = -1;
-      b.vx = this.dir * 1.6;
-      b.vz = (3.5 - b.z) * 2;
-    }
-    b.x = clamp(b.x + b.vx * dt, lo, hi);
-    b.z = clamp(b.z + b.vz * dt, 2.75, 4.25);
-    // contact
-    if (Math.abs(p.x - b.x) < b.hw + p.hw && Math.abs(p.z - b.z) < b.hd + p.hd && p.y < 2.2) g.player.hurt(1, b.x, { force: 10, ignoreRoll: true });
+    // caught
+    if (g.era === this.era && g.mode === 'play' && !(g.shiftGrace > 0) && Math.hypot(p.x - this.x, p.z - this.z) < 0.9 && p.y < 2) g.caughtByWarden();
 
-    a.flip = dx < 0;
+    const alarmed = this.state === 'alert' || this.state === 'chase';
+    this.coneMat.color.setHex(alarmed ? 0xff3040 : 0xffd040);
+    this.coneMat.opacity = alarmed ? 0.32 : 0.22;
+    this.cone.position.set(this.x, 0.04, this.z);
+    this.cone.rotation.y = -this.heading;
+    const a = this.actor;
+    a.flip = Math.cos(this.heading) < 0;
     a.play('walk');
-    a.update(dt);
-    a.mesh.position.set(b.x, -0.15, b.z);
+    a.update(dt * (this.state === 'chase' ? 2 : this.pauseT > 0 ? 0 : 1));
+    a.mesh.position.set(this.x, -0.1, this.z);
     a.mesh.quaternion.copy(g.renderer.billboardQ);
-    this.shadow.position.set(b.x, 0.02, b.z);
+    this.shadow.position.set(this.x, 0.02, this.z);
   }
 }
 
@@ -645,13 +684,20 @@ export class Pickup extends EraEntity {
     super(game, spec);
     this.icon = icon;
     const tex = iconTexture(icon);
-    const big = spec.type === 'cog' ? 0.75 : 0.85;
+    // Era Keys are drawn larger and at normal brightness: overbright gold vanished into the bloom
+    const key = ITEMS[icon]?.key || ITEMS[icon]?.showcase;
+    const big = spec.type === 'cog' ? 0.75 : key ? 1.3 : 0.85;
     this.sprite = new THREE.Mesh(
       new THREE.PlaneGeometry(big, big),
       new THREE.MeshBasicMaterial({ map: tex, alphaTest: 0.5, side: THREE.DoubleSide, toneMapped: true }),
     );
-    this.sprite.material.color.setScalar(1.6);
+    this.sprite.material.color.setScalar(key ? 0.78 : 1.6); // keys stay under the bloom threshold, so they keep their detail
     this.group.add(this.sprite);
+    if (key) {
+      // a dark halo behind the key separates it from bright backgrounds
+      this.halo = new THREE.Mesh(new THREE.CircleGeometry(0.72, 24), new THREE.MeshBasicMaterial({ color: 0x140c08, transparent: true, opacity: 0.6, depthWrite: false }));
+      this.group.add(this.halo);
+    }
     this.t = Math.random() * 6;
     this.glowCol = spec.type === 'cog' ? 0xffd070 : spec.type === 'heart' ? 0xff6080 : 0x9ff4ff;
   }
@@ -671,6 +717,11 @@ export class Pickup extends EraEntity {
     this.sprite.position.set(this.x, this.y + Math.sin(this.t * 2.5) * 0.12, this.z);
     this.sprite.quaternion.copy(this.game.renderer.billboardQ);
     this.sprite.rotateY(Math.sin(this.t * 1.5) * 0.4);
+    if (this.halo) {
+      this.halo.position.copy(this.sprite.position);
+      this.halo.quaternion.copy(this.game.renderer.billboardQ);
+      this.halo.translateZ(-0.05);
+    }
     if (Math.random() < dt * 6) this.game.bursts.emit(this.x, this.y, this.z, 1, { color: this.glowCol, speed: 0.6, life: 0.8, gravity: -0.6, jitter: 0.6 });
     const p = this.game.player.body;
     if (Math.abs(p.x - this.x) < 0.65 && Math.abs(p.z - this.z) < 0.7 && this.y > p.y - 0.3 && this.y < p.y + p.h + 0.4) this.game.collect(this);
@@ -705,13 +756,6 @@ export class Interactable extends EraEntity {
       this.group.add(this.amulet);
     } else if (id === 'soil') {
       this.sparkT = 0;
-    } else if (id === 'winch') {
-      const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.7, 10), new THREE.MeshStandardMaterial({ color: 0x5a5a62, roughness: 0.6 }));
-      drum.rotation.x = Math.PI / 2;
-      drum.position.set(this.x, 1.3, this.z);
-      this.handleMesh = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.7, 0.08), new THREE.MeshStandardMaterial({ color: 0x8a929e }));
-      this.handleMesh.position.set(this.x + 0.3, 1.3, this.z + 0.38);
-      this.group.add(drum, this.handleMesh);
     } else if (id.startsWith('socket')) {
       const item = { socketSun: 'disc', socketBell: 'hammer', socketCore: 'core' }[id];
       this.placedIcon = new THREE.Mesh(
@@ -756,9 +800,6 @@ export class Interactable extends EraEntity {
       if (!s.flags.acornPlanted && !s.flags.acornPlantedM && Math.random() < dt * 5) this.game.bursts.emit(this.x, 0.15, this.z, 1, { color: 0x9aff7a, speed: 0.4, life: 1, gravity: -0.6, jitter: 0.8 });
     } else if (this.id === 'soilM') {
       if (!s.flags.acornPlanted && !s.flags.acornPlantedM && Math.random() < dt * 5) this.game.bursts.emit(this.x, 0.55, this.z, 1, { color: 0x9aff7a, speed: 0.4, life: 1, gravity: -0.6, jitter: 0.6 });
-    } else if (this.id === 'winch') {
-      this.handleMesh.visible = s.inventory.includes('rod') || s.flags.winchFixed;
-      this.handleMesh.rotation.z = s.flags.gateDown ? 1.2 : 0;
     } else if (this.floatIcon) {
       const waiting = !s.flags[this.spec.goneFlag];
       this.floatIcon.visible = waiting;

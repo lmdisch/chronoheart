@@ -9,7 +9,7 @@ import { Ambient, Bursts } from './render/particles.js';
 import { World, T, W } from './world/world.js';
 import { hits } from './world/physics.js';
 import { buildLevel, SPAWNS, CHECKPOINTS, AREAS, L, COG_TOTAL } from './levels/hollowmere.js';
-import { Player, NPC, Enemy, Sentinel, Pushable, Pickup, Interactable, Shrine } from './world/entities.js';
+import { Player, NPC, Enemy, Warden, Pushable, Pickup, Interactable, Shrine } from './world/entities.js';
 import { HUD, Dialogue, showInventoryPanel, setFade, letterbox } from './ui/ui.js';
 import { talk, interact, ITEMS, INTRO, ENDING, FAVOURS } from './story.js';
 import { touchActive } from './ui/touch.js';
@@ -73,7 +73,6 @@ export class Game {
     this.peekTarget = null;
     this.blockFlashT = 0;
     this.areaIdx = -1;
-    this.invOpen = false;
     this.warnT = 0;
     this.state = newState();
     this.abilities = new Abilities(this);
@@ -105,7 +104,7 @@ export class Game {
       let e;
       if (s.type === 'npc') this.npcs.push((e = new NPC(this, s)));
       else if (s.type === 'enemy') this.enemies.push((e = new Enemy(this, s)));
-      else if (s.type === 'sentinel') this.enemies.push((e = this.sentinel = new Sentinel(this, s)));
+      else if (s.type === 'warden') e = this.warden = new Warden(this, s);
       else if (s.type === 'pushable') {
         const pos = this.state[s.posKey];
         this.pushables.push((e = new Pushable(this, { ...s, x: pos.x, z: pos.z })));
@@ -139,7 +138,7 @@ export class Game {
     this.renderer.camTarget.set(L.start.x + 4, 1, 3);
     this.cutscene(INTRO).then(() => {
       if (touchActive()) {
-        this.hud.toast('Drag on the left side of the screen to move. Tap <b>Jump</b> to jump, and <b>Talk</b> when it lights up.', 6500);
+        this.hud.toast('Drag on the left side of the screen to move. Tap <b>Jump</b> to jump, and <b>Interact</b> when it lights up.', 6500);
         setTimeout(() => this.hud.toast('Tap <b>Attack</b> to swing your wrench. Tap <b>?</b> any time to see all controls.', 6500), 1200);
       } else {
         this.hud.toast('Move with <kbd>A</kbd><kbd>D</kbd> and <kbd>W</kbd><kbd>S</kbd>. Jump with <kbd>Space</kbd>. Interact with <kbd>F</kbd>.', 6500);
@@ -273,17 +272,8 @@ export class Game {
     const b = this.player.body;
     this.bursts.emit(b.x, b.y + 0.8, b.z, 40, { color: [ERA_RING[target], 0xffffff], speed: 5, life: 0.6, gravity: 0, glow: 2.5 });
     this.areaIdx = -1;
-    if (target === ERA.FUTURE && this.sentinel && this.sentinel.checkCrush()) {
-      audio.sfx('crush');
-      this.renderer.shake = 1;
-      this.bursts.emit(this.sentinel.body.x, 1, this.sentinel.body.z, 60, { color: [0xffb03a, 0xff3040, 0xffffff], speed: 6, life: 1 });
-      setTimeout(() => this.hud.toast('<b>CRUNCH.</b> Three hundred years of rusted portcullis landed right on the Sentinel.', 5000), 600);
-      this.save();
-    }
-    if (target === ERA.FUTURE && this.state.flags.gateDown && this.sentinel && !this.sentinel.dead && this.sentinel.body.x < L.gateX && !this.state.flags.trapHint) {
-      this.state.flags.trapHint = true;
-      setTimeout(() => this.hud.toast('The Sentinel is trapped behind the fallen gate!'), 700);
-    }
+    // a moment to get your bearings: nothing can hurt or notice you right after you arrive
+    this.shiftGrace = 1.5;
   }
 
   snapBack() {
@@ -492,26 +482,62 @@ export class Game {
   }
 
   onHazard() {
-    if (this.respawning) return;
+    if (this.respawning || this.mode !== 'play') return;
     this.respawning = true;
     audio.sfx('splash');
     this.abilities.cancelRecording();
     const b = this.player.body;
     this.bursts.emit(b.x, b.y + 0.5, b.z, 24, { color: this.era === ERA.FUTURE ? [0x7cff6a] : [0x9fe0ff, 0xffffff], speed: 4, life: 0.6 });
-    setFade(0.85, '#000');
-    setTimeout(() => {
-      const s = this.player.lastSafe || { ...CHECKPOINTS[this.state.checkpoint], y: 0, era: ERA.PRESENT };
-      this.player.place(s.x, s.y, s.z);
-      if (s.era !== this.era) this.applyEra(s.era, true);
-      if (s.era !== ERA.PRESENT) this.meter = Math.max(this.meter, 0.6);
-      this.player.invuln = 0;
-      this.player.hurt(1, s.x);
-      this.player.body.vx = this.player.body.vy = 0;
-      this.player.state = 'normal';
-      this.lockT = 0.6;
-      setFade(0);
-      this.respawning = false;
-    }, 380);
+    // straight back to the last safe spot, unless the world has changed under it since (a
+    // dry hollow that's a pond now): then the shrine
+    let s = [this.player.lastSafe, this.player.lastGround].find((p) => p && this.isSafeSpot(p));
+    if (!s) s = { ...CHECKPOINTS[this.state.checkpoint], x: CHECKPOINTS[this.state.checkpoint].x + 1.2, y: 0, z: 3.5, era: ERA.PRESENT };
+    this.player.place(s.x, s.y, s.z);
+    if (s.era !== this.era) this.applyEra(s.era, true);
+    if (s.era !== ERA.PRESENT) this.meter = Math.max(this.meter, 0.6);
+    this.player.body.vx = this.player.body.vy = this.player.body.vz = 0;
+    this.player.state = 'normal';
+    // lose a heart, without the usual knockback (that could shove you straight back in)
+    if (!this.godMode) {
+      this.player.hp = Math.max(0, this.player.hp - 1);
+      this.player.invuln = 1.1;
+      audio.sfx('hurt');
+      this.hud.setHearts(this.player.hp, this.player.maxHp);
+    }
+    this.lockT = 0.25;
+    setFade(0.45, '#000');
+    setTimeout(() => setFade(0), 90);
+    this.respawning = false;
+    if (this.player.hp <= 0) this.onDeath();
+  }
+
+  /** The Warden got you: lose a heart and land back at the courtyard gate, in the Present. */
+  caughtByWarden() {
+    if (this.respawning) return;
+    this.abilities.cancelRecording();
+    audio.sfx('hurt');
+    this.renderer.shake = 0.6;
+    if (!this.godMode) {
+      this.player.hp = Math.max(0, this.player.hp - 1);
+      this.hud.setHearts(this.player.hp, this.player.maxHp);
+    }
+    this.player.invuln = 1.5;
+    this.player.place(L.yardX0 + 2.5, 0, 3.5);
+    this.applyEra(ERA.PRESENT, true);
+    this.warden?.reset();
+    setFade(0.6, '#200008');
+    setTimeout(() => setFade(0), 160);
+    this.lockT = 0.4;
+    this.hud.toast('The Warden seized you and threw you out of the courtyard! Stay out of its sight cone.', 5000);
+    if (this.player.hp <= 0) this.onDeath();
+  }
+
+  /** Solid ground underneath, nothing in the way, and no hazard where you'd stand. */
+  isSafeSpot(s) {
+    const w = this.world, fx = Math.floor(s.x), fy = Math.floor(s.y + 0.01), fz = Math.floor(s.z);
+    if (w.cell(s.era, fx, fy - 1, fz) !== T.SOLID) return false;
+    if (w.cell(s.era, fx, fy, fz) === T.HAZARD) return false;
+    return !hits(w, s.era, { ...this.player.body, x: s.x, y: s.y, z: s.z });
   }
 
   onDeath() {
@@ -529,6 +555,7 @@ export class Game {
       this.meter = 1;
       if (Object.keys(this.sockets).length) this.failResonance();
       for (const e of this.enemies) if (e.alive && e.reset) e.reset();
+      this.warden?.reset();
       this.hud.setHearts(this.player.hp, this.player.maxHp);
       this.mode = 'play';
       audio.setMusicVolume(0.55);
@@ -589,7 +616,12 @@ export class Game {
     // entities
     this.player.update(dt);
     if (this.era === ERA.PRESENT && this.player.body.onGround) this.lastSafePresent = { x: this.player.body.x, y: this.player.body.y, z: this.player.body.z };
-    for (const e of this.entities) if (e.alive && (e.active() || e instanceof Pushable)) e.update(dt);
+    const talking = this.dialogue.active;
+    for (const e of this.entities) {
+      if (!e.alive || !(e.active() || e instanceof Pushable || e.alwaysUpdate)) continue;
+      if (talking && e.hostile) continue; // enemies wait while you're in a conversation
+      e.update(dt);
+    }
     this.entities = this.entities.filter((e) => e.alive);
     this.enemies = this.enemies.filter((e) => e.alive);
     this.pickups = this.pickups.filter((e) => e.alive);
@@ -613,14 +645,8 @@ export class Game {
       });
     }
 
-    if (input.hit('hint') && ctl) this.showHint();
     this.abilities.update(dt, ctl);
 
-    // inventory & pause
-    if (input.hit('inventory') && ctl) {
-      this.invOpen = !this.invOpen;
-      showInventoryPanel(this.state.inventory, this.invOpen, this.favourList());
-    }
 
     // resonance
     if (this.resonance > 0) {
@@ -652,22 +678,20 @@ export class Game {
       }
     }
 
-    // goal line: a gentle nudge, with the direct answer behind the Hint button (or G)
+    // the goal (shown in the Menu, with its hint behind a button): announce real changes
     const { goal, hint } = currentGoal(this);
     const key = goal + '|' + hint;
     if (key !== this.goalText) {
-      const first = this.goalText === undefined;
+      const prevGoal = this.goalText?.split('|')[0];
       this.goalText = key;
       document.getElementById('goal-text').innerHTML = goal;
       document.getElementById('goal-hint').innerHTML = hint;
       this.showHint(false);
-      if (!first) {
-        const box = document.getElementById('goal');
-        box.classList.remove('new');
-        void box.offsetWidth; // restart the highlight animation
-        box.classList.add('new');
+      if (prevGoal !== undefined && goal !== prevGoal && !/^Keep heading/.test(goal)) {
+        this.hud.toast(`<b>New goal:</b> ${goal} <small>(${touchActive() ? 'Menu' : 'I'} for details)</small>`, 4500);
       }
     }
+    this.shiftGrace = Math.max(0, (this.shiftGrace || 0) - dt);
 
     // area banner
     const bx = this.player.body.x;
@@ -678,6 +702,11 @@ export class Game {
       this.areaIdx = ai;
       if (!first || this.mode === 'play') this.hud.showBanner(AREAS[ai].name, this.era);
     }
+  }
+
+  /** Fill the Menu panel (goal and hint are kept up to date every frame). */
+  renderMenu() {
+    showInventoryPanel(this.state.inventory, true, this.favourList());
   }
 
   // ------------------------------------------------------------------ kindness side quests
@@ -694,7 +723,7 @@ export class Game {
     const fv = FAVOURS.find((x) => x.id === id);
     if (!fv) return;
     audio.sfx('ui');
-    this.hud.toast(`<b>New favour:</b> ${fv.title}<br><small>${fv.todo} (See Items.)</small>`, 6500);
+    this.hud.toast(`<b>New favour:</b> ${fv.title}<br><small>${fv.todo} (See the Menu.)</small>`, 6500);
     this.save();
   }
 
@@ -892,7 +921,7 @@ export class Game {
       const others = [0, 1, 2].filter((e) => e !== this.era);
       g.era = others[Math.floor(Math.random() * others.length)];
       if (prox > 0.5) audio.sfx('glitch');
-      if (!this.state.flags.towerGlitchSeen && !this.glitchExplaining && this.player.body.x > L.vaultDoorX1 && this.controlsEnabled()) this.explainTowerGlitch();
+      if (!this.state.flags.towerGlitchSeen && !this.glitchExplaining && this.player.body.x > L.towerX0 - 14 && this.controlsEnabled()) this.explainTowerGlitch();
     }
     if (g.on <= 0) return;
     g.on -= dt;

@@ -38,38 +38,66 @@ $('btn-continue').addEventListener('click', () => {
   hideTitle();
   game.continueGame();
 });
-document.querySelectorAll('[data-open-controls]').forEach((b) =>
-  b.addEventListener('click', () => {
-    audio.init();
-    audio.sfx('ui');
-    controls.hidden = false;
-  }),
-);
-// Controls overlay during play (H key or the HUD button) freezes the game while open.
-let controlsFromPlay = false;
-function openControlsInPlay() {
-  if (game.mode !== 'play' || !controls.hidden) return;
+// ---------------------------------------------------------------------------
+// Overlays: the pause menu, the Controls sheet and the Menu (goal, items, favours). Only one
+// shows at a time, and the game is paused while any is open. Controls opened from the pause
+// menu go back to it when closed; from the title they don't pause anything.
+const menu = $('inventory-panel');
+let overlay = null; // 'pause' | 'controls' | 'menu' | null
+let controlsReturn = null; // where closing Controls goes: 'play' | 'pause' | 'title'
+
+function show(name) {
+  pause.hidden = name !== 'pause';
+  controls.hidden = name !== 'controls';
+  menu.hidden = name !== 'menu';
+  overlay = name;
+}
+function pauseGame(p) {
+  game.mode = p ? 'paused' : 'play';
+  audio.setMusicVolume(p ? 0.2 : 0.55);
+  if (!p) game.clock.getDelta(); // don't let the paused time leak into the next frame
+}
+function openOverlay(name) {
+  if (name === 'controls') {
+    controlsReturn = overlay === 'pause' ? 'pause' : !overlay && game.mode === 'play' ? 'play' : game.mode === 'title' ? 'title' : null;
+    if (!controlsReturn) return; // not mid-conversation or mid-cutscene
+  } else if (overlay || game.mode !== 'play') return;
+  audio.init();
   audio.sfx('ui');
-  controlsFromPlay = true;
-  controls.hidden = false;
-  game.mode = 'paused';
+  if (!overlay && game.mode === 'play') pauseGame(true);
+  if (name === 'menu') game.renderMenu();
+  show(name);
 }
-function closeControls() {
-  controls.hidden = true;
-  if (controlsFromPlay) {
-    controlsFromPlay = false;
-    game.mode = 'play';
-    game.clock.getDelta();
-  }
+function closeOverlay() {
+  if (!overlay) return;
+  audio.sfx('ui');
+  if (overlay === 'controls' && controlsReturn === 'pause') return show('pause');
+  const fromTitle = overlay === 'controls' && controlsReturn === 'title';
+  show(null);
+  if (!fromTitle) pauseGame(false);
 }
+const toggle = (name) => (overlay === name ? closeOverlay() : !overlay || name === 'controls' ? openOverlay(name) : null);
+
+document.querySelectorAll('[data-open-controls]').forEach((b) => b.addEventListener('click', () => openOverlay('controls')));
 $('hud-controls').addEventListener('click', (e) => {
   e.currentTarget.blur();
-  openControlsInPlay();
+  toggle('controls');
 });
-$('btn-close-controls').addEventListener('click', () => {
-  audio.sfx('ui');
-  closeControls();
+$('btn-close-controls').addEventListener('click', closeOverlay);
+$('btn-close-menu').addEventListener('click', closeOverlay);
+$('btn-resume').addEventListener('click', closeOverlay);
+$('btn-restart-cp').addEventListener('click', () => {
+  show(null);
+  pauseGame(false);
+  game.player.hp = 1;
+  game.player.invuln = 0;
+  game.onDeath();
 });
+$('btn-music').addEventListener('click', () => {
+  audio.musicOn = !audio.musicOn;
+  $('btn-music').textContent = `Music: ${audio.musicOn ? 'On' : 'Off'}`;
+});
+$('btn-quit').addEventListener('click', () => location.reload());
 
 // start music quietly on first interaction with the title
 window.addEventListener(
@@ -81,46 +109,24 @@ window.addEventListener(
   { once: true },
 );
 
-function setPaused(p) {
-  if (p && game.mode !== 'play') return;
-  pause.hidden = !p;
-  game.mode = p ? 'paused' : 'play';
-  audio.setMusicVolume(p ? 0.2 : 0.55);
-  if (!p) game.clock.getDelta();
-}
-$('btn-resume').addEventListener('click', () => setPaused(false));
-$('btn-restart-cp').addEventListener('click', () => {
-  setPaused(false);
-  game.player.hp = 1;
-  game.player.invuln = 0;
-  game.onDeath();
-});
-$('btn-music').addEventListener('click', () => {
-  audio.musicOn = !audio.musicOn;
-  $('btn-music').textContent = `Music: ${audio.musicOn ? 'On' : 'Off'}`;
-});
-$('btn-quit').addEventListener('click', () => location.reload());
-
 window.addEventListener('keydown', (e) => {
-  if (e.code === 'KeyH') {
-    if (!controls.hidden && controlsFromPlay) closeControls();
-    else openControlsInPlay();
-    return;
-  }
-  if (e.code === 'Escape' || e.code === 'KeyP') {
-    if (!controls.hidden) closeControls();
-    else if (game.mode === 'play') setPaused(true);
-    else if (game.mode === 'paused') setPaused(false);
+  if (e.repeat) return;
+  if (e.code === 'KeyH') toggle('controls');
+  else if (e.code === 'KeyI') toggle('menu');
+  else if (e.code === 'KeyG') {
+    // straight to the hint
+    if (!overlay) openOverlay('menu');
+    if (overlay === 'menu') game.showHint(true);
+  } else if (e.code === 'Escape' || e.code === 'KeyP') {
+    if (overlay) closeOverlay();
+    else openOverlay('pause');
   }
 });
 
 const touch = new TouchControls(game, {
-  onHelp: () => openControlsInPlay(),
-  onPause: () => {
-    audio.sfx('ui');
-    if (game.mode === 'play') setPaused(true);
-    else if (game.mode === 'paused' && !pause.hidden) setPaused(false);
-  },
+  onHelp: () => toggle('controls'),
+  onMenu: () => toggle('menu'),
+  onPause: () => (overlay ? closeOverlay() : openOverlay('pause')),
 });
 $('goal-hint-btn').addEventListener('click', (e) => {
   e.currentTarget.blur();

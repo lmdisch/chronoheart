@@ -996,7 +996,15 @@ const ICONS = {
     px(c, 6, 5, '#d8dce6');
     px(c, 10, 13, '#d8dce6');
   },
-  satchel: (c) => {
+  clockKey: (c) => {
+    disc(c, 5, 5, 4, '#36f0ff');
+    disc(c, 5, 5, 2, '#0a2a30');
+    line(c, 8, 8, 14, 14, '#c9a44a', 2);
+    rect(c, 11, 13, 2, 2, '#c9a44a');
+    rect(c, 13, 11, 2, 2, '#c9a44a');
+    px(c, 3, 3, '#e0ffff');
+  },
+    satchel: (c) => {
     rect(c, 2, 6, 12, 8, '#7a5232');
     rect(c, 2, 6, 12, 3, '#8a6038');
     rect(c, 7, 8, 2, 2, '#c9a44a');
