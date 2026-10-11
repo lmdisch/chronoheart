@@ -186,6 +186,16 @@ function drawHair(P, R, hx, hy, o) {
       R(hx - 1, hy + 9, 4, 2, d);
       P(hx + 4, hy - 1, shadeCss(c, 1.25));
       break;
+    case 'baldRing':
+      // a bare dome, with a ring of hair round the back and sides
+      P(hx + 4, hy, shadeCss(o.skin, 1.18));
+      P(hx + 5, hy + 1, shadeCss(o.skin, 1.18));
+      R(hx, hy + 3, 2, 4, c); // the back of the head
+      R(hx + 2, hy + 3, 2, 1, c); // over the ear
+      P(hx + 2, hy + 5, c); // and behind it
+      P(hx + 4, hy + 4, c); // sideburn
+      R(hx, hy + 6, 2, 1, d);
+      break;
     case 'bald':
       P(hx + 5, hy + 1, shadeCss(o.skin, 1.2));
       R(hx, hy + 3, 2, 3, c || '#5a3a2a');
@@ -709,7 +719,7 @@ export const CHAR = {
   sheng: { skin: '#c08860', hair: '#8e8c94', hairStyle: 'short', beard: '#9a98a0', top: '#8a8e9a', apron: '#5a5e6a', legs: '#5a5a62', boots: '#3a3a40', belt: '#8a6a3a', wide: true },
   callie: { skin: '#c08860', hair: '#b8925a', hairStyle: 'braid', top: '#d8b880', apron: '#8a6a3a', legs: '#7a5a3a', boots: '#5a3a22', belt: '#c8642a', wide: true },
   lillian: { skin: '#e8b088', hair: '#36d0e0', hairStyle: 'spiky', top: '#e07a2a', apron: '#3a404c', legs: '#3a404c', boots: '#22262f', belt: '#ffb03a', goggles: true },
-  eugene: { skin: '#eac0a0', hair: '#e8e8f0', hairStyle: 'short', beard: '#e8e8f0', top: '#3a4a8a', apron: '#c9a44a', legs: '#2a2a3a', boots: '#3a2a20', belt: '#c9a44a' },
+  eugene: { skin: '#f2cdb4', hair: '#f0f0f6', hairStyle: 'baldRing', top: '#3a4a8a', apron: '#c9a44a', legs: '#2a2a3a', boots: '#3a2a20', belt: '#c9a44a' },
   hobb: { skin: '#e0b088', hair: '#8a5a32', hairStyle: 'bald', beard: '#a87a4a', top: '#c8c0a8', apron: '#e8e0d0', legs: '#5a4a3a', boots: '#3a2a20', belt: '#6a4a2a', wide: true },
   tamsin: { skin: '#9a6a48', hair: '#1e1612', hairStyle: 'braid', top: '#7a8a3a', apron: '#c9a24a', legs: '#6a5232', boots: '#4a3220', belt: '#c8642a' },
 };
@@ -1018,6 +1028,16 @@ const ICONS = {
     disc(c, 8, 8, 2, '#ffc8f4');
     px(c, 6, 6, '#ffffff');
     rect(c, 7, 14, 2, 2, '#8a6a3a');
+  },
+  escapement: (c) => {
+    // an escape wheel: a brass ring of hooked teeth
+    disc(c, 8, 8, 5, '#c9a44a');
+    disc(c, 8, 8, 3, '#2a2014');
+    for (let k = 0; k < 8; k++) {
+      const a = (k / 8) * Math.PI * 2;
+      px(c, Math.round(8 + Math.cos(a) * 6.4), Math.round(8 + Math.sin(a) * 6.4), '#ffe08a');
+    }
+    disc(c, 8, 8, 1, '#ffe08a');
   },
   everspring: (c) => {
     // a coiled mainspring of bright star-iron

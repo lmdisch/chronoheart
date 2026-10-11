@@ -572,8 +572,7 @@ body.in-gearworks .tc-seal, body.in-gearworks .tc-echo { display: none; }
 .tc-slow.on { color: #0e1a24; background: #7fd8ff; border-color: transparent; box-shadow: 0 0 22px rgba(127, 216, 255, 0.7); }
 .tc-fast.on { color: #241405; background: #ffb84a; border-color: transparent; box-shadow: 0 0 22px rgba(255, 184, 74, 0.7); }
 body:not(.has-tempo) .needs-tempo { display: none !important; }
-/* keyboard: the amulet shows what Q / E do now, and a click on it (or T) switches */
-body.has-tempo:not(.touch) #chrono .chrono-dial { pointer-events: auto; cursor: pointer; }
+/* inside the clock, the amulet reads Slow / Tempo / Fast */
 #chrono.tempo .chrono-dial svg { filter: drop-shadow(0 0 10px rgba(255, 184, 74, 0.7)); }
 #chrono.tempo .era-pill[data-e='0'] { color: #7fd8ff; border-color: rgba(127, 216, 255, 0.45); }
 #chrono.tempo .era-pill[data-e='2'] { color: #ffb84a; border-color: rgba(255, 184, 74, 0.45); }

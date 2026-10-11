@@ -19,7 +19,6 @@ const BIND = {
   hint: ['KeyG'],
   seal: ['KeyR'],
   echo: ['KeyV'],
-  tempo: ['KeyT'], // turns Q / E between era travel and Tempo
   // Tempo's own buttons on touch (virtual codes: no physical key sends them)
   slow: ['TempoSlow'],
   fast: ['TempoFast'],

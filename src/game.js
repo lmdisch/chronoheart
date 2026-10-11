@@ -9,7 +9,7 @@ import { Ambient, Bursts } from './render/particles.js';
 import { World, T, W } from './world/world.js';
 import { hits } from './world/physics.js';
 import { buildLevel, SPAWNS, CHECKPOINTS, AREAS, L, COG_TOTAL, STUDY } from './levels/hollowmere.js';
-import { Player, NPC, Enemy, Warden, Pushable, Pickup, Interactable, Strikeable, Shrine } from './world/entities.js';
+import { Player, NPC, Enemy, Warden, Searchlight, Pushable, Pickup, Interactable, Strikeable, Shrine } from './world/entities.js';
 import { HUD, Dialogue, showInventoryPanel, setFade, letterbox } from './ui/ui.js';
 import { talk, interact, struck, ITEMS, INTRO, ENDING, TEMPO_GIFT, TEMPO_LEARN, FAVOURS } from './story.js';
 import { touchActive } from './ui/touch.js';
@@ -27,6 +27,7 @@ const store = {
 };
 const ERA_RING = [0xffc060, 0xbff6ff, 0xff4fd8];
 const DRAIN_TIME = 10; // seconds of charge away from the present
+const TAP_TIME = 0.2; // Q / E held less than this is a tap (era travel); longer is Tempo
 const BASE_HP = 5;
 /** Short vibration on phones that support it (Android); silently ignored elsewhere. */
 export function haptic(ms) {
@@ -72,7 +73,8 @@ export class Game {
     this.lockT = 0;
     this.peekTarget = null;
     this.shiftFrom = null; // the era being left, while a shift is still playing
-    this.tempoMode = false; // keyboard: Q / E are Tempo instead of era travel (T switches)
+    this.tempoHold = 0; // Q / E held past a tap: -1 slow, +1 fast (see updatePlay)
+    this.keyT = { back: 0, forward: 0 }; // how long each has been held
     this.blockFlashT = 0;
     this.areaIdx = -1;
     this.warnT = 0;
@@ -110,6 +112,7 @@ export class Game {
       if (s.type === 'npc') this.npcs.push((e = new NPC(this, s)));
       else if (s.type === 'enemy') this.enemies.push((e = new Enemy(this, s)));
       else if (s.type === 'warden') e = this.warden = new Warden(this, s);
+      else if (s.type === 'searchlight') e = new Searchlight(this, s);
       else if (s.type === 'pushable') {
         const pos = this.state[s.posKey];
         this.pushables.push((e = new Pushable(this, { ...s, x: pos.x, z: pos.z })));
@@ -197,6 +200,8 @@ export class Game {
     if (f.finished) return this.startNew();
     // a save from before the gatehouse shutter existed, already past it: it stays open
     if ((this.state.taken || []).includes('core') || f.posternOpen || f.millDammed) f.shutterBroken = true;
+    // a save where the star chart was returned before the valley began remembering it
+    if ((this.state.kindness || []).includes('chart')) f.chartReturned = f.statueShown = true;
     // saves from before Tempo came with the Escapement Key, and before the door's regulators
     if (this.state.inventory.includes('clockKey') || f.towerUnlocked) f.hasTempo = true;
     if (f.towerUnlocked) f.regulatorsSynced = true;
@@ -437,19 +442,7 @@ export class Game {
 
   onPushed(p) {
     this.state[p.spec.posKey] = { x: p.cx, z: p.cz };
-    if (p.id === 'boulder') {
-      const t = L.boulderTarget;
-      if (p.cx !== t.x || p.cz !== t.z || this.state.flags.millDammed) return;
-      this.state.flags.millDammed = true;
-      audio.sfx('socket');
-      audio.sfx('splash');
-      this.bursts.emit(t.x + 0.5, 0.8, t.z + 0.5, 30, { color: [0x3ad0c0, 0x9fe0ff], speed: 3, life: 0.8 });
-      this.refreshWorld();
-      this.save();
-      this.timelapse({ to: ERA.PRESENT, focus: [195.5, 1, 3], years: 500, caption: 'Turned from its gully, the spring pools in the hollow...', grow: ['millM'] }).then(() =>
-        this.hud.toast("A millpond now, but it drains through the mill's open sluice.", 4500),
-      );
-    } else if (p.id === 'block') {
+    if (p.id === 'block') {
       this.refreshWorld();
       const t = L.pillarTarget;
       if (p.cx === t.x && p.cz === t.z) {
@@ -491,31 +484,33 @@ export class Game {
     if (p.id === 'clockKey') this.learnTempo();
   }
 
-  /** Lifting the Escapement Key teaches the Chronoheart Tempo, and brings the Warden straight for you. */
+  /**
+   * Lifting the Escapement Key brings the Warden straight for you. (Tempo is normally learned at
+   * the courtyard gate; anyone who walked past that learns it here instead.)
+   */
   async learnTempo() {
     const f = this.state.flags;
-    if (f.hasTempo) return;
-    f.hasTempo = true;
-    this.tempoMode = !touchActive(); // on a keyboard, Q / E start out as Tempo: it's needed this instant
+    if (!f.hasTempo) {
+      this.grantTempo();
+      await this.cutscene(TEMPO_LEARN);
+      this.tempoToast();
+    } else this.hud.toast('The Warden knows the key is gone. <b>Slow it down</b> and get clear!', 4500);
+    this.warden?.hunt();
+  }
+
+  grantTempo() {
+    this.state.flags.hasTempo = true;
     this.abilities.syncBody();
     this.save();
-    await this.cutscene(TEMPO_LEARN);
-    this.warden?.hunt();
+  }
+
+  tempoToast() {
     this.hud.toast(
       touchActive()
         ? '<b>Tempo!</b> Hold <b>Slow</b> to slow the machines near you, <b>Fast</b> to speed them up.'
-        : '<b>Tempo!</b> Hold <kbd>Q</kbd> to slow the machines near you, <kbd>E</kbd> to speed them up. <kbd>T</kbd> turns Q / E back to era travel.',
+        : '<b>Tempo!</b> <b>Hold</b> <kbd>Q</kbd> to slow the machines near you, <b>hold</b> <kbd>E</kbd> to speed them up. A quick tap still travels.',
       8000,
     );
-  }
-
-  /** Keyboard: turn Q / E between era travel and Tempo. (Touch has Slow and Fast buttons instead.) */
-  toggleTempo() {
-    if (!this.state.flags.hasTempo || !this.controlsEnabled()) return;
-    audio.sfx('ui');
-    if (this.gearworks.active) return this.hud.toast('Inside the clock, the Chronoheart only turns Tempo.', 2500);
-    this.tempoMode = !this.tempoMode;
-    this.hud.toast(this.tempoMode ? '<kbd>Q</kbd> / <kbd>E</kbd>: <b>Tempo</b> (slow / fast)' : '<kbd>Q</kbd> / <kbd>E</kbd>: <b>era travel</b>', 2200);
   }
 
   giveItem(item) {
@@ -773,12 +768,28 @@ export class Game {
       if (input.hit('forward') && this.era < 2) this.peekTarget = this.era + 1;
     } else {
       this.peekTarget = null;
-      // inside the clock, or once T has turned them to Tempo, Q and E bend time instead (see gearworks.js)
-      const eraKeys = ctl && !this.gearworks.active && !(this.tempoMode && f.hasTempo);
-      if (eraKeys && input.hit('back')) this.tryShift(this.era - 1);
-      if (eraKeys && input.hit('forward')) this.tryShift(this.era + 1);
     }
-    if (input.hit('tempo')) this.toggleTempo();
+    // Q / E. Before Tempo is learned, a press travels one era. After it, a quick tap still
+    // travels (on letting go) and holding bends time instead: no mode to switch. Inside the
+    // clock, where the ages can't be pulled apart, they are Tempo from the first instant.
+    this.tempoHold = 0;
+    for (const [name, dir] of [['back', -1], ['forward', 1]]) {
+      const held = ctl && !peeking && input.held(name);
+      const t = this.keyT[name];
+      if (!ctl || peeking) this.keyT[name] = 0;
+      else if (!f.hasTempo) {
+        if (input.hit(name) && !this.gearworks.active) this.tryShift(this.era + dir);
+      } else if (this.gearworks.active) {
+        if (held) this.tempoHold = dir;
+      } else if (held) {
+        this.keyT[name] = t + dt;
+        if (this.keyT[name] >= TAP_TIME) this.tempoHold = dir;
+      } else {
+        // let go (or a touch tap on an era name, down for a single frame)
+        if ((t > 0 && t < TAP_TIME) || (t === 0 && input.hit(name))) this.tryShift(this.era + dir);
+        this.keyT[name] = 0;
+      }
+    }
 
     // meter
     if (f.steadyHeart) this.meter = 1; // the Everspring: the Chronoheart never drains again
@@ -949,10 +960,13 @@ export class Game {
    * Show the consequence of something the player just did: hold the camera on `focus` in the
    * age where they did it, then spin the sky through days and nights while the years count up
    * and that age slowly becomes era `to` in front of them, where the result grows (`grow`:
-   * feature ids scaled up from the ground) or drops into place (`drop`). Then shift back.
+   * feature ids scaled up from the ground, starting at `growFrom` of full height: water rising
+   * from a shallow pool, say), drops into place (`drop`) or floats up with rising water
+   * (`float`: { ids, by } rises `by` cells). Then shift back. `to` can be the age you're in:
+   * then nothing shifts, and the change simply plays out in front of you.
    * Any tap / key after a moment skips ahead.
    */
-  async timelapse({ to, focus, years, caption, grow = [], drop = [], effect = null, erode = null }) {
+  async timelapse({ to, focus, years, caption, grow = [], drop = [], float = null, growFrom = 0, effect = null, erode = null }) {
     if (this.lapse || (this.mode !== 'play' && this.mode !== 'dialogue')) return;
     const from = this.era;
     const r = this.renderer;
@@ -979,7 +993,7 @@ export class Game {
     const targets = (ids) => this.world.features.filter((f) => ids.includes(f.id)).flatMap((f) => f.meshes[to] || []);
 
     overlay.querySelector('.lapse-caption').textContent = caption;
-    overlay.querySelector('.lapse-era').textContent = `${ERA_LABEL[from]}  →  ${ERA_LABEL[to]}`;
+    overlay.querySelector('.lapse-era').textContent = to === from ? ERA_LABEL[to] : `${ERA_LABEL[from]}  →  ${ERA_LABEL[to]}`;
     overlay.style.setProperty('--lapse-color', ERA_COLORS[to]);
     yearsEl.textContent = '+0 years';
     overlay.hidden = false;
@@ -993,12 +1007,16 @@ export class Game {
 
     // the age it was done in turns into the later one as the years go by (lapse.update keeps
     // the two in step); the consequence starts small and grows in
-    const DUR = 3.2;
-    this.shiftEra(to, lapse.focus, DUR * 0.8);
-    audio.sfx('shift', { era: to });
+    const DUR = 3.2, shifted = to !== from;
+    if (shifted) {
+      this.shiftEra(to, lapse.focus, DUR * 0.8);
+      audio.sfx('shift', { era: to });
+    }
     lapse.grow = targets(grow);
     lapse.drop = targets(drop);
-    for (const m of lapse.grow) m.scale.y = 0.001;
+    lapse.float = float ? targets(float.ids) : [];
+    for (const m of lapse.grow) m.scale.y = Math.max(0.001, growFrom);
+    for (const m of lapse.float) m.position.y = -float.by;
     for (const m of lapse.drop) m.position.y = 5;
     // erosion: the rock that will be worn away starts whole and crumbles, nearest the water first
     let rock = null;
@@ -1029,9 +1047,10 @@ export class Game {
       const k = lapse.t / DUR;
       // a beat in the old age first, and the new one fully arrived a little before the years stop
       const a = THREE.MathUtils.clamp((k - 0.08) / 0.8, 0, 1);
-      this.post.trans = Math.min(0.999, a * a * (3 - 2 * a));
+      if (shifted) this.post.trans = Math.min(0.999, a * a * (3 - 2 * a));
       const e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2; // ease in-out
-      yearsEl.textContent = `+${Math.round(e * years).toLocaleString()} years`;
+      const n = Math.round(e * years);
+      yearsEl.textContent = `+${n.toLocaleString()} ${n === 1 ? 'year' : 'years'}`;
       // days and nights racing past
       const night = Math.max(0, Math.sin(k * Math.PI * 10)) * (1 - k) * 0.9;
       r.sun.intensity = r.atmos.sunI * (1 - night * 0.85);
@@ -1040,7 +1059,8 @@ export class Game {
       // the consequence waits until the new age has begun to show through, then unfolds in it
       const kc = THREE.MathUtils.clamp((k - 0.25) / 0.75, 0, 1);
       const g = 1 - Math.pow(1 - Math.min(1, kc * 1.15), 3); // growth ease-out
-      for (const m of lapse.grow) m.scale.y = Math.max(0.001, g);
+      for (const m of lapse.grow) m.scale.y = Math.max(0.001, growFrom + (1 - growFrom) * g);
+      for (const m of lapse.float) m.position.y = -float.by * (1 - g);
       for (const m of lapse.drop) m.position.y = 5 * Math.max(0, 1 - Math.min(1, kc * 1.6) ** 2);
       if (lapse.rock) {
         const R = lapse.rock, target = Math.floor(Math.min(1, kc * 1.1) ** 1.2 * R.pieces.length);
@@ -1077,8 +1097,10 @@ export class Game {
 
     // back to the player's own age
     overlay.classList.remove('in');
-    this.shiftEra(from);
-    audio.sfx('shift', { era: from });
+    if (shifted) {
+      this.shiftEra(from);
+      audio.sfx('shift', { era: from });
+    }
     window.removeEventListener('keydown', skipKeys);
     window.removeEventListener('pointerdown', wantSkip);
     this.lapse = null;
@@ -1187,6 +1209,11 @@ export class Game {
     }, 900);
   }
 
+  /**
+   * The time lens: holding peek opens a round window onto another age around Vivienne, live, so
+   * she can walk about with it. (A swipe in progress opens it as far as the drag; a refused
+   * shift flashes it red, to show what's in the way.)
+   */
   renderPeek() {
     // mid-shift, the "other age" target holds the age being left, kept live so it moves with the camera
     if (this.post.trans < 1 && this.shiftFrom !== null) {
@@ -1199,14 +1226,14 @@ export class Game {
     const target = this.blockFlashT > 0 ? this.blockFlashEra : sp ? sp.target : this.peekTarget;
     const want = target !== null && target !== undefined ? (this.blockFlashT > 0 ? Math.min(1, this.blockFlashT * 2) : sp ? sp.amt : 1) : 0;
     this.post.peekAmt += (want - this.post.peekAmt) * 0.25;
-    const tint = this.post.time.uniforms.peekTint.value;
-    if (this.blockFlashT > 0) tint.setRGB(1.4, 0.35, 0.35);
-    else tint.setRGB(0.6, 0.95, 1.0);
     if (this.post.peekAmt > 0.01 && target !== null && target !== undefined) {
-      const groups = this.world.groups;
-      groups.forEach((g, i) => (g.visible = i === target));
-      this.post.capture();
-      groups.forEach((g, i) => (g.visible = i === this.era));
+      const tu = this.post.time.uniforms, b = this.player.body;
+      if (this.blockFlashT > 0) tu.peekTint.value.setRGB(1.4, 0.35, 0.35);
+      else tu.peekTint.value.setHex(ERA_RING[target]);
+      const v = new THREE.Vector3(b.x, b.y + 0.8, b.z).project(this.renderer.camera);
+      tu.peekCenter.value.set(v.x * 0.5 + 0.5, v.y * 0.5 + 0.5);
+      tu.peekR.value = Math.min(0.3, 0.42 * tu.aspect.value); // narrower on a phone held upright
+      this.captureEra(target);
     }
   }
 

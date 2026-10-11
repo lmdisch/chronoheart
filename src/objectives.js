@@ -83,7 +83,7 @@ export function currentGoal(game) {
     if (!f.millDammed) {
       return step(
         'Find a way across the hollow.',
-        'The far bank is too high to climb. In the <b>Past</b>, a spring falls from the cliff and drains away down a gully. Push the boulder into the glowing gully mouth to turn the water into the hollow.',
+        "The far bank is too high to climb. In the <b>Past</b>, a spring falls into a stone trough at the cliff foot and drains away. The trough has three plugs, and only one of their channels is the old millrace. Hold the time lens open on the <b>Present</b> to see where each channel ends: two stop at sinkholes, one runs to the dam. Knock that plug out with your wrench.",
       );
     }
     if (!f.sluiceClosed) {
@@ -131,10 +131,11 @@ export function currentGoal(game) {
   if (x < X.tower) {
     if (f.towerUnlocked) return step('Enter the Clocktower.', 'The great door is open.');
     const eraMissing = [!hasDisc && 'the Sun Disc (Sun Terrace, in the Past)', !hasHammer && 'the Bell Hammer (Smithy Lane)', !hasCore && 'the Fusion Core (Gatehouse vault, in the Future)'].filter(Boolean);
+    if (!f.hasTempo && !inv.includes('clockKey')) return step('Look around the courtyard gate.', "Donald Eugene left his toolbox just inside the gate, in the <b>Present</b>. Something in it is meant for you.");
     if (!inv.includes('clockKey')) {
       return step(
         "Find the key to the Clocktower's lock.",
-        "The door only opens in the <b>Present</b>, but its key lies in the <b>Future</b> courtyard, guarded by the Warden. Stay out of its sight cone: hide behind the pillars, or slip into the Present when it turns your way. In the Present, the key's spot is inside the fountain. The moment you lift the key the Warden comes for you: the key teaches you Tempo, so slow it down and walk away.",
+        "The door only opens in the <b>Present</b>, but its key lies in the <b>Future</b> courtyard, guarded by the Warden. Stay out of its sight cone: hide behind the pillars, or slip into the Present when it turns your way. In the Present, the key's spot is inside the fountain. Tempo works on everything out there: slow the Warden or a searchlight to slip past it, or speed the Warden up to hurry it off a corner. The moment you lift the key the Warden comes for you, so slow it down and walk away.",
       );
     }
     if (eraMissing.length) {
@@ -205,5 +206,5 @@ function inputNames() {
   const touch = document.body.classList.contains('touch');
   return touch
     ? { seal: 'the <b>Seal</b> button', echo: 'the <b>Echo</b> button', slow: 'the <b>Slow</b> button', fast: 'the <b>Fast</b> button', tempoNote: '' }
-    : { seal: '<kbd>R</kbd>', echo: '<kbd>V</kbd>', slow: '<kbd>Q</kbd>', fast: '<kbd>E</kbd>', tempoNote: ' (<kbd>T</kbd> turns Q / E between era travel and Tempo.)' };
+    : { seal: '<kbd>R</kbd>', echo: '<kbd>V</kbd>', slow: '<kbd>Q</kbd>', fast: '<kbd>E</kbd>', tempoNote: ' (Hold the key down: a quick tap travels an era instead.)' };
 }

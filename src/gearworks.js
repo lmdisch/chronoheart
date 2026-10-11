@@ -3,9 +3,9 @@
 //
 // The Escapement Key teaches the Chronoheart Tempo: slow time around you, or speed it up. Only
 // machines within your bubble feel it; Vivienne moves as she always does. On touch it's the Slow
-// and Fast buttons. On a keyboard, T turns Q and E from era travel to Tempo and back; inside the
-// clock, where the ages are wound too tightly to pull apart, they are always Tempo. It runs on
-// the Chronoheart's ring.
+// and Fast buttons. On a keyboard it's Q and E held down (a quick tap still travels an era; see
+// Game.updatePlay); inside the clock, where the ages are wound too tightly to pull apart, they
+// are Tempo from the first instant. It runs on the Chronoheart's ring.
 import * as THREE from 'three';
 import { ERA } from './core/util.js';
 import { audio } from './audio/audio.js';
@@ -370,12 +370,9 @@ export class Gearworks {
     const open = !!f.gearworksOpen;
     this.group.visible = open;
     const inside = this.active;
-    // Tempo: the Slow / Fast buttons, or Q / E while the keys are turned to Tempo (always, in the clock)
+    // Tempo: the Slow / Fast buttons, or Q / E held down (g.tempoHold)
     let want = 0;
-    if (ctl && f.hasTempo && !input.held('peek')) {
-      const keys = inside || g.tempoMode;
-      want = input.held('slow') || (keys && input.held('back')) ? -1 : input.held('fast') || (keys && input.held('forward')) ? 1 : 0;
-    }
+    if (ctl && f.hasTempo && !input.held('peek')) want = input.held('slow') || g.tempoHold < 0 ? -1 : input.held('fast') || g.tempoHold > 0 ? 1 : 0;
     // it runs on the Chronoheart's ring: the clock's own inside the Gearworks, and outside it the
     // same ring era travel uses. An empty ring needs you to let go before it works again.
     if (!want) this.spent = false;
@@ -417,8 +414,8 @@ export class Gearworks {
           : { color: [COL.slow, 0xd8f4ff], speed: 0.25, life: 1.8, gravity: -0.1, jitter: 0.2 });
       }
     }
-    // while Q / E are Tempo, the era dial reads Slow / Tempo / Fast, and the music keeps your time
-    const dial = inside || (!!g.tempoMode && !!f.hasTempo);
+    // inside the clock, the era dial reads Slow / Tempo / Fast, and the music keeps your time
+    const dial = inside;
     if (dial !== this.wasDial) {
       this.wasDial = dial;
       const pills = document.querySelectorAll('#chrono .era-pill');

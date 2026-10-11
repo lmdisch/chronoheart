@@ -1,4 +1,4 @@
-// Post-processing: the era shift (one age rebuilding into another) / peek blend, soft-knee bloom, bokeh depth of field,
+// Post-processing: the era shift (one age rebuilding into another) / the time lens, soft-knee bloom, bokeh depth of field,
 // screen-space god rays, chromatic aberration, film grain and the era colour grade.
 // The scene renders into a target with a depth texture so DOF and rays can read depth.
 import * as THREE from 'three';
@@ -23,8 +23,14 @@ const TimeShader = {
     // block fading across in its own time (loosely outward from the cause)
     scatter: { value: 0 },
     ripple: { value: 0 },
+    // The time lens (peeking): a round window onto another age (tPrev, rendered live), centred
+    // on Vivienne. peek 0..1 opens it; its rim is forever being rebuilt, block by block, the way
+    // an era shift's edge is.
     peek: { value: 0 },
     peekTint: { value: new THREE.Color(0.6, 0.95, 1.0) },
+    peekCenter: { value: new THREE.Vector2(0.5, 0.5) },
+    peekR: { value: 0.3 },
+    peekBlocks: { value: 34 }, // 0 = a plain soft-edged circle (reduced motion)
     ringTint: { value: new THREE.Color(0.5, 1.0, 1.0) },
     aspect: { value: 1.7 },
     time: { value: 0 },
@@ -39,7 +45,7 @@ const TimeShader = {
   fragmentShader: `
     uniform sampler2D tDiffuse; uniform sampler2D tPrev;
     uniform float shift; uniform float reach; uniform float shiftDir; uniform float blocks; uniform float scatter;
-    uniform float ripple; uniform float peek; uniform vec3 peekTint; uniform vec3 ringTint;
+    uniform float ripple; uniform float peek; uniform vec2 peekCenter; uniform float peekR; uniform float peekBlocks; uniform vec3 peekTint; uniform vec3 ringTint;
     uniform float aspect; uniform float time; uniform vec2 center;
     uniform float glitch; uniform vec4 glitchRect; uniform float glitchSeed; uniform vec3 glitchTint;
     varying vec2 vUv;
@@ -117,11 +123,28 @@ const TimeShader = {
         }
       }
       if (peek > 0.0) {
-        vec3 pv = texture2D(tPrev, vUv + vec2(sin(vUv.y * 80.0 + time * 6.0) * 0.0015, 0.0)).rgb;
-        float lum = dot(pv, vec3(0.299, 0.587, 0.114));
-        vec3 ghost = mix(vec3(lum), pv, 0.55) * peekTint;
-        float scan = 0.85 + 0.15 * sin(vUv.y * 600.0 + time * 10.0);
-        col = mix(col, ghost * scan * 1.15, peek * 0.5);
+        vec3 pv = texture2D(tPrev, vUv).rgb;
+        float R = peekR * peek * (1.0 + 0.015 * sin(time * 2.3));
+        float pd = length((vUv - peekCenter) * asp);
+        if (peekBlocks > 0.0) {
+          vec2 g = vUv * asp * peekBlocks;
+          vec2 cell = floor(g), f = fract(g);
+          float dc = length((cell + 0.5) / peekBlocks - peekCenter * asp);
+          // blocks on the rim drift in and out of the other age, each in its own time
+          float n = 0.5 + 0.5 * sin(time * 2.2 + h2(cell) * 6.2832);
+          float t = clamp((R - dc + (n - 0.5) * 0.07) / 0.06, 0.0, 1.0);
+          float live = sin(t * 3.14159);
+          float w = smoothstep(0.12, 0.9, t);
+          float built = step(f.y, w) * step(0.001, w);
+          vec3 here = mix(col, vec3(dot(col, vec3(0.299, 0.587, 0.114))) * peekTint * 1.25, live * 0.55);
+          col = mix(here, pv, built);
+          col += peekTint * exp(-abs(f.y - w) * 16.0) * live * 0.8;
+          float rim = max(smoothstep(0.42, 0.5, abs(f.x - 0.5)), smoothstep(0.42, 0.5, abs(f.y - 0.5)));
+          col += peekTint * rim * live * 0.18;
+        } else {
+          col = mix(col, pv, smoothstep(R, R - 0.03, pd));
+        }
+        col += peekTint * exp(-abs(pd - R) * 45.0) * 0.22 * peek; // a thin ring of light round it
       }
       gl_FragColor = vec4(col, 1.0);
     }`,
@@ -308,6 +331,7 @@ export class Post {
     this.trans = 1; // 0..1
     this.shiftTime = SHIFT_TIME;
     this.peekAmt = 0;
+    this.time.uniforms.peekBlocks.value = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 0 : renderer.lowPower ? 26 : 34;
     this.focusDist = 20;
     this.onResize();
     renderer.onResizeCb = () => this.onResize();

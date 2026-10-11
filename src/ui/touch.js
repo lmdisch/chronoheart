@@ -69,7 +69,6 @@ export class TouchControls {
     if (this.on === on) return;
     this.on = on;
     document.body.classList.toggle('touch', on);
-    if (on) this.game.tempoMode = false; // touch has its own Slow / Fast buttons: Q / E stay era travel
     if (!on) this.releaseAll();
   }
 

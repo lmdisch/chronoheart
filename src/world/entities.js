@@ -608,6 +608,57 @@ export class Warden extends EraEntity {
 }
 
 // ---------------------------------------------------------------------------
+/**
+ * A searchlight in the Warden's yard: a pool of light sweeping back and forth between two points.
+ * Step into it and the Warden comes straight for you. It's a machine, so Tempo slows or hurries it.
+ */
+export class Searchlight extends EraEntity {
+  constructor(game, spec) {
+    super(game, spec);
+    this.alwaysUpdate = true; // keeps sweeping while you're in another era
+    this.t = spec.phase ?? 0;
+    this.r = spec.r ?? 1.25;
+    this.mat = new THREE.MeshBasicMaterial({ color: 0xbfe8ff, transparent: true, opacity: 0.3, depthWrite: false, side: THREE.DoubleSide });
+    this.pool = new THREE.Mesh(new THREE.CircleGeometry(this.r, 28).rotateX(-Math.PI / 2), this.mat);
+    this.pool.renderOrder = 1;
+    this.rimMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xbfe8ff).multiplyScalar(2), transparent: true, opacity: 0.8, depthWrite: false, side: THREE.DoubleSide });
+    this.rim = new THREE.Mesh(new THREE.RingGeometry(this.r - 0.06, this.r, 36).rotateX(-Math.PI / 2), this.rimMat);
+    this.rim.renderOrder = 2;
+    // its lamp, on a mast at the back of the yard
+    const [ax, az] = spec.a, [bx, bz] = spec.b;
+    const mast = new THREE.Mesh(new THREE.BoxGeometry(0.16, 4.6, 0.16), new THREE.MeshStandardMaterial({ color: 0x3a404c, metalness: 0.5, roughness: 0.5 }));
+    mast.position.set((ax + bx) / 2, 2.3, 0.2);
+    this.lamp = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.3, 0.4), this.rimMat);
+    this.lamp.position.set((ax + bx) / 2, 4.6, 0.3);
+    this.group.add(this.pool, this.rim, mast, this.lamp);
+    this.cool = 0;
+  }
+  update(dt) {
+    const g = this.game, p = g.player.body, [ax, az] = this.spec.a, [bx, bz] = this.spec.b;
+    const tempo = g.era === this.era ? g.gearworks.tempoAt(this.x, 0) : 1;
+    this.t += (dt * tempo) / this.spec.period;
+    const k = 0.5 - 0.5 * Math.cos(this.t * Math.PI * 2); // there and back, easing at each end
+    this.x = ax + (bx - ax) * k;
+    this.z = az + (bz - az) * k;
+    this.pool.position.set(this.x, 0.05, this.z);
+    this.rim.position.set(this.x, 0.06, this.z);
+    const col = tempo < 1 ? 0x7fd8ff : tempo > 1 ? 0xffb84a : 0xdff2ff;
+    this.mat.color.setHex(col);
+    this.rimMat.color.setHex(col).multiplyScalar(2);
+    this.cool = Math.max(0, this.cool - dt);
+    const lit = g.era === this.era && g.mode === 'play' && !(g.shiftGrace > 0) && p.y < 2 && Math.hypot(p.x - this.x, p.z - this.z) < this.r - 0.15;
+    if (lit && this.cool <= 0 && g.warden && g.warden.state !== 'chase' && g.warden.state !== 'alert') {
+      this.cool = 3;
+      g.warden.hunt(3.5);
+      if (!g.state.flags.lightHint) {
+        g.state.flags.lightHint = true;
+        g.hud.toast('Caught in a searchlight! The Warden is coming. Slow the lights down to slip past them.', 4500);
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 const stoneGeo = new THREE.BoxGeometry(1, 1, 1);
 export class Pushable extends EraEntity {
   constructor(game, spec) {
@@ -858,10 +909,25 @@ export class Strikeable extends EraEntity {
       this.box.position.set(spec.x - 0.25, 1.25, spec.z);
       this.group.add(this.box);
     }
-    this.group.visible = !game.state.flags[spec.flag];
+    if (this.id.startsWith('plug')) {
+      // a stone plug in the wall of the spring's trough
+      this.box = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.52, 0.62), new THREE.MeshStandardMaterial({ color: 0xb98a54, roughness: 0.95 }));
+      this.box.position.set(spec.x + 0.05, 0.34, spec.z);
+      const ring = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.26, 0.26), new THREE.MeshBasicMaterial({ color: new THREE.Color(0x3ad0c0).multiplyScalar(1.6) }));
+      ring.position.set(-0.22, 0, 0);
+      this.box.add(ring);
+      this.group.add(this.box);
+    }
+    // gone once it has given (spec.keep: it stays put, e.g. a plug that was the wrong one)
+    this.group.visible = !game.state.flags[spec.flag] || !!spec.keep;
   }
   active() {
     return super.active() && !this.game.state.flags[this.spec.flag];
+  }
+  /** Back as it was, to be struck again (the story re-seats a wrong plug). */
+  reseat() {
+    this.hits = 0;
+    this.group.visible = true;
   }
   /** The prompt shows how far along it is. */
   prompt() {
@@ -897,7 +963,7 @@ export class Strikeable extends EraEntity {
       const t = this.game.time;
       this.box.rotation.x = this.hits * 0.16 + Math.sin(t * 60) * 0.1 * this.jolt;
       this.box.rotation.z = -this.hits * 0.09;
-      this.lamp.visible = this.hits === 0 || Math.sin(t * (14 + this.hits * 12)) > -0.2 * this.hits;
+      if (this.lamp) this.lamp.visible = this.hits === 0 || Math.sin(t * (14 + this.hits * 12)) > -0.2 * this.hits;
     }
   }
 }

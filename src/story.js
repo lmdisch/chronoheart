@@ -2,7 +2,7 @@
 import { audio } from './audio/audio.js';
 import { ERA } from './core/util.js';
 import { touchActive } from './ui/touch.js';
-import { erosionCells } from './levels/hollowmere.js';
+import { erosionCells, STATUE } from './levels/hollowmere.js';
 
 export const ITEMS = {
   acorn: { name: 'Acorn', desc: "Megan's finest acorn. It just needs time to grow." },
@@ -39,6 +39,7 @@ export const INTRO = [
 
 // The Escapement Key: the part of a clock that sets its tempo teaches the Chronoheart to do the same.
 export const TEMPO_LEARN = [
+  // (only for someone who walked past the toolbox at the courtyard gate)
   N('The Escapement Key hums against the Chronoheart. Its ring divides in two: one half turning slowly, one racing.'),
   Wr('An escapement sets how fast a clock runs... and now the Chronoheart can, too. Any machine near me: slower, or faster.'),
   N('Across the yard, the Warden swings round. It knows the key is gone.'),
@@ -69,6 +70,10 @@ export const ENDING = [
   DE('Now then... I believe we are both late for supper. Shall we go home?'),
 ];
 
+// Nobody Vivienne meets knows she is travelling through time. In the Present they know her as
+// the clockmaker's apprentice; in the other ages she is a stranger in very odd clothes. What she
+// does for them is remembered all the same, and shows up in the ages that follow (the statue in
+// the square, the waymarker by Tamsin's bridge, the lily garden, Lillian's medallion).
 function npcLines(game, id) {
   const f = game.state.flags, inv = game.state.inventory;
   const S = (who, name) => (text) => ({ who, name, text });
@@ -76,10 +81,18 @@ function npcLines(game, id) {
     case 'louise': {
       const m = S('louise', 'Elder Karen Louise');
       if (!f.hasAmulet) return [m("Vivienne, dear. The Tower's stopped and Donald Eugene's vanished. People say the old ages are bleeding through. I saw a lizard the size of a dog in the square at dawn!"), m('Have you looked in his workshop? He always kept his secrets on that bench.')];
+      if (f.chartReturned && !f.louiseStatue) {
+        f.louiseStatue = true;
+        return [
+          m("Do you know, dear, I've walked past the Stranger's statue every day of my life, and only this morning did I notice she wears eye-glasses just like yours."),
+          m('Callie the carver made her, in the oldest days. Nobody remembers who she was. Somebody kind, the plaque says.'),
+          Wr('...Somebody kind. I can live with that.'),
+        ];
+      }
       if (game.state.kindness.includes('lilies')) return [m('Look at them, Vivienne. Sun-lilies, right here in the square, just like Grandmother said. Thank you, dear.')];
-      if (inv.includes('lilySeeds')) return [m('Are those... sun-lily seeds? But they died out centuries ago! Plant them in my old flower bed by the road, would you?')];
+      if (inv.includes('lilySeeds')) return [m("Are those... sun-lily seeds? But they died out centuries ago! Wherever did you find them? No, don't tell me, you'll only say something clever. Plant them in my old flower bed by the road, would you?")];
       if (game.player.body.x < 50) {
-        const lines = [m("That glow... Donald Eugene's amulet! So you have the gift too."), m("Listen. The river ford washed out long ago, but in the oldest days people crossed it on stepping stones."), Wr('The oldest days... the Past!')];
+        const lines = [m("Is that Donald Eugene's amulet? He never took it off. Keep it safe for him, dear, until he's back."), m("If you're off to look for him, mind the river. The ford washed out long ago. Grandmother used to say that in the oldest days, people crossed it on stepping stones."), Wr('The oldest days... the Past!')];
         if (!f.lilyQuest) {
           f.lilyQuest = true;
           lines.push(m("One more thing, dear, if you have a moment. That empty flower bed by the road was my grandmother's pride."), m('She said golden sun-lilies grew in this square in the oldest days. None have bloomed here in living memory.'), { favour: 'lilies' });
@@ -92,18 +105,19 @@ function npcLines(game, id) {
       const y = S('samaria', 'Samaria the Sun-Keeper');
       if (!f.hasAmulet) return [y('...')];
       const disc = y('We keep the Sun Disc in the observatory on the high terrace to the east. Only someone who lays stones for the ages can climb up to it.');
-      if (game.state.kindness.includes('chart')) return [y("Every night I mark the sun's path on the chart you brought back. The calendar is whole again."), disc];
+      if (game.state.kindness.includes('chart')) return [y("Every night I mark the sun's path on the chart you brought back. The calendar is whole again."), y('Callie is carving you in stone, strange clothes and all. The valley should remember who helped it.'), disc];
       if (inv.includes('starChart'))
         return [
-          y("My star chart! Where did you... no. I won't ask. It smells of strange metal and stranger centuries."),
+          y('My star chart! Dry, and whole! Where did you find it? ...No. The sun sends what it sends, and today it sent a stranger in peculiar clothes.'),
           { take: 'starChart' },
           y('Thank you, traveller. Without it, the planting days would be guesswork, and the village would go hungry.'),
-          { kind: 'chart' },
+          y('You will be remembered here. I shall have Callie carve you in stone, so that our grandchildren know your face.'),
+          { kind: 'chart', flag: 'chartReturned' },
         ];
       if (f.chartQuest) return [y('Still no sign of my star chart? The storm carried it far. Perhaps farther than anyone can walk.'), disc];
       f.chartQuest = true;
       return [
-        y('You shimmer like a mirage, traveller. Have you come from another age?'),
+        y('What strange clothes, traveller. Glass over your eyes, and an apron full of iron? You are not from the river villages.'),
         y("Forgive me, I am distracted. Last night a storm tore my star chart from the observatory and carried it off. Without it, I cannot keep the sun's calendar."),
         { favour: 'chart' },
         disc,
@@ -112,31 +126,34 @@ function npcLines(game, id) {
     case 'tick': {
       const t = S('tick', 'TICK');
       if (game.state.kindness.includes('chart'))
-        return [t('ARCHIVE NOTE: ITEM 4471, "ANCIENT STAR CHART", HAS BEEN... RETURNED TO ITS OWNER? IN THE DISTANT PAST?'), t('RECORDS NOW SHOW THE ANCIENT SUN CALENDAR WAS NEVER INTERRUPTED. HOW DELIGHTFUL.')];
+        return [
+          t('ARCHIVE NOTE: ITEM 4471, "ANCIENT STAR CHART", IS NO LONGER LISTED AS LOST. I HAVE NO RECORD OF THAT RECORD CHANGING. HOW DELIGHTFUL.'),
+          t('PLEASE ENJOY THE PLAZA\'S OLDEST EXHIBIT: THE STATUE OF "THE STRANGER". VISITORS OFTEN REMARK THAT YOUR COSTUME IS A VERY GOOD COPY.'),
+        ];
       if (inv.includes('starChart')) return [t('THE STAR CHART IS ON LOAN TO YOU. ITS ORIGINAL OWNER IS LISTED AS "SAMARIA, SUN-KEEPER".')];
       if (f.chartQuest)
         return [
           t('QUERY: ANCIENT STAR CHART. SEARCHING...'),
           t('ITEM 4471 LOCATED. A STAR CHART RECOVERED FROM THE VALLEY AFTER A GREAT STORM. AGE: VERY.'),
-          t('YOU MAY BORROW IT. PLEASE RETURN IT TO ITS OWNER. OR TO US. TIME IS CONFUSING.'),
+          t('YOU MAY BORROW IT. PLEASE RETURN IT TO ITS OWNER, "SAMARIA, SUN-KEEPER". OWNER STATUS: DECEASED, APPROXIMATELY NINE HUNDRED YEARS. ...I WILL MARK THE LOAN "OPEN-ENDED".'),
           { give: 'starChart' },
         ];
-      return [t('GREETINGS, VISITOR. WELCOME TO HOLLOWMERE MEMORIAL PLAZA.'), t('ERROR: YOUR TIMESTAMP IS INVALID. ARE YOU... EARLY?'), t('ARCHIVE NOTE: AN AQUEDUCT LIES BENEATH THE SANDSTONE CLIFFS. IT WAS CARVED BY A SPRING THAT DRIPPED FOR CENTURIES.')];
+      return [t('GREETINGS, VISITOR. WELCOME TO HOLLOWMERE MEMORIAL PLAZA.'), t('COSTUME DETECTED: "MEDIEVAL APPRENTICE". VERY AUTHENTIC. PLEASE NOTE THE HERITAGE FESTIVAL IS NOT UNTIL SPRING.'), t('ARCHIVE NOTE: AN AQUEDUCT LIES BENEATH THE SANDSTONE CLIFFS. IT WAS CARVED BY A SPRING THAT DRIPPED FOR CENTURIES.')];
     }
     case 'holo':
-      return [N('MEMORIAL: EUGENE THE CLOCKMAKER, WHO RESTARTED THE GREAT TOWER WITH THE HELP OF HIS APPRENTICE, V—[DATA CORRUPTED]'), Wr('...With the help of his apprentice? Does that mean... me?')];
+      return [N('MEMORIAL: DONALD EUGENE THE CLOCKMAKER, WHO RESTARTED THE GREAT TOWER WITH THE HELP OF HIS APPRENTICE, V—[DATA CORRUPTED]'), Wr('...With the help of his apprentice? Does that mean... me?')];
     case 'michelle': {
       const m = S('michelle', 'Michelle the Wise');
       if (f.metMichelle && game.state.kindness.length >= FAVOURS.length)
-        return [m("Samaria's calendar, Karen Louise's lilies, Lillian's keepsake... You helped people in every age, Vivienne."), m('Every age remembers a kindness. And so do I.')];
+        return [m("You have the look of someone who has been busy being kind, Vivienne. I can always tell."), m('People remember a kindness far longer than you would think. And so do I.')];
       if (f.metMichelle)
-        return [m('Use the power of time wisely, Vivienne. And whatever age you find yourself in, always remember to help others.')];
+        return [m('Spend your time wisely, Vivienne. And wherever you find yourself, always remember to help others.')];
       f.metMichelle = true;
       return [
         m('Ah. The clockmaker\'s apprentice, right on time. The river has been expecting you.'),
-        m('A little advice before you cross. Time is a great power, and great powers are easy to waste. Use it wisely.'),
-        m('Your master used to vanish for days at a time, you know. He once told me he kept a room in the oldest age, behind a door no one would ever think to knock on.'),
-        m('And whatever age you find yourself in, always remember to help others. Every age remembers a kindness.'),
+        m('A little advice before you cross. Time is the one thing none of us gets back, and it is very easy to waste. Spend it wisely.'),
+        m('Your master used to vanish for days at a time, you know. He once told me he kept a room "in the oldest age, behind a door no one would ever think to knock on". I never did work out what he meant.'),
+        m('And wherever you find yourself, always remember to help others. A kindness is remembered longer than you would think.'),
         Wr("I'll remember. Thank you, Michelle."),
       ];
     }
@@ -163,23 +180,29 @@ function npcLines(game, id) {
       const b = S('aria', 'Aria the Smith');
       if (f.keepsakeQuest && !f.medallionGiven && (f.hammerLeft || inv.includes('hammerBroken')))
         return [
-          Wr('Aria, I met someone from your family. Lillian. She runs a shop here, three hundred years from now.'),
-          b('Three hundred... ha! So the forge outlives me. Good.'),
-          b('Then she should have this. My mother stamped our mark in it. Tell her to wear it at the bench.'),
+          Wr("Aria... suppose someone in your family, a long way down the line, wished they had something you'd held. What would you leave them?"),
+          b("Strange question, girl. ...Ha. I like it, though. So the forge outlives me, in this story of yours? Good."),
+          b("Then this. My mother stamped our mark in it. You've a careful look about you: see it finds its way to whoever is minding the bench by then. Tell them to wear it there."),
           { give: 'medallion', flag: 'medallionGiven' },
         ];
       if (f.hammerLeft) return [b("It's in the vault now. My grandkids' grandkids can fish it out, eh?")];
-      if (inv.includes('hammerBroken')) return [b("If you know a way to give it a few centuries, my quench-vault's right there.")];
+      if (inv.includes('hammerBroken')) return [b("Seal it in my quench-vault if you like. Some great-grandchild of mine can fish it out when it's done.")];
       return [
         b("Donald Eugene's apprentice! You've got his look, like you're late for something that hasn't happened yet."),
         b('The Tower\'s bell hammer cracked last winter. Donald Eugene brought it to me, but tempering star-iron properly takes a lifetime in the quench-vault. Longer than I\'ve got left.'),
-        b("Take it. If you know a way to buy it a few centuries, you're welcome to use my vault."),
+        b("Take it. Seal it in my vault if you like, and let some great-grandchild of mine fish it out when it's done."),
         { give: 'hammerBroken' },
       ];
     }
     case 'callie': {
       const b = S('callie', 'Callie the Carver');
-      return [b('Hm. Callie the carver, at your service, spirit.'), b('Remember this: whatever you lay down now becomes the foundation for everything after. My grandchildren will build their houses on my stones.'), b('The Sun Disc sits up on the terrace. Far too high for most people.')];
+      if (f.chartReturned)
+        return [
+          b('Ah, the stranger! The Sun-Keeper wants you in stone, for bringing back her chart. Hold still a moment.'),
+          b('...Hm. Strange cloth is hard to carve. And what are those, on your eyes? I shall have to guess.'),
+          b('Stone remembers longer than people do. Whoever stands in this valley after us will know your face, if not your name.'),
+        ];
+      return [b('Hm. Strange cloth, stranger boots. You are not from the river villages, are you? No matter. Callie the carver, at your service.'), b('Remember this: whatever you lay down now becomes the foundation for everything after. My grandchildren will build their houses on my stones.'), b('The Sun Disc sits up on the terrace. Far too high for most people.')];
     }
     case 'lillian': {
       const k = S('lillian', 'Lillian');
@@ -188,7 +211,8 @@ function npcLines(game, id) {
         return [
           k("Is this... Aria's medallion? That's our family mark!"),
           { take: 'medallion' },
-          k("All we ever had were stories. Now I've got something she actually held. Thank you, Vivienne. Really."),
+          k('Where did you even find this? ...No, never mind. I don\'t need to know.'),
+          k("All we ever had were stories. Now I've got something she actually held. Thank you. Really."),
           { kind: 'keepsake' },
         ];
       if (game.state.kindness.includes('keepsake')) return [k('Ring that bell loud enough for all of us.'), k("(Lillian taps Aria's medallion, pinned proudly to her apron.)")];
@@ -200,8 +224,8 @@ function npcLines(game, id) {
       if (f.hammerLeft)
         return [
           k('Wait. Glowing amulet. Dark hair in a bun. Goggles...'),
-          k("Family legend says a girl like you would come for THE hammer. It's Aria's last masterwork, and it's been tempering in her vault for three hundred years."),
-          k("It's been waiting for you, right there on the display case. Go on, take it."),
+          k("Family legend says someone dressed exactly like that would come for THE hammer one day. I always figured it was a joke Aria played on us. It's her last masterwork, and it's been tempering in her vault for three hundred years."),
+          k("Well, a legend's a legend. It's right there on the display case. Go on, take it."),
           ...(f.keepsakeQuest ? [] : (f.keepsakeQuest = true, [...wish, { favour: 'keepsake' }])),
         ];
       if (!f.keepsakeQuest) {
@@ -229,7 +253,8 @@ function npcLines(game, id) {
       return [
         h('Hobb, miller. Or I would be, if this hollow held a drop of water.'),
         h('My great-grandsire swore a spring once ran down that cliff. Then one day it wandered off into the hills, and the pond with it.'),
-        Wr('A spring that wandered off... in the Past, maybe it can be turned back this way.'),
+        h("You can still see the old channels in the mud down there. Two of them go nowhere, mind. Only one was ever the millrace."),
+        Wr('A spring that wandered off... in the Past, maybe it can be turned back this way. Down the right channel.'),
       ];
     }
     case 'tamsin': {
@@ -253,7 +278,7 @@ function npcLines(game, id) {
       if (f.bridgeQuest) return [t("Rope that never rots. That's what I need. Find me some and I'll bridge this gorge.")];
       f.bridgeQuest = true;
       return [
-        t('A traveller! Careful near the edge. The Thornwater has taken braver folk than you.'),
+        t('A traveller! And dressed like no one I ever saw. Careful near the edge: the Thornwater has taken braver folk than you.'),
         t("I'm Tamsin. I mean to bridge this gorge, but every vine rope I twist frays within a season."),
         t('If only there were rope that never rotted. Spirits\' rope. Ha!'),
         Wr('Rope that never rots... there must be something like that in the Future.'),
@@ -282,6 +307,15 @@ export async function talk(game, npc) {
   });
   npc.talking = false;
   if (npc.id === 'tick') game.state.flags.metTick = true;
+  // the river folk remember: Callie's statue of the stranger stands in the square from then on
+  const f = game.state.flags;
+  if (npc.id === 'samaria' && f.chartReturned && !f.statueShown) {
+    f.statueShown = true;
+    game.refreshWorld();
+    await game.timelapse({ to: ERA.PRESENT, focus: [STATUE.x, 1.2, 2], years: 600, caption: 'The river folk carve the stranger in stone, and the valley keeps her...', grow: ['strangerStatue'] });
+    game.hud.toast('Something new stands in the square, in the <b>Present</b> and the <b>Future</b>.', 5000);
+    game.save();
+  }
 }
 
 /** "a", "a and b", "a, b and c" */
@@ -295,6 +329,28 @@ export async function struck(game, ent) {
     case 'leverJam':
       // freed at last: it swings over, and the spring runs
       return interact(game, { id: 'lever' });
+    case 'plugN':
+    case 'plugMid':
+      audio.sfx('splash');
+      game.bursts.emit(ent.x - 0.4, 0.4, ent.z, 30, { color: [0x4a9ad8, 0x9fe0ff], speed: 3, life: 0.8, gravity: 6 });
+      await say([
+        N('The plug pops free, and water rushes away down the old channel and under the scrub... and then you hear it gurgle down into the rock.'),
+        Wr("A sinkhole. Not that one. If only I could see where each of these channels ends up, further down the years..."),
+        N('You wedge the plug back into place.'),
+      ]);
+      ent.reseat();
+      return;
+    case 'plugS':
+      f.millDammed = true;
+      audio.sfx('socket');
+      audio.sfx('splash');
+      game.bursts.emit(ent.x - 0.4, 0.4, ent.z, 40, { color: [0x3ad0c0, 0x9fe0ff], speed: 3.5, life: 0.9, gravity: 6 });
+      game.refreshWorld();
+      game.save();
+      await say([N('The plug pops free. Water rushes down the old channel and out across the floor of the hollow, and this time it stays.'), Wr('That one runs true: the old millrace. Now give it a few centuries...')]);
+      await game.timelapse({ to: ERA.PRESENT, focus: [195.5, 1, 3], years: 500, caption: 'Turned down the old millrace, the spring pools in the hollow...', grow: ['millWaterM'] });
+      game.hud.toast("A millpond now, but it drains through the mill's open sluice.", 4500);
+      return;
     case 'shutterLock':
       f.shutterBroken = true;
       audio.sfx('gate');
@@ -441,7 +497,9 @@ export async function interact(game, ent) {
       game.renderer.shake = 0.4;
       game.refreshWorld();
       await say([N('You fit the brass wheel onto the spindle and wind. With a long groan, the sluice gate drops shut.'), Wr('Now the pond can fill all the way up!')]);
-      await game.timelapse({ to: ERA.FUTURE, focus: [195.5, 1.5, 3], years: 300, caption: 'The millpond fills to the brim, and in time becomes a reservoir...', grow: ['millF'] });
+      // the pond you're standing over fills first; then, three centuries on, the reservoir it becomes
+      await game.timelapse({ to: ERA.PRESENT, focus: [195.5, 1.5, 3], years: 1, caption: 'With the sluice shut, the millpond fills to the brim...', grow: ['millWaterM'], growFrom: 0.2, float: { ids: ['millBoomM'], by: 2 } });
+      await game.timelapse({ to: ERA.FUTURE, focus: [195.5, 1.5, 3], years: 300, caption: '...and in time it becomes a reservoir.', grow: ['millWaterF'], float: { ids: ['millBoomF'], by: 2 } });
       game.hud.toast('The log boom floats level with the banks. Hop across!', 4000);
       game.save();
       return;
@@ -455,6 +513,18 @@ export async function interact(game, ent) {
       ]);
       game.abilities.unlock('seal');
       game.save();
+      return;
+    case 'tempoGift':
+      if (f.hasTempo) return say(N("Donald Eugene's toolbox, empty now but for a note: \"Hold, don't tap.\""));
+      await say([
+        N("Just inside the courtyard gate sits Donald Eugene's old toolbox. In it, a small brass escape wheel, and another note:"),
+        N('"Vivienne. The thing that guards this yard in the age to come is only a machine, and every machine keeps time. An escapement sets how fast a clock runs. Fit this one to the Chronoheart, and you can set the pace of any machine near you: slower, or faster. ~D.E."'),
+        Wr('Slower... or faster. Any machine near me?'),
+        N('The escape wheel clicks into the Chronoheart. Its ring divides in two: one half turning slowly, one racing.'),
+      ]);
+      audio.sfx('key');
+      game.grantTempo();
+      game.tempoToast();
       return;
     case 'echoLens':
       if (f.hasEcho) return say(N("Donald Eugene's lectern. A scrawled diagram of three stone steps, and the words: \"Be in three places at once.\""));
@@ -503,6 +573,30 @@ export async function interact(game, ent) {
       return say([N('A sealed slab of stone. There is no lock, no handle: the door has not been made yet.'), Wr("The lock doesn't exist in this age. It has to be the Present.")]);
     case 'lockF':
       return say([N('The great lock has rusted into one solid lump. It will never turn again.'), Wr("No key will open this one. It has to be the Present.")]);
+    case 'statueM':
+      return say([
+        N('A small, weathered statue on a plinth: a girl with her hair in a bun and round glass over her eyes, holding out a star chart. The carving is very old.'),
+        N('The plaque is worn almost smooth: "THE STRANGER, WHO BROUGHT BACK THE SUN\'S CALENDAR. CARVED BY CALLIE OF THE RIVER FOLK."'),
+        Wr("That's... me. They carved me. Six hundred years ago, and it has been standing here my whole life."),
+        Wr("...Has it? I honestly can't remember the square without it."),
+      ]);
+    case 'statueF':
+      return say([
+        N('The old statue from the square, kept under a pane of light. A label glows beside it.'),
+        N('"THE STRANGER. HOLLOWMERE\'S OLDEST CARVING, c. 900 YEARS. SUBJECT UNKNOWN. THE COSTUME IS CONSIDERED FANCIFUL."'),
+        Wr('Fanciful! These are perfectly sensible work clothes.'),
+      ]);
+    case 'bridgeStoneM':
+      return say([
+        N('A waymarker by the bridge, its carving softened by weather: a ropewright at her work, and beside her a small figure in odd clothes, handing her a coil.'),
+        N('"TAMSIN\'S BRIDGE. RAISED WITH SPIRIT-ROPE, THE GIFT OF A STRANGER. IT HAS NEVER ONCE NEEDED MENDING."'),
+        Wr('Spirit-rope. She never did believe it was only steel.'),
+      ]);
+    case 'bridgeStoneF':
+      return say([
+        N('TRANSIT HERITAGE MARKER 12: "TAMSIN\'S BRIDGE, THE VALLEY\'S OLDEST CROSSING. ENGINEERS HAVE NEVER EXPLAINED WHY IT DOES NOT AGE."'),
+        Wr("I could explain it. They wouldn't believe me."),
+      ]);
     case 'gearworksDoor':
       return game.enterGearworks();
     case 'gearworksExit':
