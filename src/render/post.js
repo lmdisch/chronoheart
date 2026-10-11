@@ -1,4 +1,4 @@
-// Post-processing: time-shift ripple / peek blend, soft-knee bloom, bokeh depth of field,
+// Post-processing: the era shift (one age rebuilding into another) / peek blend, soft-knee bloom, bokeh depth of field,
 // screen-space god rays, chromatic aberration, film grain and the era colour grade.
 // The scene renders into a target with a depth texture so DOF and rays can read depth.
 import * as THREE from 'three';
@@ -12,7 +12,16 @@ const TimeShader = {
   uniforms: {
     tDiffuse: { value: null },
     tPrev: { value: null },
-    radius: { value: 2.0 }, // reveal radius of the new era (>=1.6 means fully revealed)
+    // Era shift: tPrev is the age being left, still rendered live. The new age spreads out from
+    // `center` block by block; each block is rebuilt from the ground up (or from the top down,
+    // travelling back). shift runs 0..1 (1 = done); reach is how far the farthest corner is.
+    shift: { value: 1 },
+    reach: { value: 1.2 },
+    shiftDir: { value: 1 },
+    blocks: { value: 30 }, // blocks down the screen; 0 = a plain soft fade (reduced motion)
+    // 1 for a time-lapse: instead of a front sweeping out, the whole view ages together, each
+    // block fading across in its own time (loosely outward from the cause)
+    scatter: { value: 0 },
     ripple: { value: 0 },
     peek: { value: 0 },
     peekTint: { value: new THREE.Color(0.6, 0.95, 1.0) },
@@ -29,30 +38,59 @@ const TimeShader = {
   vertexShader: VERT,
   fragmentShader: `
     uniform sampler2D tDiffuse; uniform sampler2D tPrev;
-    uniform float radius; uniform float ripple; uniform float peek; uniform vec3 peekTint; uniform vec3 ringTint;
+    uniform float shift; uniform float reach; uniform float shiftDir; uniform float blocks; uniform float scatter;
+    uniform float ripple; uniform float peek; uniform vec3 peekTint; uniform vec3 ringTint;
     uniform float aspect; uniform float time; uniform vec2 center;
     uniform float glitch; uniform vec4 glitchRect; uniform float glitchSeed; uniform vec3 glitchTint;
     varying vec2 vUv;
     float gh(float n){ return fract(sin(n * 12.9898 + glitchSeed * 78.233) * 43758.5453); }
+    float h2(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
     void main(){
+      vec2 asp = vec2(aspect, 1.0);
       vec2 c = vUv - center;
-      vec2 ca = c * vec2(aspect, 1.0);
-      float d = length(ca);
+      float d = length(c * asp);
       vec2 dir = normalize(c + 1e-5);
-      float wave = sin(d * 46.0 - time * 20.0) * ripple * 0.010 * smoothstep(1.3, 0.0, d);
-      float edge = exp(-abs(d - radius) * 26.0) * ripple;
-      vec2 uv = vUv + dir * (wave + edge * 0.02);
+      float front = shift * (reach + 0.95); // how far the new age has spread
+      float wave = sin(d * 46.0 - time * 20.0) * ripple * 0.005 * smoothstep(1.3, 0.0, d);
+      float edge = exp(-abs(d - front) * 14.0) * ripple * (1.0 - scatter);
+      vec2 uv = vUv + dir * (wave + edge * 0.01);
       vec3 cur;
-      float ab = edge * 0.006 + ripple * 0.002;
+      float ab = edge * 0.004 + ripple * 0.0015;
       cur.r = texture2D(tDiffuse, uv + dir * ab).r;
       cur.g = texture2D(tDiffuse, uv).g;
       cur.b = texture2D(tDiffuse, uv - dir * ab).b;
       vec3 col = cur;
-      if (radius < 1.6) {
+      if (shift < 1.0) {
         vec3 prev = texture2D(tPrev, uv).rgb;
-        float m = smoothstep(radius - 0.05, radius + 0.05, d);
-        col = mix(cur, prev, m);
-        col += ringTint * edge * 1.6;
+        if (blocks > 0.0) {
+          vec2 g = vUv * asp * blocks;
+          vec2 cell = floor(g), f = fract(g);
+          float dc = length((cell + 0.5) / blocks - center * asp);
+          if (scatter > 0.5) {
+            float lag = h2(cell) * 0.35 + clamp(dc / reach, 0.0, 1.0) * 0.8;
+            float t = clamp(shift * 2.15 - lag, 0.0, 1.0);
+            col = mix(prev, cur, smoothstep(0.0, 1.0, t)) + ringTint * sin(t * 3.14159) * 0.05;
+          } else {
+          // each block turns in its own moment, a little before or after its neighbours. Right
+          // around you it's quick (what you're standing on is already the new age); further out
+          // the change is broad and slow enough to watch.
+          float far = smoothstep(0.0, 0.8, dc);
+          float t = clamp((front - dc - h2(cell) * mix(0.06, 0.35, far)) / mix(0.16, 0.55, far), 0.0, 1.0);
+          float live = sin(t * 3.14159);
+          float w = smoothstep(0.12, 0.9, t); // how much of this block has been rebuilt
+          float fy = shiftDir > 0.0 ? f.y : 1.0 - f.y;
+          float built = step(fy, w) * step(0.001, w);
+          // the old age drains toward the new one's colour as its turn comes
+          vec3 old = mix(prev, vec3(dot(prev, vec3(0.299, 0.587, 0.114))) * ringTint * 1.25, live * 0.55);
+          col = mix(old, cur, built);
+          col += ringTint * exp(-abs(fy - w) * 16.0) * live * 0.9; // the bright seam where it is being rebuilt
+          float rim = max(smoothstep(0.42, 0.5, abs(f.x - 0.5)), smoothstep(0.42, 0.5, abs(f.y - 0.5)));
+          col += ringTint * rim * live * 0.18;
+          }
+        } else {
+          col = mix(prev, cur, smoothstep(0.0, 1.0, scatter > 0.5 ? shift : clamp((front - d) / 0.5, 0.0, 1.0)));
+        }
+        col += ringTint * edge * 0.5;
       }
       if (glitch > 0.0 && vUv.x > glitchRect.x && vUv.x < glitchRect.z && vUv.y > glitchRect.y && vUv.y < glitchRect.w) {
         // the tower stutters between ages: random horizontal slices from another era
@@ -211,6 +249,8 @@ const GradeShader = {
     }`,
 };
 
+export const SHIFT_TIME = 1.3; // seconds for one age to rebuild into another
+
 export const GRADES = [
   // Past: warm golden hour, strong god rays
   { tint: [1.07, 0.99, 0.86], shadowTint: [0.86, 0.84, 1.0], saturation: 1.14, contrast: 1.07, vignette: 0.36, rays: 0.55, rayColor: [1.0, 0.82, 0.55] },
@@ -266,6 +306,7 @@ export class Post {
 
     // transition state
     this.trans = 1; // 0..1
+    this.shiftTime = SHIFT_TIME;
     this.peekAmt = 0;
     this.focusDist = 20;
     this.onResize();
@@ -291,9 +332,26 @@ export class Post {
     gl.setRenderTarget(null);
   }
 
-  startTransition(color) {
+  /**
+   * Start the era shift. The caller keeps the age being left rendered into prevRT (capture())
+   * until trans reaches 1. center: where it spreads from, in screen uv. dir: +1 toward the
+   * Future, -1 toward the Past. lapse: a time-lapse, where the whole view ages together and the
+   * caller sets `trans` itself (0..1) to keep it in step with the years going by.
+   */
+  startTransition(color, { center = [0.5, 0.5], dir = 1, lapse = false } = {}) {
+    const tu = this.time.uniforms;
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     this.trans = 0;
-    this.time.uniforms.ringTint.value.setHex(color);
+    this.shiftTime = reduced ? 0.6 : SHIFT_TIME;
+    tu.ringTint.value.setHex(color);
+    tu.center.value.set(center[0], center[1]);
+    tu.shiftDir.value = dir;
+    tu.scatter.value = lapse ? 1 : 0;
+    this.manual = lapse;
+    tu.blocks.value = reduced ? 0 : this.r.lowPower ? 22 : 30;
+    const a = tu.aspect.value;
+    tu.reach.value = Math.max(...[[0, 0], [1, 0], [0, 1], [1, 1]].map(([x, y]) => Math.hypot((x - center[0]) * a, y - center[1])));
+    tu.shift.value = 0;
   }
 
   setGrade(era) {
@@ -324,12 +382,11 @@ export class Post {
     const tu = this.time.uniforms;
     tu.time.value = t;
     if (this.trans < 1) {
-      this.trans = Math.min(1, this.trans + dt / 0.55);
-      const e = 1 - Math.pow(1 - this.trans, 2.2);
-      tu.radius.value = this.trans >= 1 ? 2.0 : e * 1.6;
-      tu.ripple.value = Math.sin(this.trans * Math.PI);
+      if (!this.manual) this.trans = Math.min(1, this.trans + dt / this.shiftTime);
+      tu.shift.value = this.trans;
+      tu.ripple.value = Math.sin(this.trans * Math.PI) * (this.manual ? 0.2 : 1);
     } else {
-      tu.radius.value = 2.0;
+      tu.shift.value = 1;
       tu.ripple.value = Math.max(0, tu.ripple.value - dt * 3);
     }
     tu.peek.value = this.peekAmt;

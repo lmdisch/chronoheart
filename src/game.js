@@ -71,6 +71,7 @@ export class Game {
     this.meter = 1;
     this.lockT = 0;
     this.peekTarget = null;
+    this.shiftFrom = null; // the era being left, while a shift is still playing
     this.blockFlashT = 0;
     this.areaIdx = -1;
     this.warnT = 0;
@@ -262,6 +263,34 @@ export class Game {
     audio.setEra(era, instant);
   }
 
+  /**
+   * Switch to `era`, with the age you're leaving visibly rebuilding into the new one. It spreads
+   * out from `at` (a world position; the middle of the screen if not given). lapse: see timelapse().
+   */
+  shiftEra(era, at = null, lapse = false) {
+    const from = this.era;
+    let center;
+    if (at) {
+      const v = at.clone().project(this.renderer.camera);
+      center = [THREE.MathUtils.clamp(v.x * 0.5 + 0.5, 0, 1), THREE.MathUtils.clamp(v.y * 0.5 + 0.5, 0, 1)];
+    }
+    this.applyEra(era);
+    this.post.startTransition(ERA_RING[era], { center, dir: era > from ? 1 : -1, lapse });
+    this.renderer.atmosDur = lapse || this.post.shiftTime;
+    this.shiftFrom = from;
+    this.captureEra(from);
+  }
+
+  /** Render `era` (its world, its people, its lamps) into the post-processing "other age" target. */
+  captureEra(era) {
+    const groups = this.world.groups, r = this.renderer;
+    groups.forEach((g, i) => (g.visible = i === era));
+    r.updateLights(this.world.lights[era], r.camTarget, this.time);
+    this.post.capture();
+    groups.forEach((g, i) => (g.visible = i === this.era));
+    r.updateLights(this.world.lights[this.era], r.camTarget, this.time);
+  }
+
   tryShift(target) {
     if (!this.state.flags.hasAmulet || target < 0 || target > 2 || target === this.era) return;
     if (this.gearworks.active) {
@@ -270,7 +299,7 @@ export class Game {
       this.hud.toast('Inside the clock, the ages are wound too tightly to pull apart.', 3000);
       return;
     }
-    if (this.post.trans < 0.6) return;
+    if (this.post.trans < 0.27) return;
     const b = this.player.body;
     if (target !== ERA.PRESENT && this.meter < 0.06) {
       audio.sfx('blocked');
@@ -326,11 +355,9 @@ export class Game {
     this.post.peekAmt = 0;
     this.swipePeek = null;
     haptic(25);
-    this.post.capture();
-    this.applyEra(target);
-    this.post.startTransition(ERA_RING[target]);
-    audio.sfx('shift', { era: target });
     const b = this.player.body;
+    this.shiftEra(target, new THREE.Vector3(b.x, b.y + 0.8, b.z));
+    audio.sfx('shift', { era: target });
     this.bursts.emit(b.x, b.y + 0.8, b.z, 40, { color: [ERA_RING[target], 0xffffff], speed: 5, life: 0.6, gravity: 0, glow: 2.5 });
     // a moment to get your bearings: nothing can hurt or notice you right after you arrive
     this.shiftGrace = 1.5;
@@ -858,10 +885,11 @@ export class Game {
 
   // ------------------------------------------------------------------ cause-and-effect time-lapse
   /**
-   * Show the consequence of something the player just did: hold the camera on `focus`, spin
-   * the sky through days and nights while the years count up, ripple into era `to` where the
-   * result grows (`grow`: feature ids scaled up from the ground) or drops into place (`drop`),
-   * then ripple back. Any tap / key after a moment skips ahead.
+   * Show the consequence of something the player just did: hold the camera on `focus` in the
+   * age where they did it, then spin the sky through days and nights while the years count up
+   * and that age slowly becomes era `to` in front of them, where the result grows (`grow`:
+   * feature ids scaled up from the ground) or drops into place (`drop`). Then shift back.
+   * Any tap / key after a moment skips ahead.
    */
   async timelapse({ to, focus, years, caption, grow = [], drop = [], effect = null, erode = null }) {
     if (this.lapse || (this.mode !== 'play' && this.mode !== 'dialogue')) return;
@@ -902,10 +930,10 @@ export class Game {
       window.addEventListener('pointerdown', wantSkip);
     }, 300);
 
-    // ripple into the future era; the consequence starts small and grows in
-    this.post.capture();
-    this.applyEra(to);
-    this.post.startTransition(ERA_RING[to]);
+    // the age it was done in turns into the later one as the years go by (lapse.update keeps
+    // the two in step); the consequence starts small and grows in
+    const DUR = 3.2;
+    this.shiftEra(to, lapse.focus, DUR * 0.8);
     audio.sfx('shift', { era: to });
     lapse.grow = targets(grow);
     lapse.drop = targets(drop);
@@ -935,10 +963,12 @@ export class Game {
       lapse.rock = { mesh: rock, pieces, gone: 0 };
     }
 
-    const DUR = 2.4;
     lapse.update = (dt) => {
       lapse.t = Math.min(DUR, lapse.t + dt * (skip ? 6 : 1));
       const k = lapse.t / DUR;
+      // a beat in the old age first, and the new one fully arrived a little before the years stop
+      const a = THREE.MathUtils.clamp((k - 0.08) / 0.8, 0, 1);
+      this.post.trans = Math.min(0.999, a * a * (3 - 2 * a));
       const e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2; // ease in-out
       yearsEl.textContent = `+${Math.round(e * years).toLocaleString()} years`;
       // days and nights racing past
@@ -946,11 +976,13 @@ export class Game {
       r.sun.intensity = r.atmos.sunI * (1 - night * 0.85);
       r.hemi.intensity = r.atmos.hemiI * (1 - night * 0.55);
       r.skyUniforms.stars.value = night;
-      const g = 1 - Math.pow(1 - Math.min(1, k * 1.15), 3); // growth ease-out
+      // the consequence waits until the new age has begun to show through, then unfolds in it
+      const kc = THREE.MathUtils.clamp((k - 0.25) / 0.75, 0, 1);
+      const g = 1 - Math.pow(1 - Math.min(1, kc * 1.15), 3); // growth ease-out
       for (const m of lapse.grow) m.scale.y = Math.max(0.001, g);
-      for (const m of lapse.drop) m.position.y = 5 * Math.max(0, 1 - Math.min(1, k * 1.6) ** 2);
+      for (const m of lapse.drop) m.position.y = 5 * Math.max(0, 1 - Math.min(1, kc * 1.6) ** 2);
       if (lapse.rock) {
-        const R = lapse.rock, target = Math.floor(Math.min(1, k * 1.1) ** 1.2 * R.pieces.length);
+        const R = lapse.rock, target = Math.floor(Math.min(1, kc * 1.1) ** 1.2 * R.pieces.length);
         const zero = new THREE.Matrix4().makeScale(0, 0, 0);
         while (R.gone < target) {
           const pc = R.pieces[R.gone];
@@ -971,6 +1003,7 @@ export class Game {
     lapse.t = DUR;
     lapse.update(0);
     lapse.update = null;
+    this.post.trans = 1;
     if (rock) {
       rock.parent?.remove(rock);
       rock.geometry.dispose();
@@ -983,9 +1016,7 @@ export class Game {
 
     // back to the player's own age
     overlay.classList.remove('in');
-    this.post.capture();
-    this.applyEra(from);
-    this.post.startTransition(ERA_RING[from]);
+    this.shiftEra(from);
     audio.sfx('shift', { era: from });
     window.removeEventListener('keydown', skipKeys);
     window.removeEventListener('pointerdown', wantSkip);
@@ -1096,6 +1127,12 @@ export class Game {
   }
 
   renderPeek() {
+    // mid-shift, the "other age" target holds the age being left, kept live so it moves with the camera
+    if (this.post.trans < 1 && this.shiftFrom !== null) {
+      this.post.peekAmt = 0;
+      this.captureEra(this.shiftFrom);
+      return;
+    }
     // a swipe in progress previews the era it's heading to, fading in with the drag
     const sp = this.swipePeek;
     const target = this.blockFlashT > 0 ? this.blockFlashEra : sp ? sp.target : this.peekTarget;
@@ -1119,9 +1156,7 @@ export class Game {
     if (this.titleT > 6) {
       this.titleT = 0;
       this.titleEra = (this.titleEra + 1) % 3;
-      this.post.capture();
-      this.applyEra(this.titleEra);
-      this.post.startTransition(ERA_RING[this.titleEra]);
+      this.shiftEra(this.titleEra);
     }
   }
 

@@ -189,7 +189,7 @@ export class Renderer {
 
   tickAtmos(dt) {
     if (this.atmosT >= 1 || !this.atmosTo) return;
-    this.atmosT = Math.min(1, this.atmosT + dt / 0.55);
+    this.atmosT = Math.min(1, this.atmosT + dt / (this.atmosDur || 0.55));
     const t = this.atmosT;
     const A = this.atmosFrom, B = this.atmosTo, out = this.atmos;
     for (const k of Object.keys(B)) {
