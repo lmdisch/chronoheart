@@ -374,7 +374,8 @@ export class World {
       for (let cx = 0; cx < W; cx += CHUNK) {
         const x1 = Math.min(W, cx + CHUNK);
         const gb = meshVoxels(get, [cx, YMIN, ZMIN], [x1, YMAX, ZMAX]);
-        for (const d of b.decos) if (d[0] >= cx && d[0] < x1) meshBox(gb, d);
+        // (the first chunk also takes scenery standing west of the grid: the valley's end wall)
+        for (const d of b.decos) if ((d[0] >= cx || cx === 0) && d[0] < x1) meshBox(gb, d);
         for (const r of b.roofs) if (r.x0 >= cx && r.x0 < x1) meshRoof(gb, r);
         voxelMesh(gb, group);
       }

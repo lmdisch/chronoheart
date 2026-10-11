@@ -467,6 +467,36 @@ function filler(b, era, x0, x1, seed) {
   }
 }
 
+/**
+ * The west end of the valley. The grid (and the road) stops at x = 0, and with nothing beyond it
+ * the left of the screen was empty sky at the very start of the game. Each age closes the valley
+ * off there instead: a jungle bluff, the old town wall, a containment wall. Scenery only; x < 0
+ * is already solid to walk into.
+ */
+function valleyEnd(world) {
+  const z0 = ZMIN, d = ZMAX - ZMIN, far = 44;
+  // PAST: a sandstone bluff under jungle, stepping up toward the west
+  let b = world.staticBuilder(P);
+  b.deco(-far, -4, z0, far, 14, d, C.sandDark[0]);
+  b.deco(-far, 10, z0, far, 1, d, C.jungle[1]);
+  b.deco(-far, 11, z0, far - 5, 5, d, C.sandDark[1]);
+  b.deco(-far, 16, z0, far - 5, 1, d, C.jungle[0]);
+  for (let i = 0; i < 9; i++) b.deco(-4.4 + hash3(i, 1, 4) * 3.2, 11, z0 + 1 + i * 3.2, 1.4 + hash3(i, 2, 4), 1 + hash3(i, 3, 4) * 1.6, 1.6, C.jungle[i % 5]);
+  for (let i = 0; i < 6; i++) b.deco(-0.5, 2 + hash3(i, 5, 4) * 7, z0 + 2 + i * 4.6, 0.5, 0.5, 1.4 + hash3(i, 6, 4), C.sandDark[2]); // weathered ledges
+  // PRESENT: Hollowmere's west wall, with a walk along the top
+  b = world.staticBuilder(M);
+  b.deco(-far, -4, z0, far, 13, d, C.stone[0]);
+  b.deco(-far, 9, z0, far - 1.2, 0.3, d, C.stone[3]);
+  for (let z = z0; z < ZMAX; z += 2) b.deco(-1.2, 9, z, 1.2, 1.1, 1, C.stone[1]); // battlements
+  b.deco(-0.12, 5.2, z0, 0.14, 0.4, d, C.stone[3]); // a string course along its face
+  b.deco(-far, 9.3, z0, far - 7, 5, d, C.stoneMoss[0]);
+  // FUTURE: a containment wall, banded in light
+  b = world.staticBuilder(F);
+  b.deco(-far, -4, z0, far, 22, d, C.metal[0]);
+  b.deco(-far, 18, z0, far - 3, 6, d, C.panel[0]);
+  for (const y of [3.5, 8.5, 13.5]) b.glow(0, y, z0, 0.05, 0.12, d, y === 8.5 ? NEON.magenta : NEON.cyan);
+}
+
 function backdrop(world) {
   for (let era = 0; era < 3; era++) {
     const b = world.staticBuilder(era);
@@ -1819,6 +1849,7 @@ export function buildLevel(world, state) {
   world.__state = state;
   buildGround(world);
   backdrop(world);
+  valleyEnd(world);
   hub(world);
   lilies(world);
   river(world);
