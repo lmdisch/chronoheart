@@ -80,7 +80,7 @@ Every world, sprite, melody and sound in the game is generated from code: there 
 On-screen controls appear automatically on touch screens.
 
 - **Joystick:** touch anywhere on the left half and drag. Push all the way to sprint.
-- **Buttons:** Jump, Attack, Roll, and **Interact** (it lights up when there's someone to talk to or something to use). **Seal** and **Echo** appear once learned; Seal only lights up beside something sealable. Inside the clock they're replaced by **Slow** and **Fast** (hold).
+- **Buttons:** Jump, Attack, Roll, and **Interact** (it only appears when there's someone to talk to or something to use). **Seal** and **Echo** appear once learned; Seal only lights up beside something sealable. Inside the clock they're replaced by **Slow** and **Fast** (hold).
 - **Swipe** anywhere else: left to travel toward the Future, right toward the Past. Drag slowly to preview first. You can also tap the era names at the top.
 - **Top-right:** Menu, Help and Pause.
 - It plays best in landscape, but portrait works too.

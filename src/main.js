@@ -41,10 +41,10 @@ $('btn-continue').addEventListener('click', () => {
 // ---------------------------------------------------------------------------
 // Overlays: the pause menu, the Controls sheet and the Menu (goal, items, favours). Only one
 // shows at a time, and the game is paused while any is open. Controls opened from the pause
-// menu go back to it when closed; from the title they don't pause anything.
+// menu go back to it when closed.
 const menu = $('inventory-panel');
 let overlay = null; // 'pause' | 'controls' | 'menu' | null
-let controlsReturn = null; // where closing Controls goes: 'play' | 'pause' | 'title'
+let controlsReturn = null; // where closing Controls goes: 'play' | 'pause'
 
 function show(name) {
   pause.hidden = name !== 'pause';
@@ -59,8 +59,8 @@ function pauseGame(p) {
 }
 function openOverlay(name) {
   if (name === 'controls') {
-    controlsReturn = overlay === 'pause' ? 'pause' : !overlay && game.mode === 'play' ? 'play' : game.mode === 'title' ? 'title' : null;
-    if (!controlsReturn) return; // not mid-conversation or mid-cutscene
+    controlsReturn = overlay === 'pause' ? 'pause' : !overlay && game.mode === 'play' ? 'play' : null;
+    if (!controlsReturn) return; // not on the title, mid-conversation or mid-cutscene
   } else if (overlay || game.mode !== 'play') return;
   audio.init();
   audio.sfx('ui');
@@ -75,9 +75,8 @@ function closeOverlay() {
   if (!overlay) return;
   audio.sfx('ui');
   if (overlay === 'controls' && controlsReturn === 'pause') return show('pause');
-  const fromTitle = overlay === 'controls' && controlsReturn === 'title';
   show(null);
-  if (!fromTitle) pauseGame(false);
+  pauseGame(false);
 }
 const toggle = (name) => (overlay === name ? closeOverlay() : !overlay || name === 'controls' ? openOverlay(name) : null);
 

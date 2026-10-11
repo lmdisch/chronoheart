@@ -33,6 +33,7 @@ export class TouchControls {
   constructor(game, { onHelp, onMenu, onPause }) {
     this.game = game;
     this.root = document.getElementById('touch-controls');
+    this.holds = new Map(); // held button element -> the key code it's holding down
     this.buildSwipe();
     this.buildButtons({ onHelp, onMenu, onPause });
     this.buildStick();
@@ -42,6 +43,20 @@ export class TouchControls {
     window.addEventListener('touchstart', () => this.set(true), { capture: true, passive: true });
     window.addEventListener('keydown', (e) => {
       if (!e.repeat && !e.isComposing) this.set(false);
+    });
+    // A finger can lift without its pointerup ever reaching us (the controls were hidden under
+    // it by a cutscene, a system gesture took the touch, the page lost focus). Nothing may stay
+    // held after that, or the stick is left pushed over with no way to let go of it.
+    const noFingers = (e) => {
+      // after this touch's own pointerup, so a swipe or tap that ends normally still lands
+      if (e.touches.length === 0) setTimeout(() => this.releaseAll(), 0);
+    };
+    window.addEventListener('touchend', noFingers, { capture: true, passive: true });
+    window.addEventListener('touchcancel', noFingers, { capture: true, passive: true });
+    window.addEventListener('blur', () => this.releaseAll());
+    window.addEventListener('pagehide', () => this.releaseAll());
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) this.releaseAll();
     });
     // stop the browser from scrolling / zooming / long-press selecting while playing
     document.addEventListener('gesturestart', (e) => e.preventDefault());
@@ -54,7 +69,18 @@ export class TouchControls {
     if (this.on === on) return;
     this.on = on;
     document.body.classList.toggle('touch', on);
-    if (!on) this.resetStick();
+    if (!on) this.releaseAll();
+  }
+
+  /** Let go of the stick and every held button. */
+  releaseAll() {
+    for (const [el, code] of this.holds) {
+      el.classList.remove('on');
+      input.release(code);
+    }
+    this.holds.clear();
+    this.swipeClear();
+    this.resetStick();
   }
 
   /** A button that holds `code` down for as long as it's pressed. */
@@ -62,6 +88,7 @@ export class TouchControls {
     const up = (e) => {
       el.classList.remove('on');
       input.release(code);
+      this.holds.delete(el);
       if (e && el.hasPointerCapture?.(e.pointerId)) el.releasePointerCapture(e.pointerId);
     };
     el.addEventListener('pointerdown', (e) => {
@@ -69,9 +96,11 @@ export class TouchControls {
       el.setPointerCapture?.(e.pointerId);
       el.classList.add('on');
       input.press(code);
+      this.holds.set(el, code);
     });
     el.addEventListener('pointerup', up);
     el.addEventListener('pointercancel', up);
+    el.addEventListener('lostpointercapture', up);
   }
 
   /** A button that fires once per tap. */
@@ -165,6 +194,7 @@ export class TouchControls {
       game.swipePeek = null;
       label.className = 'tc-swipe-label';
     };
+    this.swipeClear = clear;
     zone.addEventListener('pointerdown', (e) => {
       if (!this.on || game.dialogue.active || !game.state.flags.hasAmulet || game.mode !== 'play') return;
       sw = { id: e.pointerId, x0: e.clientX, y0: e.clientY, target: null, amt: 0 };
@@ -217,7 +247,8 @@ export class TouchControls {
     Object.assign(this, { zone, base, knob, stickId: null });
 
     zone.addEventListener('pointerdown', (e) => {
-      if (this.stickId !== null) return;
+      // a second finger is ignored only while the first one is really still down
+      if (this.stickId !== null && zone.hasPointerCapture?.(this.stickId)) return;
       e.preventDefault();
       this.stickId = e.pointerId;
       zone.setPointerCapture?.(e.pointerId);
@@ -238,6 +269,7 @@ export class TouchControls {
     };
     zone.addEventListener('pointerup', end);
     zone.addEventListener('pointercancel', end);
+    zone.addEventListener('lostpointercapture', end);
   }
 
   moveStick(e) {
@@ -300,6 +332,8 @@ export class TouchControls {
   /** Called every frame: highlight Talk when there's something to talk to. */
   update(hasPrompt) {
     if (!this.on) return;
+    // controls hidden mid-press (the HUD goes away for cutscenes): the finger's release won't arrive
+    if ((this.stickId !== null || this.holds.size) && !this.zone.offsetWidth) this.releaseAll();
     this.talkBtn.classList.toggle('ready', !!hasPrompt && document.getElementById('prompt').dataset.action !== 'seal');
     this.sealBtn.classList.toggle('ready', !!this.game.abilities?.sealTarget());
   }

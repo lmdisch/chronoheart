@@ -301,7 +301,10 @@ body.in-dialogue #touch-controls { opacity: 0.35; }
   position: absolute; right: calc(18px + env(safe-area-inset-right, 0px)); bottom: calc(18px + env(safe-area-inset-bottom, 0px));
   display: grid; grid-template-areas: 'talk roll' 'attack jump'; gap: 12px; align-items: end; justify-items: end;
 }
-.tc-talk { grid-area: talk; }
+.tc-talk { grid-area: talk; transition: opacity 0.18s, visibility 0.18s, transform 0.08s, border-color 0.15s, box-shadow 0.15s; }
+/* only there when there's something to interact with; it keeps its place so the pad doesn't shift */
+.tc-talk:not(.ready):not(.on) { opacity: 0; visibility: hidden; pointer-events: none; }
+.tc-talk span { letter-spacing: 0.04em; }
 .tc-roll { grid-area: roll; }
 .tc-attack { grid-area: attack; }
 .tc-jump {
