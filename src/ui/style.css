@@ -380,7 +380,7 @@ body.touch #toasts { top: calc(66px + env(safe-area-inset-top, 0px)); right: cal
 }
 
 /* ---------------- goal line ---------------- */
-/* the Menu panel: current goal, items, favours */
+/* the Menu panel: current goal, items, favors */
 .menu-section { margin-bottom: 16px; }
 .menu-title { margin: 0 0 8px; font: 700 0.75rem var(--font-ui); letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold-2); }
 #goal { padding: 12px 14px; border-radius: 12px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 236, 200, 0.12); }
@@ -425,16 +425,16 @@ body.touch #goal-hint-btn { padding: 6px 12px; font-size: 0.66rem; touch-action:
 body.touch .lapse-skip { font-size: 0.68rem; }
 @media (max-height: 520px) { #timelapse { top: 11vh; } .lapse-caption { font-size: 0.9rem; } }
 
-/* ---------------- favours (Items panel) ---------------- */
-.favours { margin: 6px 0 12px; }
-.favours-title { margin: 0 0 8px; font: 700 0.75rem var(--font-ui); letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold-2); }
-.favour-list { display: flex; flex-direction: column; gap: 8px; }
-.favour { display: flex; gap: 12px; align-items: flex-start; padding: 9px 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.03); border: 1px dashed rgba(255, 236, 200, 0.16); }
-.favour.done { border-style: solid; border-color: rgba(255, 110, 140, 0.35); background: rgba(255, 90, 120, 0.06); }
-.favour-mark { font-size: 1.1rem; line-height: 1.3; color: var(--muted); }
-.favour.done .favour-mark { color: #ff6a88; }
-.favour h4 { margin: 0 0 2px; font-size: 0.95rem; }
-.favour p { margin: 0; color: var(--muted); font-size: 0.85rem; }
+/* ---------------- favors (Items panel) ---------------- */
+.favors { margin: 6px 0 12px; }
+.favors-title { margin: 0 0 8px; font: 700 0.75rem var(--font-ui); letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold-2); }
+.favor-list { display: flex; flex-direction: column; gap: 8px; }
+.favor { display: flex; gap: 12px; align-items: flex-start; padding: 9px 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.03); border: 1px dashed rgba(255, 236, 200, 0.16); }
+.favor.done { border-style: solid; border-color: rgba(255, 110, 140, 0.35); background: rgba(255, 90, 120, 0.06); }
+.favor-mark { font-size: 1.1rem; line-height: 1.3; color: var(--muted); }
+.favor.done .favor-mark { color: #ff6a88; }
+.favor h4 { margin: 0 0 2px; font-size: 0.95rem; }
+.favor p { margin: 0; color: var(--muted); font-size: 0.85rem; }
 .badge.kind { background: #ff6a88; color: #1a1424; }
 body.lapse #area-banner, body.lapse #toasts { opacity: 0; transition: opacity 0.3s; }
 
@@ -478,7 +478,7 @@ body.touch.in-dialogue #toasts {
 }
 
 /* Short landscape: toasts move off the top (where the amulet and buttons live) to the bottom
-   centre, between the joystick and the button pad, above the interact prompt. */
+   center, between the joystick and the button pad, above the interact prompt. */
 @media (max-height: 520px) {
   body.touch #toasts {
     top: auto; right: auto; left: 50%; bottom: calc(76px + env(safe-area-inset-bottom, 0px));

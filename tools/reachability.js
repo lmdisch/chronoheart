@@ -199,7 +199,7 @@ function summarize(stuck) {
     if (!groups.has(k)) groups.set(k, new Set());
     groups.get(k).add(`y${y}z${z}`);
   }
-  // merge neighbouring x columns into ranges
+  // merge neighboring x columns into ranges
   const out = [];
   for (const e of ERA_NAMES) {
     const xs = [...groups.keys()].filter((k) => k.startsWith(e + ' ')).map((k) => +k.split(' x')[1]).sort((a, b) => a - b);
@@ -218,7 +218,7 @@ function summarize(stuck) {
   return out;
 }
 
-/** Apply each story stage in turn and check it. Restores nothing: start a new game afterwards. */
+/** Apply each story stage in turn and check it. Restores nothing: start a new game afterward. */
 export function checkAll(game, stages = STAGES, opts = {}) {
   const results = [];
   for (const [name, flags, fn] of stages) {

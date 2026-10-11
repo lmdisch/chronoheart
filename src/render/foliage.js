@@ -38,7 +38,7 @@ function getTuftTexture() {
     g.fillStyle = col;
     g.fillRect(x, y, 1, 1);
   };
-  // grass is drawn near-white so instance colour sets the hue
+  // grass is drawn near-white so instance color sets the hue
   const G = ['#7d8a78', '#a3b09c', '#c8d2c0', '#e9efe2', '#ffffff'];
   const blade = (ox, x0, h, lean, ramp = G) => {
     let x = x0;
@@ -70,7 +70,7 @@ function getTuftTexture() {
       }
     }
   }
-  // flowers: green stems with coloured heads (stems drawn green, so instance colour stays white-ish)
+  // flowers: green stems with colored heads (stems drawn green, so instance color stays white-ish)
   const heads = [
     ['#f7d84a', '#fff3a0', '#c99a20'],
     ['#f07aa8', '#ffc0d8', '#b8406a'],
@@ -107,13 +107,13 @@ function getTuftTexture() {
   return tuftTex;
 }
 
-// Leaf-clump atlas: 4 cells of 32x32, greyscale (instance colour tints them).
+// Leaf-clump atlas: 4 cells of 32x32, grayscale (instance color tints them).
 let leafTex = null;
 function getLeafTexture() {
   if (leafTex) return leafTex;
   const { c, g } = canvas(128, 32);
   const rng = makeRng(7);
-  const R = rampCss(0xb8b8b0, 6, 0.55, 0.03); // dark -> light greys
+  const R = rampCss(0xb8b8b0, 6, 0.55, 0.03); // dark -> light grays
   const leaf = (ox, cx, cy, s) => {
     // small pixel leaf: dark rim, lit top-left
     for (let y = -s; y <= s; y++)

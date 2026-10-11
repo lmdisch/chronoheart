@@ -118,6 +118,10 @@ export class Player {
     if (inWater && !this.wasWater) {
       audio.sfx('splash');
       g.bursts.emit(b.x, b.y + 0.8, b.z, 14, { color: [0x9fe0ff, 0xffffff], speed: 3, life: 0.5, glow: 1.2 });
+      if (!g.state.flags.swimHint) {
+        g.state.flags.swimHint = true;
+        g.hud.toast(`Clean water: you can swim here. ${document.body.classList.contains('touch') ? 'Hold <b>Jump</b>' : 'Hold <kbd>Space</kbd>'} to rise, let go to sink.`, 5000);
+      }
     }
     this.wasWater = inWater;
 

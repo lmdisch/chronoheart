@@ -1,5 +1,5 @@
 // Procedural pixel-art texture library: 16x16 seamless tiles with hue-shifted ramps.
-// Every tile produces a colour map (alpha = roughness), and a normal map derived
+// Every tile produces a color map (alpha = roughness), and a normal map derived
 // from its height field (alpha = emissive mask). Tiles live in two texture arrays
 // so the whole voxel world can be drawn with a single material.
 import * as THREE from 'three';
@@ -8,7 +8,7 @@ import { makeRng } from '../core/util.js';
 export const TILE = 16;
 
 // ---------------------------------------------------------------------------
-// Colour helpers
+// Color helpers
 // ---------------------------------------------------------------------------
 function hexToRgb255(hex) {
   return [(hex >> 16) & 255, (hex >> 8) & 255, hex & 255];
@@ -52,7 +52,7 @@ function hueToward(a, b, t) {
 }
 
 /**
- * Hue-shifted colour ramp, dark -> light. Shadows drift toward cool purple,
+ * Hue-shifted color ramp, dark -> light. Shadows drift toward cool purple,
  * highlights toward warm yellow, the way pixel artists build palettes.
  */
 export function ramp(hex, steps = 6, spread = 0.36, shift = 0.07) {
@@ -68,7 +68,7 @@ export function ramp(hex, steps = 6, spread = 0.36, shift = 0.07) {
   return out;
 }
 
-/** Ramp as CSS colours (for sprite drawing). */
+/** Ramp as CSS colors (for sprite drawing). */
 export function rampCss(hex, steps, spread, shift) {
   return ramp(hex, steps, spread, shift).map(([r, g, b]) => `rgb(${r},${g},${b})`);
 }
@@ -113,7 +113,7 @@ export function fbm(seed, octaves = 3, base = 2) {
   };
 }
 
-/** Tileable Voronoi: returns {d1, d2, id} for pixel centre. */
+/** Tileable Voronoi: returns {d1, d2, id} for pixel center. */
 function voronoi(seed, points) {
   const rng = makeRng(seed);
   const pts = [];
@@ -171,7 +171,7 @@ export class PixelCanvas {
 const pick = PixelCanvas.pick;
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 
-/** Shade every pixel from its height: top-left lit, bottom-right shadowed (bakes form into colour). */
+/** Shade every pixel from its height: top-left lit, bottom-right shadowed (bakes form into color). */
 function bakeRelief(pc, rampArr, base, amount = 1) {
   const out = [];
   pc.each((x, y) => {
@@ -186,7 +186,7 @@ function bakeRelief(pc, rampArr, base, amount = 1) {
 }
 
 // ---------------------------------------------------------------------------
-// Tile painters. Each receives a PixelCanvas and paints colour/height/etc.
+// Tile painters. Each receives a PixelCanvas and paints color/height/etc.
 // ---------------------------------------------------------------------------
 function paintGrassTop(pc, baseHex, seed, opts = {}) {
   const R = ramp(baseHex, 7, 0.42, 0.09);
@@ -432,7 +432,7 @@ function paintRoofTiles(pc, baseHex, seed, o = {}) {
     if (tone[key] === undefined) tone[key] = (rng() - 0.5) * 0.3;
     let v, h;
     if (round) {
-      // rounded tile: bright centre, dark sides and dark lower lip
+      // rounded tile: bright center, dark sides and dark lower lip
       const c = 1 - Math.abs(lx - (tileW - 1) / 2) / (tileW / 2);
       v = 0.3 + c * 0.45 + tone[key] - (ly === rowH - 1 ? 0.35 : 0) + (ly === 0 ? 0.12 : 0);
       h = 0.3 + c * 0.6 - ly * 0.08;
@@ -647,13 +647,13 @@ function paintHexFloor(pc, baseHex, seed) {
   const R = ramp(baseHex, 7, 0.4, 0.05);
   const n = fbm(seed, 2, 4);
   // hex grid with period 16 horizontally (2 hexes) and 16 vertically
-  const centres = [
+  const centers = [
     [4, 4], [12, 4], [0, 12], [8, 12], [16, 12], [4, 20], [12, 20], [4, -4], [12, -4], [-4, 4], [20, 4],
   ];
   const base = [];
   pc.each((x, y) => {
     let d1 = 1e9, d2 = 1e9, ci = 0;
-    centres.forEach(([cx, cy], k) => {
+    centers.forEach(([cx, cy], k) => {
       const dx = x + 0.5 - cx, dy = (y + 0.5 - cy) * 1.0;
       const d = Math.max(Math.abs(dx) * 0.866 + Math.abs(dy) * 0.5, Math.abs(dy));
       if (d < d1) {

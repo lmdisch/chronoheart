@@ -251,7 +251,7 @@ function shadeCss(col, f) {
 // ---------------------------------------------------------------------------
 // Sprites are authored at base resolution, then upscaled with Scale2x (keeps hard pixel
 // edges but rounds diagonals), then get 1px hue-shifted rim light / core shadow and a
-// selective (colour-aware) outline at the doubled resolution: twice the pixels per unit.
+// selective (color-aware) outline at the doubled resolution: twice the pixels per unit.
 const SCALE = 2;
 
 /** EPX / Scale2x of an RGBA image (w x h) -> (2w x 2h). */
@@ -300,7 +300,7 @@ function polish(px32, w, h) {
       }
       out[y * w + x] = pack(r | 0, g | 0, b | 0, a);
     }
-  // selective outline: dark version of the neighbouring colour (bottom edges darkest)
+  // selective outline: dark version of the neighboring color (bottom edges darkest)
   const res = out.slice();
   for (let y = 0; y < h; y++)
     for (let x = 0; x < w; x++) {
@@ -335,7 +335,7 @@ function scaleRgb(v, f) {
   return pack(Math.min(255, Math.round(r * f)), Math.min(255, Math.round(g * f)), Math.min(255, Math.round(b * f)), a);
 }
 
-// Surface patterns, applied at 2x to pixels of a given base colour: hair strands, cloth folds...
+// Surface patterns, applied at 2x to pixels of a given base color: hair strands, cloth folds...
 const PATTERNS = {
   hair: (x, y) => ((x + 2 * y) % 7 === 0 && y % 2 === 0 ? 0.8 : (x * 3 + y) % 13 === 0 ? 1.22 : 1),
   cloth: (x, y) => (x % 7 === 3 && y % 4 !== 0 ? 0.9 : 1),
@@ -347,7 +347,7 @@ const PATTERNS = {
   plate: (x, y) => (x % 10 === 0 || y % 10 === 0 ? 0.86 : (x % 10 === 5 && y % 10 === 5) ? 1.3 : 1),
 };
 
-/** rules: { cssColor: patternName } (shaded variants of each colour are included automatically). */
+/** rules: { cssColor: patternName } (shaded variants of each color are included automatically). */
 function compileRules(rules) {
   const map = new Map();
   for (const [col, name] of Object.entries(rules || {})) {
@@ -385,7 +385,7 @@ class Sheet {
     this.count = 0;
     this.anims = {};
   }
-  /** drawFn paints at base resolution; detailFn (optional) paints fine 1px details at 2x afterwards. */
+  /** drawFn paints at base resolution; detailFn (optional) paints fine 1px details at 2x afterward. */
   frame(drawFn, detailFn = null) {
     const i = this.count++;
     const { fw, fh } = this;
@@ -715,13 +715,15 @@ export const CHAR = {
   aria: { skin: '#e0a882', hair: '#e2bc5a', hairStyle: 'long', top: '#8a4a3a', apron: '#4a3020', legs: '#3a3030', boots: '#2a2020', belt: '#2a1a10', wide: true },
   // Michelle the Wise: a star-robed sage waiting by the old ford
   michelle: { skin: '#d9a27c', hair: '#e6e2ea', hairStyle: 'long', top: '#33416e', apron: '#c9a44a', legs: '#2c3760', boots: '#3a2a20', belt: '#c9a44a', robe: true, sunPendant: true },
-  // Sheng keeps the old grey-bearded gatekeeper look
+  // Sheng keeps the old gray-bearded gatekeeper look
   sheng: { skin: '#c08860', hair: '#8e8c94', hairStyle: 'short', beard: '#9a98a0', top: '#8a8e9a', apron: '#5a5e6a', legs: '#5a5a62', boots: '#3a3a40', belt: '#8a6a3a', wide: true },
   callie: { skin: '#c08860', hair: '#b8925a', hairStyle: 'braid', top: '#d8b880', apron: '#8a6a3a', legs: '#7a5a3a', boots: '#5a3a22', belt: '#c8642a', wide: true },
   lillian: { skin: '#e8b088', hair: '#36d0e0', hairStyle: 'spiky', top: '#e07a2a', apron: '#3a404c', legs: '#3a404c', boots: '#22262f', belt: '#ffb03a', goggles: true },
   eugene: { skin: '#f2cdb4', hair: '#f0f0f6', hairStyle: 'baldRing', top: '#3a4a8a', apron: '#c9a44a', legs: '#2a2a3a', boots: '#3a2a20', belt: '#c9a44a' },
   hobb: { skin: '#e0b088', hair: '#8a5a32', hairStyle: 'bald', beard: '#a87a4a', top: '#c8c0a8', apron: '#e8e0d0', legs: '#5a4a3a', boots: '#3a2a20', belt: '#6a4a2a', wide: true },
   tamsin: { skin: '#9a6a48', hair: '#1e1612', hairStyle: 'braid', top: '#7a8a3a', apron: '#c9a24a', legs: '#6a5232', boots: '#4a3220', belt: '#c8642a' },
+  // Oren the Mason: laying the first stones of a tower he doesn't understand
+  oren: { skin: '#a8744e', hair: '#3a2a1e', hairStyle: 'short', beard: '#3a2a1e', top: '#c9b48a', apron: '#8a7a66', legs: '#7a6248', boots: '#4a3220', belt: '#c8642a', wide: true },
 };
 
 let cache = null;
@@ -743,6 +745,7 @@ export function getSheets() {
     michelle: humanoidSheet(CHAR.michelle, { npcOnly: true }),
     hobb: humanoidSheet(CHAR.hobb, { npcOnly: true }),
     tamsin: humanoidSheet(CHAR.tamsin, { npcOnly: true }),
+    oren: humanoidSheet(CHAR.oren, { npcOnly: true }),
     thornback: thornbackSheet(),
     rat: ratSheet(),
     drone: droneSheet(),
@@ -997,6 +1000,16 @@ const ICONS = {
     line(c, 12, 4, 4, 12, '#d8a840', 1);
     disc(c, 8, 8, 1, '#ffe08a');
     px(c, 5, 3, '#fff2b0');
+  },
+  snorkel: (c) => {
+    // a diving mask and its breathing tube
+    rect(c, 3, 7, 9, 5, '#2a6a8a');
+    rect(c, 4, 8, 7, 3, '#9fe8ff');
+    px(c, 5, 8, '#ffffff');
+    rect(c, 2, 9, 1, 2, '#1c2028');
+    rect(c, 12, 9, 1, 2, '#1c2028');
+    line(c, 13, 11, 13, 3, '#ff8a3a', 2);
+    rect(c, 11, 2, 3, 2, '#ff8a3a');
   },
   cable: (c) => {
     disc(c, 8, 9, 6, '#5b6472');

@@ -1,5 +1,5 @@
 // Post-processing: the era shift (one age rebuilding into another) / the time lens, soft-knee bloom, bokeh depth of field,
-// screen-space god rays, chromatic aberration, film grain and the era colour grade.
+// screen-space god rays, chromatic aberration, film grain and the era color grade.
 // The scene renders into a target with a depth texture so DOF and rays can read depth.
 import * as THREE from 'three';
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
@@ -14,7 +14,7 @@ const TimeShader = {
     tPrev: { value: null },
     // Era shift: tPrev is the age being left, still rendered live. The new age spreads out from
     // `center` block by block; each block is rebuilt from the ground up (or from the top down,
-    // travelling back). shift runs 0..1 (1 = done); reach is how far the farthest corner is.
+    // traveling back). shift runs 0..1 (1 = done); reach is how far the farthest corner is.
     shift: { value: 1 },
     reach: { value: 1.2 },
     shiftDir: { value: 1 },
@@ -23,7 +23,7 @@ const TimeShader = {
     // block fading across in its own time (loosely outward from the cause)
     scatter: { value: 0 },
     ripple: { value: 0 },
-    // The time lens (peeking): a round window onto another age (tPrev, rendered live), centred
+    // The time lens (peeking): a round window onto another age (tPrev, rendered live), centered
     // on Vivienne. peek 0..1 opens it; its rim is forever being rebuilt, block by block, the way
     // an era shift's edge is.
     peek: { value: 0 },
@@ -77,7 +77,7 @@ const TimeShader = {
             float t = clamp(shift * 2.15 - lag, 0.0, 1.0);
             col = mix(prev, cur, smoothstep(0.0, 1.0, t)) + ringTint * sin(t * 3.14159) * 0.05;
           } else {
-          // each block turns in its own moment, a little before or after its neighbours. Right
+          // each block turns in its own moment, a little before or after its neighbors. Right
           // around you it's quick (what you're standing on is already the new age); further out
           // the change is broad and slow enough to watch.
           float far = smoothstep(0.0, 0.8, dc);
@@ -86,7 +86,7 @@ const TimeShader = {
           float w = smoothstep(0.12, 0.9, t); // how much of this block has been rebuilt
           float fy = shiftDir > 0.0 ? f.y : 1.0 - f.y;
           float built = step(fy, w) * step(0.001, w);
-          // the old age drains toward the new one's colour as its turn comes
+          // the old age drains toward the new one's color as its turn comes
           vec3 old = mix(prev, vec3(dot(prev, vec3(0.299, 0.587, 0.114))) * ringTint * 1.25, live * 0.55);
           col = mix(old, cur, built);
           col += ringTint * exp(-abs(fy - w) * 16.0) * live * 0.9; // the bright seam where it is being rebuilt
@@ -116,7 +116,7 @@ const TimeShader = {
           float scan = 0.82 + 0.18 * sin(vUv.y * 1100.0 + time * 40.0);
           col = mix(col, g * mix(vec3(1.0), glitchTint, 0.4) * scan * 1.08, 0.94);
         } else if (r < glitch * 1.6) {
-          // neighbouring slices only tear sideways, with a colour fringe
+          // neighboring slices only tear sideways, with a color fringe
           float shift = (gh(band + 2.0) - 0.5) * 0.02 * glitch;
           col.r = texture2D(tDiffuse, uv + vec2(shift + 0.004, 0.0)).r;
           col.b = texture2D(tDiffuse, uv + vec2(shift - 0.004, 0.0)).b;

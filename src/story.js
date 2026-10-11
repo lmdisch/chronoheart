@@ -16,11 +16,12 @@ export const ITEMS = {
   medallion: { name: "Aria's Medallion", desc: "A smith's medallion stamped with the family mark. For Lillian." },
   wheel: { name: 'Brass Sluice Wheel', desc: "The old mill's sluice wheel, kept in a museum for three hundred years. It winds the sluice gate shut." },
   cable: { name: 'Steel Cable', desc: 'A spool of cable from the scrapyard. It will not fray or rot for a very, very long time.' },
+  snorkel: { name: 'Snorkel', desc: 'Borrowed from the aqueduct pool, three hundred years from now. With it you can stay underwater for as long as you like.' },
   clockKey: { name: 'Escapement Key', desc: "The key to the Clocktower's great lock. Only a lock that still turns will take it.", showcase: true },
 };
 
-/** Kindness side quests. `start` is the flag set when the favour is asked. */
-export const FAVOURS = [
+/** Kindness side quests. `start` is the flag set when the favor is asked. */
+export const FAVORS = [
   { id: 'chart', title: "Samaria's star chart", start: 'chartQuest', todo: "A storm carried off the Sun-Keeper's star chart. Someone, somewhen, must have found it.", done: 'You returned the star chart to Samaria.' },
   { id: 'lilies', title: "Karen Louise's sun-lilies", start: 'lilyQuest', todo: "Sun-lilies once grew in the square, in the oldest days. Bring some back to Karen Louise's flower bed.", done: 'Sun-lilies bloom in the square again.' },
   { id: 'keepsake', title: "Lillian's keepsake", start: 'keepsakeQuest', todo: 'Lillian has nothing her ancestor Aria ever held. Perhaps Aria could spare something.', done: "Lillian wears Aria's medallion at the bench." },
@@ -70,7 +71,7 @@ export const ENDING = [
   DE('Now then... I believe we are both late for supper. Shall we go home?'),
 ];
 
-// Nobody Vivienne meets knows she is travelling through time. In the Present they know her as
+// Nobody Vivienne meets knows she is traveling through time. In the Present they know her as
 // the clockmaker's apprentice; in the other ages she is a stranger in very odd clothes. What she
 // does for them is remembered all the same, and shows up in the ages that follow (the statue in
 // the square, the waymarker by Tamsin's bridge, the lily garden, Lillian's medallion).
@@ -95,7 +96,7 @@ function npcLines(game, id) {
         const lines = [m("Is that Donald Eugene's amulet? He never took it off. Keep it safe for him, dear, until he's back."), m("If you're off to look for him, mind the river. The ford washed out long ago. Grandmother used to say that in the oldest days, people crossed it on stepping stones."), Wr('The oldest days... the Past!')];
         if (!f.lilyQuest) {
           f.lilyQuest = true;
-          lines.push(m("One more thing, dear, if you have a moment. That empty flower bed by the road was my grandmother's pride."), m('She said golden sun-lilies grew in this square in the oldest days. None have bloomed here in living memory.'), { favour: 'lilies' });
+          lines.push(m("One more thing, dear, if you have a moment. That empty flower bed by the road was my grandmother's pride."), m('She said golden sun-lilies grew in this square in the oldest days. None have bloomed here in living memory.'), { favor: 'lilies' });
         }
         return lines;
       }
@@ -110,16 +111,16 @@ function npcLines(game, id) {
         return [
           y('My star chart! Dry, and whole! Where did you find it? ...No. The sun sends what it sends, and today it sent a stranger in peculiar clothes.'),
           { take: 'starChart' },
-          y('Thank you, traveller. Without it, the planting days would be guesswork, and the village would go hungry.'),
+          y('Thank you, traveler. Without it, the planting days would be guesswork, and the village would go hungry.'),
           y('You will be remembered here. I shall have Callie carve you in stone, so that our grandchildren know your face.'),
           { kind: 'chart', flag: 'chartReturned' },
         ];
       if (f.chartQuest) return [y('Still no sign of my star chart? The storm carried it far. Perhaps farther than anyone can walk.'), disc];
       f.chartQuest = true;
       return [
-        y('What strange clothes, traveller. Glass over your eyes, and an apron full of iron? You are not from the river villages.'),
+        y('What strange clothes, traveler. Glass over your eyes, and an apron full of iron? You are not from the river villages.'),
         y("Forgive me, I am distracted. Last night a storm tore my star chart from the observatory and carried it off. Without it, I cannot keep the sun's calendar."),
-        { favour: 'chart' },
+        { favor: 'chart' },
         disc,
       ];
     }
@@ -141,10 +142,15 @@ function npcLines(game, id) {
       return [t('GREETINGS, VISITOR. WELCOME TO HOLLOWMERE MEMORIAL PLAZA.'), t('COSTUME DETECTED: "MEDIEVAL APPRENTICE". VERY AUTHENTIC. PLEASE NOTE THE HERITAGE FESTIVAL IS NOT UNTIL SPRING.'), t('ARCHIVE NOTE: AN AQUEDUCT LIES BENEATH THE SANDSTONE CLIFFS. IT WAS CARVED BY A SPRING THAT DRIPPED FOR CENTURIES.')];
     }
     case 'holo':
-      return [N('MEMORIAL: DONALD EUGENE THE CLOCKMAKER, WHO RESTARTED THE GREAT TOWER WITH THE HELP OF HIS APPRENTICE, V—[DATA CORRUPTED]'), Wr('...With the help of his apprentice? Does that mean... me?')];
+      // (the Tower hasn't been restarted in the Present yet, so no Future knows of it)
+      return [
+        N('MEMORIAL: DONALD EUGENE THE CLOCKMAKER, LAST KEEPER OF THE GREAT TOWER. HE VANISHED THE WEEK THE TOWER STOPPED, AND WAS NEVER FOUND. THE TOWER HAS NOT TICKED SINCE.'),
+        Wr('Never found... and three hundred years on, it still has not ticked.'),
+        Wr("Not if I can help it. That's not how this is going to go, Master."),
+      ];
     case 'michelle': {
       const m = S('michelle', 'Michelle the Wise');
-      if (f.metMichelle && game.state.kindness.length >= FAVOURS.length)
+      if (f.metMichelle && game.state.kindness.length >= FAVORS.length)
         return [m("You have the look of someone who has been busy being kind, Vivienne. I can always tell."), m('People remember a kindness far longer than you would think. And so do I.')];
       if (f.metMichelle)
         return [m('Spend your time wisely, Vivienne. And wherever you find yourself, always remember to help others.')];
@@ -219,18 +225,18 @@ function npcLines(game, id) {
       if (game.state.taken.includes('hammerGift')) {
         if (f.keepsakeQuest) return [k('Ring that bell loud enough for all of us.')];
         f.keepsakeQuest = true;
-        return [k('Ring that bell loud enough for all of us.'), ...wish, { favour: 'keepsake' }];
+        return [k('Ring that bell loud enough for all of us.'), ...wish, { favor: 'keepsake' }];
       }
       if (f.hammerLeft)
         return [
           k('Wait. Glowing amulet. Dark hair in a bun. Goggles...'),
           k("Family legend says someone dressed exactly like that would come for THE hammer one day. I always figured it was a joke Aria played on us. It's her last masterwork, and it's been tempering in her vault for three hundred years."),
           k("Well, a legend's a legend. It's right there on the display case. Go on, take it."),
-          ...(f.keepsakeQuest ? [] : (f.keepsakeQuest = true, [...wish, { favour: 'keepsake' }])),
+          ...(f.keepsakeQuest ? [] : (f.keepsakeQuest = true, [...wish, { favor: 'keepsake' }])),
         ];
       if (!f.keepsakeQuest) {
         f.keepsakeQuest = true;
-        return [k("Hey, you're not from around here. Nice goggles."), k("This family shop has been here since my ancestor Aria's forge days. She supposedly left something unfinished... the stories never say what."), ...wish, { favour: 'keepsake' }];
+        return [k("Hey, you're not from around here. Nice goggles."), k("This family shop has been here since my ancestor Aria's forge days. She supposedly left something unfinished... the stories never say what."), ...wish, { favor: 'keepsake' }];
       }
       return [k("Hey, you're not from around here. Nice goggles."), k("This family shop has been here since my ancestor Aria's forge days. She supposedly left something unfinished... the stories never say what.")];
     }
@@ -257,6 +263,22 @@ function npcLines(game, id) {
         Wr('A spring that wandered off... in the Past, maybe it can be turned back this way. Down the right channel.'),
       ];
     }
+    case 'oren': {
+      // He has met Donald Eugene, without knowing who (or when) he is: the old man came back to
+      // the first age to have the Clocktower built.
+      const o = S('oren', 'Oren the Mason');
+      if (f.metOren) return [o('Still dressing stone for the old man\'s "clock" tower. If you see him, tell him the walls are up. And ask him again what a clock is.')];
+      f.metOren = true;
+      return [
+        o("Ho, stranger. More odd clothes! You're the second this season."),
+        o('The first was an old man. Bald as a river stone on top, with white hair all round the sides. He walked out of the trees with a cart of iron wheels, and drawings on skins so thin the sun shone through them.'),
+        o('He wanted a tower. Here, on this very spot. A "clock tower", he called it. He was very excited. He would not stop talking, and he would not hear no.'),
+        Wr('A clock tower... did he say what a clock was?'),
+        o('Something that counts the day, he said. I told him we have the sun for that. He laughed, and said the sun was a fine start.'),
+        o('So we are building it. The walls are up already. He says the part that matters goes inside, later. He paid in iron, and iron is iron. But between us, stranger: not one of us knows what it is for.'),
+        Wr('Bald, white hair, would not hear no... Master Donald Eugene. He didn\'t just look after the Clocktower. He had it built.'),
+      ];
+    }
     case 'tamsin': {
       const t = S('tamsin', 'Tamsin the Ropewright');
       if (f.bridgeSealed) return [t('Look at it. Not a fray, not a speck of rot, and it hums like a plucked string.'), t('Whatever you did, spirit, my bridge will outlive us all.')];
@@ -278,7 +300,7 @@ function npcLines(game, id) {
       if (f.bridgeQuest) return [t("Rope that never rots. That's what I need. Find me some and I'll bridge this gorge.")];
       f.bridgeQuest = true;
       return [
-        t('A traveller! And dressed like no one I ever saw. Careful near the edge: the Thornwater has taken braver folk than you.'),
+        t('A traveler! And dressed like no one I ever saw. Careful near the edge: the Thornwater has taken braver folk than you.'),
         t("I'm Tamsin. I mean to bridge this gorge, but every vine rope I twist frays within a season."),
         t('If only there were rope that never rotted. Spirits\' rope. Ha!'),
         Wr('Rope that never rots... there must be something like that in the Future.'),
@@ -297,7 +319,7 @@ export async function talk(game, npc) {
     if (cmd.taken) game.state.taken.push(cmd.taken);
     if (cmd.take) game.removeItem(cmd.take);
     if (cmd.flag) game.state.flags[cmd.flag] = true;
-    if (cmd.favour) game.startFavour(cmd.favour);
+    if (cmd.favor) game.startFavor(cmd.favor);
     if (cmd.kind) game.completeKindness(cmd.kind);
     if (cmd.sfx) audio.sfx(cmd.sfx);
     if (cmd.refresh) {
@@ -367,7 +389,7 @@ export async function interact(game, ent) {
   const say = (lines) => game.dialogue.run(Array.isArray(lines) ? lines : [lines]);
   switch (ent.id) {
     case 'workbench':
-      if (f.hasAmulet) return say(Wr("Donald Eugene's tools, all neatly arranged. Except his favourite wrench, which is in my apron."));
+      if (f.hasAmulet) return say(Wr("Donald Eugene's tools, all neatly arranged. Except his favorite wrench, which is in my apron."));
       await say([
         Wr("Donald Eugene's amulet, the Chronoheart! He never let me touch it."),
         N("There's a note folded underneath it:"),
@@ -399,6 +421,20 @@ export async function interact(game, ent) {
       await game.timelapse({ to: ERA.PRESENT, focus: [66.5, 2.5, 4.5], years: 600, caption: 'Drip by drip, the spring wears through the cliff...', erode: { cells: erosionCells(), origin: [66.6, 4, 7] } });
       game.save();
       return;
+    case 'swimSign': {
+      const sign = N('A lit sign beside the flooded aqueduct: "HOLLOWMERE AQUEDUCT POOL. CLEAN SPRING WATER: SWIMMING PERMITTED. ALL OTHER WATERWAYS IN THE VALLEY ARE TREATED. DO NOT ENTER THEM."');
+      if (f.hasSnorkel) return say(sign);
+      await say([
+        sign,
+        N('A snorkel hangs from a hook beneath it: "FOR VISITORS. PLEASE BORROW."'),
+        Wr("Clean water, three hundred years on. That's my spring! And with a breathing tube, I can stay under for as long as I like."),
+      ]);
+      f.hasSnorkel = true;
+      game.giveItem('snorkel');
+      game.refreshWorld();
+      game.save();
+      return;
+    }
     case 'cliffSign':
       if (f.springOpen) return say(N('A smooth tunnel, carved through the cliff by centuries of dripping water.'));
       return say([N('Soft, crumbly sandstone. Old water stains run down from the top of the cliff, but no water has flowed here in living memory.'), Wr('If only water had been running here all this time...')]);

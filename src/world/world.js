@@ -120,7 +120,7 @@ export class Builder {
     this.lights.push({ x, y, z, color, intensity, distance, flicker });
   }
 
-  /** Visual gabled roof, ridge along x. color: tagged roof colour, gable: end-wall colour. */
+  /** Visual gabled roof, ridge along x. color: tagged roof color, gable: end-wall color. */
   roof(x0, x1, y0, zBack, zFront, ridgeY, color, gable) {
     this.roofs.push({ x0, x1, y0, zBack, zFront, ridgeY, ridgeZ: (zBack + zFront) / 2, color, gable });
   }
@@ -265,7 +265,7 @@ export class World {
     this.staticBuilders = [null, null, null];
   }
 
-  /** Visible static voxel colour (tagged) or 0. */
+  /** Visible static voxel color (tagged) or 0. */
   staticVisible(era, x, y, z) {
     if (!inRange(x, y, z)) return 0;
     const i = idx(x, y, z);

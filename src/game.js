@@ -11,7 +11,7 @@ import { hits } from './world/physics.js';
 import { buildLevel, SPAWNS, CHECKPOINTS, AREAS, L, COG_TOTAL, STUDY } from './levels/hollowmere.js';
 import { Player, NPC, Enemy, Warden, Searchlight, Pushable, Pickup, Interactable, Strikeable, Shrine } from './world/entities.js';
 import { HUD, Dialogue, showInventoryPanel, setFade, letterbox } from './ui/ui.js';
-import { talk, interact, struck, ITEMS, INTRO, ENDING, TEMPO_GIFT, TEMPO_LEARN, FAVOURS } from './story.js';
+import { talk, interact, struck, ITEMS, INTRO, ENDING, TEMPO_GIFT, TEMPO_LEARN, FAVORS } from './story.js';
 import { touchActive } from './ui/touch.js';
 import { currentGoal } from './objectives.js';
 import { Abilities } from './abilities.js';
@@ -46,7 +46,7 @@ export function newState() {
     inventory: [],
     taken: [],
     cogs: [],
-    kindness: [], // completed favours (see FAVOURS in story.js)
+    kindness: [], // completed favors (see FAVORS in story.js)
     blockPos: { ...L.blockStart },
     cratePos: { ...L.crateStart },
     boulderPos: { ...L.boulderStart },
@@ -918,24 +918,24 @@ export class Game {
 
   /** Fill the Menu panel (goal and hint are kept up to date every frame). */
   renderMenu() {
-    showInventoryPanel(this.state.inventory, true, this.favourList());
+    showInventoryPanel(this.state.inventory, true, this.favorList());
   }
 
   // ------------------------------------------------------------------ kindness side quests
-  favourList() {
+  favorList() {
     const s = this.state;
-    return FAVOURS.filter((fv) => s.flags[fv.start] || s.kindness.includes(fv.id)).map((fv) => ({
+    return FAVORS.filter((fv) => s.flags[fv.start] || s.kindness.includes(fv.id)).map((fv) => ({
       title: fv.title,
       text: s.kindness.includes(fv.id) ? fv.done : fv.todo,
       done: s.kindness.includes(fv.id),
     }));
   }
 
-  startFavour(id) {
-    const fv = FAVOURS.find((x) => x.id === id);
+  startFavor(id) {
+    const fv = FAVORS.find((x) => x.id === id);
     if (!fv) return;
     audio.sfx('ui');
-    this.hud.toast(`New favour: <b>${fv.title}</b>`, 3500);
+    this.hud.toast(`New favor: <b>${fv.title}</b>`, 3500);
     this.save();
   }
 

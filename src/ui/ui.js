@@ -193,15 +193,15 @@ export class Dialogue {
   }
 }
 
-export function showInventoryPanel(items, open, favours = []) {
+export function showInventoryPanel(items, open, favors = []) {
   const el = $('inventory-panel');
   el.hidden = !open;
   if (!open) return;
-  // favours (kindness side quests) the player has heard about
-  const fav = el.querySelector('.favours');
-  fav.hidden = !favours.length;
-  fav.querySelector('.favour-list').innerHTML = favours
-    .map((f) => `<div class="favour ${f.done ? 'done' : ''}"><span class="favour-mark" aria-hidden="true">${f.done ? '♥' : '◇'}</span><div><h4>${f.title}${f.done ? ' <span class="badge kind">Done</span>' : ''}</h4><p>${f.text}</p></div></div>`)
+  // favors (kindness side quests) the player has heard about
+  const fav = el.querySelector('.favors');
+  fav.hidden = !favors.length;
+  fav.querySelector('.favor-list').innerHTML = favors
+    .map((f) => `<div class="favor ${f.done ? 'done' : ''}"><span class="favor-mark" aria-hidden="true">${f.done ? '♥' : '◇'}</span><div><h4>${f.title}${f.done ? ' <span class="badge kind">Done</span>' : ''}</h4><p>${f.text}</p></div></div>`)
     .join('');
   const list = el.querySelector('.inv-list');
   if (!items.length) {

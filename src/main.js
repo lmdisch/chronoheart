@@ -39,7 +39,7 @@ $('btn-continue').addEventListener('click', () => {
   game.continueGame();
 });
 // ---------------------------------------------------------------------------
-// Overlays: the pause menu, the Controls sheet and the Menu (goal, items, favours). Only one
+// Overlays: the pause menu, the Controls sheet and the Menu (goal, items, favors). Only one
 // shows at a time, and the game is paused while any is open. Controls opened from the pause
 // menu go back to it when closed.
 const menu = $('inventory-panel');

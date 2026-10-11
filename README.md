@@ -4,7 +4,7 @@
 
 Master Donald Eugene, the clockmaker of Hollowmere, has vanished, and the great Clocktower has stopped for the first time in five hundred years. His apprentice, Vivienne, finds his amulet, the **Chronoheart**, and with it the power to step between three versions of the valley:
 
-| Age | What it looks like | Its colour |
+| Age | What it looks like | Its color |
 | --- | --- | --- |
 | **Past** (the Ancient Age) | sandstone temples, jungle, a young river | amber |
 | **Present** (the Medieval Age) | timber houses, cobbled streets, a stopped Clocktower | pale blue |
@@ -25,7 +25,7 @@ Every world, sprite, melody and sound in the game is generated from code: there 
 - [Running it locally](#running-it-locally)
 - [Walkthrough](#walkthrough) *(spoilers)*
 - [All 10 Lost Cogs](#all-10-lost-cogs) *(spoilers)*
-- [Favours](#favours) *(spoilers)*
+- [Favors](#favors) *(spoilers)*
 - [Secrets](#secrets) *(big spoilers)*
 - [Project structure](#project-structure)
 - [Publishing the live page](#publishing-the-live-page)
@@ -36,11 +36,11 @@ Every world, sprite, melody and sound in the game is generated from code: there 
 
 - **Travel through time.** Once you have the Chronoheart, you can switch to the era before or after the one you're in. The amulet's ring **drains while you're in the Past or Future** (about 10 seconds) and recharges in the Present. If it runs out, you're pulled back to the Present.
 - **You can't switch into something solid**, or over a drop with nothing to stand on: the amulet shakes and refuses. Move a little and try again.
-- **The time lens:** hold `Tab` (or hold the amulet dial on touch) to open a round window onto another era around you, without travelling. It shows that era live, and you can walk about with it: line up a jump, or see what's waiting before you switch.
+- **The time lens:** hold `Tab` (or hold the amulet dial on touch) to open a round window onto another era around you, without traveling. It shows that era live, and you can walk about with it: line up a jump, or see what's waiting before you switch.
 - **After a switch you get a moment's grace**: for 1.5 seconds nothing can hurt or spot you.
-- **Hearts:** you start with 5. Each finished favour adds one. Water and hazards cost a heart and put you straight back on solid ground.
+- **Hearts:** you start with 5. Each finished favor adds one. Water and hazards cost a heart and put you straight back on solid ground.
 - **Clock shrines** are checkpoints. Walking past one saves your progress and heals you. The game also saves after every important step (in your browser's local storage).
-- **The Menu** (`I`, or the ☰ button) shows your current goal, a **Hint** if you're stuck, your items and your favours. The game pauses while it's open. A short message pops up whenever your goal changes.
+- **The Menu** (`I`, or the ☰ button) shows your current goal, a **Hint** if you're stuck, your items and your favors. The game pauses while it's open. A short message pops up whenever your goal changes.
 - **Lost Cogs** are optional collectibles: 10 in all. Find them all for a bonus line in the ending.
 
 ### Abilities you pick up along the way
@@ -70,7 +70,7 @@ Every world, sprite, melody and sound in the game is generated from code: there 
 | `Tab` | Time lens: hold to open a window onto another era around you (`Q`/`E` choose which) |
 | `R` | Stasis Seal *(once learned)* |
 | `V` | Echo: start / stop recording *(once learned)* |
-| `I` | Menu: goal, hint, items, favours |
+| `I` | Menu: goal, hint, items, favors |
 | `G` | Open the Menu with the hint showing |
 | `H` | Controls |
 | `Esc` / `P` | Pause |
@@ -113,7 +113,7 @@ The road runs west to east. Each area below lists what you need and how to get i
 ### 1. Hollowmere Square
 
 - In the **Present**, go into **Donald Eugene's workshop** at the west end and examine the **workbench**. You get the **Chronoheart** and Donald Eugene's note: find the three Era Keys and restart the Tower.
-- Elder Karen Louise (Present) has advice about the river, and a favour (see [Favours](#favours)).
+- Elder Karen Louise (Present) has advice about the river, and a favor (see [Favors](#favors)).
 
 ### 2. The Old Ford
 
@@ -194,6 +194,7 @@ Everything here happens in the **Present**: the gates, the steps and your echoes
   - If it catches you, you lose a heart and it throws you out to the courtyard gate.
   - In the Present, the key's spot is **inside a fountain**, so you can't just pop into the Future on top of it. You have to cover the last stretch in the Future, and walk clear of the fountain's footprint before switching back.
   - **Tip:** walk most of the way in the **Present** (there's no Warden there). Wait beside the fountain until the Warden's cone points away from you, then pop into the Future, take the key, step back clear of the fountain and switch back.
+- In the **Past**, **Oren the Mason** is working at the foot of the tower. He'll tell you about the strange old man who turned up with a cart of iron wheels and insisted a "clock tower" be built here.
 - **Tempo first.** Donald Eugene's toolbox sits just inside the courtyard gate, in the **Present**: it teaches the Chronoheart Tempo. Out in the Future yard it works on everything: slow the Warden to slip across behind its cone, or speed it up to hurry it off a corner.
 - **Searchlights.** Two pools of light sweep the Future yard, one across the way in and one along the far side of the key. Step into one and the Warden comes for you. Slow a light down and walk round it.
 - **Lifting the key** brings the Warden straight for you, in sight or not. Hold **Slow** (keyboard: hold **Q**) and it drops to a crawl while it's near you. Walk clear, then switch ages.
@@ -234,7 +235,7 @@ Once you've finished the story, your save is cleared: the next time you play, it
 | 2 | Hollowmere Square | **Present** | On top of the crate stack at the east end of the square. | — |
 | 3 | Hollowmere Square | **Future** | On the third of the floating steps east of the plaza. | — |
 | 4 | Sandstone Cliffs | **Past** | On top of the sandstone steps beside the temple. | — |
-| 5 | Sandstone Cliffs | **Future** | At the bottom of the flooded pit beside the cliff: swim down for it. | The spring opened in the Past |
+| 5 | Sandstone Cliffs | **Future** | At the bottom of the aqueduct pool beside the cliff: swim down for it. A sign on the road just before it says this is the one stretch of water in the Future that's safe to swim in, and lends you a snorkel. | The spring opened in the Past |
 | 6 | Rampart Row | **Present** or **Future** | On the tree's branch, up level with the top of the town wall. Planted in the Past: the oak's branch in the **Present**. Planted in the Present: the petrified tree's branch in the **Future**. Climb the ladder up the trunk. | The acorn planted |
 | 7 | Rampart Row | **Future** | At the foot of the tree by the wall, among its roots. | The acorn planted (either age) |
 | 8 | The Sun Terrace | **Past** | On top of the terrace, at its front-right corner. | Getting up the terrace |
@@ -243,13 +244,13 @@ Once you've finished the story, your save is cleared: the next time you play, it
 
 ---
 
-## Favours
+## Favors
 
-Three optional side quests. Each completed favour gives you **+1 heart** (and some nice moments). The Menu tracks the ones you've heard about.
+Three optional side quests. Each completed favor gives you **+1 heart** (and some nice moments). The Menu tracks the ones you've heard about.
 
-Nobody you meet knows you're travelling through time: in the Past and the Future you're just a stranger in very odd clothes. But what you do for people is remembered. Return Samaria's star chart and a statue of "the Stranger" stands in the square from then on (Present and Future); seal Tamsin's bridge and a waymarker by it tells whose rope it was.
+Nobody you meet knows you're traveling through time: in the Past and the Future you're just a stranger in very odd clothes. But what you do for people is remembered. Return Samaria's star chart and a statue of "the Stranger" stands in the square from then on (Present and Future); seal Tamsin's bridge and a waymarker by it tells whose rope it was.
 
-| Favour | Starts with | What to do |
+| Favor | Starts with | What to do |
 | --- | --- | --- |
 | **Samaria's star chart** | Samaria the Sun-Keeper (Past, Hollowmere Square) | A storm carried off her star chart. In the **Future**, **TICK** the archivist robot has it in the archive: ask about it and borrow it. Bring it back to Samaria in the Past. |
 | **Karen Louise's sun-lilies** | Elder Karen Louise (Present, Hollowmere Square) | Golden sun-lilies grew in the square in the oldest days. In the **Past**, gather seeds from the wild flowers at the front of the square, then plant them in Karen Louise's empty **flower bed** in the Present. |
@@ -282,7 +283,7 @@ src/
   gearworks.js          Tempo, and the Gearworks' hammers, spring plates and lift
   finale.js             the Clocktower finale: the great piston, the gears, the lurch as each key goes in
   objectives.js         the goal and hint for wherever you are and whatever you've done
-  story.js              items, favours, all dialogue, and every interaction
+  story.js              items, favors, all dialogue, and every interaction
   core/                 input (keyboard + virtual keys), small utilities
   levels/hollowmere.js  the whole valley in all three ages: layout, features, spawns, cogs
   world/                voxel world and collision, physics, entities (player, NPCs, enemies, the Warden...)
@@ -299,7 +300,7 @@ tools/
 const r = await import('/tools/reachability.js'); r.checkAll(window.__game)
 ```
 
-It replays the story one stage at a time and, for each, maps everywhere the player can get to (walking, jumping, ladders, swimming, era switches within the Chronoheart's 10 seconds) and lists any place you can reach but not get back from. Every stage should say `stuck: []`. Start a new game afterwards, since it changes the save state.
+It replays the story one stage at a time and, for each, maps everywhere the player can get to (walking, jumping, ladders, swimming, era switches within the Chronoheart's 10 seconds) and lists any place you can reach but not get back from. Every stage should say `stuck: []`. Start a new game afterward, since it changes the save state.
 
 ### How the level works
 

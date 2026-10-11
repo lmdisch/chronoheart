@@ -14,7 +14,7 @@ const ECHO_LIMIT = 3; // echoes at once; a new one replaces the oldest
 const ECHO_TONE = 0xbff6ff;
 const LIT_TIME = 5.2; // seconds a gallery button glows on after an echo steps off it (longer than any echo's loop)
 
-// on a button: within 0.65 of its centre (generous, so a step onto its edge still counts)
+// on a button: within 0.65 of its center (generous, so a step onto its edge still counts)
 const standsOn = (b, p) => Math.abs(b.x - (p.x + 0.5)) < 0.65 && Math.abs(b.z - (p.z + 0.5)) < 0.65 && Math.abs(b.y - p.y) < 0.4;
 
 /** A recorded loop of the player's movement, replayed forever in the Present. */
@@ -108,7 +108,7 @@ export class Abilities {
       g.add(group);
       return { ...p, mat, glow, group, pressed: false, lit: 0 };
     });
-    // gate buttons: plain square plates in their gate's colour
+    // gate buttons: plain square plates in their gate's color
     this.gateButtons = GATE_BUTTONS.map((p) => {
       const base = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.06, 0.92), new THREE.MeshStandardMaterial({ color: 0x2a2630, roughness: 0.7 }));
       base.position.set(p.x + 0.5, p.y + 0.03, p.z + 0.5);

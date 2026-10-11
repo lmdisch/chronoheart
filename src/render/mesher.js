@@ -70,7 +70,7 @@ function rgbOf(hex) {
   return [tmpC.r, tmpC.g, tmpC.b];
 }
 
-/** Colour + layer for a palette colour on a given face. */
+/** Color + layer for a palette color on a given face. */
 function surfaceFor(hex, faceKind) {
   const S = surfaceLayers()[surfaceOf(hex)] || surfaceLayers()[0];
   const layer = faceKind === 'top' ? S.top : faceKind === 'bottom' ? S.bottom : faceKind === 'sideTop' ? S.sideTop : S.side;
@@ -78,8 +78,8 @@ function surfaceFor(hex, faceKind) {
 }
 
 /**
- * Greedy-mesh voxels in [lo, hi) using get(x,y,z) -> tagged colour (0 = empty).
- * Faces are culled against neighbours outside the region too, so chunks seam cleanly.
+ * Greedy-mesh voxels in [lo, hi) using get(x,y,z) -> tagged color (0 = empty).
+ * Faces are culled against neighbors outside the region too, so chunks seam cleanly.
  * occ(x,y,z) decides occupancy for culling/AO (defaults to get).
  */
 export function meshVoxels(get, lo, hi, gb = new GeoBuilder(), occ = get) {

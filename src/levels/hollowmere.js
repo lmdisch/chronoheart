@@ -8,7 +8,7 @@ const P = 0, M = 1, F = 2;
 // ---------------------------------------------------------------------------
 // Palettes
 // ---------------------------------------------------------------------------
-// Every palette colour carries a surface tag (see render/materials.js) that picks its texture.
+// Every palette color carries a surface tag (see render/materials.js) that picks its texture.
 export const C = tagPalettes({
   sand: [0xd9b77a, 0xd2ad6e, 0xe0c088, 0xcfa868],
   sandstone: [0xc9935a, 0xbf8850, 0xd29e64, 0xb88048, 0xc48c56],
@@ -636,7 +636,7 @@ function hub(world) {
   filler(b, F, 13, 37, 31);
 }
 
-// Sun-lilies: golden flowers that grew in the square in the oldest days (Karen Louise's favour).
+// Sun-lilies: golden flowers that grew in the square in the oldest days (Karen Louise's favor).
 function lilyCluster(b, x, z, n, glow = false) {
   for (let i = 0; i < n; i++) {
     const ox = x + hash3(i, 3, z * 7) * 0.8, oz = z + hash3(i, 5, x * 3) * 0.8;
@@ -652,7 +652,7 @@ const LILY_BED = { x0: 22, x1: 25, z: 5 }; // in the square, by the road
 
 // What Vivienne does for people in one age is remembered in the ages after it.
 export const STATUE = { x: 13.7, z: 1.0, xF: 19.6 };
-// carved stone: plain colours (not the wall palettes, which would texture it like masonry)
+// carved stone: plain colors (not the wall palettes, which would texture it like masonry)
 const CARVED = [0xcfc9ba, 0xaaa496, 0xe0dbcf], CARVED_DARK = 0x5f5a50; // "the Stranger", in the square (Present) and the plaza (Future)
 const BRIDGE_STONE = { x: 212.3, z: 1.3 };
 
@@ -871,7 +871,7 @@ function cliffs(world) {
   });
   // FEATURE: future cliff bulkhead + flooded aqueduct
   world.addFeature({
-    id: 'cliffF', eras: [F], key: (s) => String(!!s.flags.springOpen),
+    id: 'cliffF', eras: [F], key: (s) => `${!!s.flags.springOpen},${!!s.flags.hasSnorkel}`,
     build: (b, era, s) => {
       const open = !!s.flags.springOpen;
       for (let x = L.cliffX0; x <= L.cliffX1; x++)
@@ -895,6 +895,20 @@ function cliffs(world) {
         b.glow(L.pitX0 + 0.5, -2.99, 2.6, L.pitX1 - L.pitX0, 0.04, 0.2, NEON.cyan);
         b.light(66.5, 0, 3, 0x36c0ff, 7, 9, 0);
         b.glow(L.cliffX0 + 0.2, 2.6, 2, 1.6, 0.1, 0.1, NEON.cyan);
+        // the pool's sign, on the road just before it: the one stretch of water here that's safe
+        // to swim in (everywhere else in this age it's green and deadly). A snorkel hangs from it.
+        const sx = L.pitX0 - 1.1;
+        b.deco(sx, 0, 0.35, 0.12, 2.1, 0.12, 0x3a404c);
+        b.deco(sx - 0.55, 1.2, 0.32, 1.2, 0.9, 0.06, 0x14202c);
+        b.glow(sx - 0.5, 1.25, 0.39, 1.1, 0.8, 0.03, 0x2aa0c8);
+        for (const [oy, w] of [[1.42, 0.8], [1.58, 0.6]]) b.glow(sx - 0.35, oy, 0.43, w, 0.06, 0.02, 0xe8fbff); // waves
+        b.glow(sx - 0.08, 1.74, 0.43, 0.16, 0.16, 0.02, 0xe8fbff); // a swimmer's head above them
+        b.light(sx, 1.8, 1.2, 0x36c0ff, 3, 4, 0);
+        if (!s.flags.hasSnorkel) {
+          b.deco(sx + 0.2, 0.75, 0.42, 0.34, 0.2, 0.08, 0x2a6a8a);
+          b.glow(sx + 0.24, 0.79, 0.5, 0.26, 0.12, 0.02, 0x9fe8ff);
+          b.deco(sx + 0.56, 0.75, 0.42, 0.07, 0.5, 0.07, 0xff8a3a);
+        }
       }
     },
   });
@@ -1024,7 +1038,7 @@ function hideaway(world) {
       const { x0, x1, h, door } = STUDY;
       const wall = (x, y, z) => (y === h - 1 ? jitter(C.sandDark)(x, y, z) : jitter(C.sandstone)(x, y, z));
       if (!world.pocket) {
-        // outside: an ordinary old house, just like its neighbours
+        // outside: an ordinary old house, just like its neighbors
         b.solid(x0, 0, -4, x1, h - 1, -1, wall);
         for (let x = x0; x <= x1; x += 2) b.solid(x, h, -4, x, h, -4, jitter(C.sandstone));
         b.solid(x0, h, -1, x1, h, -1, jitter(C.sandstone));
@@ -1634,6 +1648,19 @@ function wardenYard(world) {
   let b = world.staticBuilder(P);
   filler(b, P, L.yardX0 + 1, L.towerX0 - 1, 121);
   for (let i = 0; i < 10; i++) b.deco(L.yardX0 + 2 + hash3(i, 3, 7) * 26, 0, 6.2 + hash3(i, 4, 7) * 0.6, 0.5, 0.4 + hash3(i, 5, 7) * 0.5, 0.5, C.jungle[i % 5]);
+  // Oren's building site, at the foot of the tower-to-be: cut stone, and the stranger's cart of iron wheels
+  {
+    const sx = L.towerX0 - 3.4;
+    for (const [ox, oy, oz] of [[0, 0, 0], [0.75, 0, 0.05], [1.5, 0, 0], [0.35, 0.5, 0.05], [1.1, 0.5, 0], [0.7, 1.0, 0.03]]) b.deco(sx + ox, oy, 0.3 + oz, 0.7, 0.5, 0.6, C.sandstone[((ox * 4 + oy * 2) | 0) % 3]);
+    const cx = L.towerX0 - 6.6;
+    b.deco(cx, 0.3, 0.35, 1.3, 0.12, 0.7, C.log[0]); // the cart's bed
+    b.deco(cx, 0.42, 0.35, 1.3, 0.3, 0.06, C.log[1]);
+    b.deco(cx, 0.42, 0.99, 1.3, 0.3, 0.06, C.log[1]);
+    for (const ox of [0.15, 0.95]) b.deco(cx + ox, 0, 1.06, 0.36, 0.36, 0.06, C.log[1]); // its wheels
+    b.deco(cx + 0.15, 0.46, 0.5, 0.42, 0.42, 0.07, 0x6a6a74); // gear wheels, stacked in it
+    b.deco(cx + 0.55, 0.5, 0.62, 0.5, 0.5, 0.07, 0x8a8a94);
+    b.deco(cx + 0.3, 0.52, 0.76, 0.34, 0.34, 0.07, 0xb8892e);
+  }
   // PRESENT: a courtyard with a fountain over the key's spot
   b = world.staticBuilder(M);
   b.solid(272, 0, 1, 275, 1, 4, jitter(C.stone));
@@ -1873,6 +1900,7 @@ export const SPAWNS = [
   { type: 'npc', id: 'sheng', era: M, x: 160.5, z: 1.2, sheet: 'sheng', name: 'Sheng the Gatekeeper' },
   { type: 'npc', id: 'hobb', era: M, x: 186.2, z: 2.6, sheet: 'hobb', name: 'Hobb the Miller' },
   { type: 'npc', id: 'tamsin', era: P, x: 210.5, z: 1.4, sheet: 'tamsin', name: 'Tamsin the Ropewright' },
+  { type: 'npc', id: 'oren', era: P, x: L.towerX0 - 4.5, z: 1.7, sheet: 'oren', name: 'Oren the Mason' },
 
   // Interactables
   { type: 'interact', id: 'workbench', era: M, x: 9.0, y: 1, z: 0.5, prompt: 'Examine workbench' },
@@ -1883,6 +1911,7 @@ export const SPAWNS = [
   { type: 'strike', id: 'leverJam', era: P, x: 63.4, y: 0, z: 0.35, flag: 'springOpen', prompt: 'Strike the seized lever', hz: 1.7 },
   ...MILL_PLUGS.map((pl) => ({ type: 'strike', id: pl.id, era: P, x: TROUGH_X - 0.15, y: 0, z: pl.z, flag: 'millDammed', prompt: `Strike the ${pl.name} plug`, hx: 0.95, hz: 0.9, keep: !pl.good })),
   { type: 'strike', id: 'shutterLock', era: F, x: 172.6, y: 0, z: 3.5, flag: 'shutterBroken', prompt: 'Strike the rusted lock', hx: 1.1, hz: 1.9 },
+  { type: 'interact', id: 'swimSign', era: F, x: L.pitX0 - 1.1, y: 0, z: 0.9, prompt: 'Pool sign', needs: 'springOpen' },
   { type: 'interact', id: 'cliffSign', era: M, x: 64.5, y: 0, z: 0.5, prompt: 'Inspect cliff' },
   { type: 'interact', id: 'soil', era: P, x: 92.5, y: 0, z: 3.5, prompt: 'Fertile soil' },
   { type: 'interact', id: 'soilM', era: M, x: 92.5, y: 0, z: 3.5, prompt: 'Planter box', hideIf: 'acornPlanted' },

@@ -76,7 +76,7 @@ class Regulator {
   }
 }
 
-/** Machines inside your bubble glow in the tempo's colour, so you can see exactly what you're bending. */
+/** Machines inside your bubble glow in the tempo's color, so you can see exactly what you're bending. */
 function tintAll(mats, k) {
   const col = k < 1 ? COL.slow : k > 1 ? COL.fast : 0x000000;
   for (const m of mats) {

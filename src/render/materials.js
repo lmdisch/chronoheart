@@ -8,7 +8,7 @@ import { getTileTextures, TILE_INDEX } from './textures.js';
  *  top / side / bottom: tile per face orientation
  *  sideTop: side tile used when nothing solid sits above (grass lips)
  *  alt: [tile, chance] random per-cell side variant
- *  tint: multiplier on the tile colour
+ *  tint: multiplier on the tile color
  */
 export const SURFACES = {
   plain: { side: 'plain' },
@@ -47,12 +47,12 @@ export const SURFACES = {
 export const SURFACE_NAMES = Object.keys(SURFACES);
 const SURFACE_INDEX = Object.fromEntries(SURFACE_NAMES.map((n, i) => [n, i]));
 
-// Material tag lives in bits 25..30 of a palette colour (bit 24 marks "visible" in the world grid).
+// Material tag lives in bits 25..30 of a palette color (bit 24 marks "visible" in the world grid).
 const TAG_SHIFT = 2 ** 25;
 export const tagColor = (hex, name) => (hex & 0xffffff) + SURFACE_INDEX[name] * TAG_SHIFT;
 export const surfaceOf = (hex) => Math.floor(hex / TAG_SHIFT) & 63;
 
-/** Tag every colour of every named palette with its surface. Unknown palettes stay plain. */
+/** Tag every color of every named palette with its surface. Unknown palettes stay plain. */
 export function tagPalettes(C) {
   const out = {};
   for (const [k, pal] of Object.entries(C)) {
