@@ -85,6 +85,10 @@ $('hud-controls').addEventListener('click', (e) => {
   e.currentTarget.blur();
   toggle('controls');
 });
+// with a mouse, clicking the amulet turns Q / E between era travel and Tempo (the T key)
+document.querySelector('#chrono .chrono-dial').addEventListener('click', () => {
+  if (!document.body.classList.contains('touch')) game.toggleTempo();
+});
 $('btn-close-controls').addEventListener('click', closeOverlay);
 $('btn-close-menu').addEventListener('click', closeOverlay);
 $('btn-resume').addEventListener('click', closeOverlay);

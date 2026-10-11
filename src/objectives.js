@@ -32,7 +32,7 @@ export function currentGoal(game) {
   // ---- Sandstone Cliffs
   if (x < X.rampart) {
     if (x < X.cliff + 1) {
-      if (!f.springOpen) return step('Find a way through the Sandstone Cliffs.', 'The cliff\'s old water stains are a clue. Look around the temple in the <b>Past</b> for a way to send water toward it.');
+      if (!f.springOpen) return step('Find a way through the Sandstone Cliffs.', 'The cliff\'s old water stains are a clue. In the <b>Past</b>, a lever by the temple lets the spring out, but it has seized: knock it loose with a few hits of your wrench.');
       return step('See what the water has done to the cliff.', 'Centuries of spring water carved a tunnel. Walk through it in the <b>Present</b>.');
     }
     return step('Keep heading east.', 'Rampart Row and the town wall are just ahead.');
@@ -71,7 +71,8 @@ export function currentGoal(game) {
   if (x < X.mill) {
     if (!hasCore) {
       if (game.era !== ERA.FUTURE) return step('Find a way through the Gatehouse.', 'In the <b>Present</b> the road ends in rubble. In the <b>Future</b>, a security corridor runs through to a vault.');
-      return step('Reach the vault at the end of the gatehouse.', 'Follow the corridor past the drones, and hop onto the vault pedestal for the Fusion Core.');
+      if (!f.shutterBroken) return step('Get through the security shutter.', 'A shutter seals the corridor before the vault, but its lock housing has rusted through. Hit it three times with your wrench, between the drones\' passes.');
+      return step('Reach the vault at the end of the gatehouse.', 'Hop onto the vault pedestal for the Fusion Core.');
     }
     return missingEarlier(hasHammer, hasDisc) || step('Keep heading east.', 'The road goes on past the vault, toward the Clocktower.');
   }
@@ -133,12 +134,18 @@ export function currentGoal(game) {
     if (!inv.includes('clockKey')) {
       return step(
         "Find the key to the Clocktower's lock.",
-        "The door only opens in the <b>Present</b>, but its key lies in the <b>Future</b> courtyard, guarded by the Warden. Stay out of its sight cone: hide behind the pillars, or slip into the Present when it turns your way. In the Present, the key's spot is inside the fountain.",
+        "The door only opens in the <b>Present</b>, but its key lies in the <b>Future</b> courtyard, guarded by the Warden. Stay out of its sight cone: hide behind the pillars, or slip into the Present when it turns your way. In the Present, the key's spot is inside the fountain. The moment you lift the key the Warden comes for you: the key teaches you Tempo, so slow it down and walk away.",
       );
     }
     if (eraMissing.length) {
       const back = f.posternOpen ? 'The postern passage past the gatehouse vault leads back west.' : 'The old postern passage (<b>Present</b>) opens once you reach Millrace Hollow, so you can always walk back west.';
       return step('The lock needs all three Era Keys too.', `The great lock has four keyholes. You still need ${eraMissing.join(' and ')}. ${back}`);
+    }
+    if (!f.regulatorsSynced) {
+      return step(
+        "Bring the door's two regulators into step.",
+        `Two brass flywheels stand in the courtyard (<b>Present</b>), one by the Clocktower door and one west of the fountain. The lock won't turn until their markers pass the top together. Tempo only reaches what is near you: stand beside just one and hold ${keys.slow} until its marker comes round level with the other's, then let go.${keys.tempoNote}`,
+      );
     }
     return step('Unlock the Clocktower.', 'Use the keys on the Clocktower door, in the <b>Present</b>. The lock has not been made yet in the Past, and it has rusted solid in the Future.');
   }
@@ -197,6 +204,6 @@ function missingEarlier(hasHammer, hasDisc = true) {
 function inputNames() {
   const touch = document.body.classList.contains('touch');
   return touch
-    ? { seal: 'the <b>Seal</b> button', echo: 'the <b>Echo</b> button', slow: 'the <b>Slow</b> button', fast: 'the <b>Fast</b> button' }
-    : { seal: '<kbd>R</kbd>', echo: '<kbd>V</kbd>', slow: '<kbd>Q</kbd>', fast: '<kbd>E</kbd>' };
+    ? { seal: 'the <b>Seal</b> button', echo: 'the <b>Echo</b> button', slow: 'the <b>Slow</b> button', fast: 'the <b>Fast</b> button', tempoNote: '' }
+    : { seal: '<kbd>R</kbd>', echo: '<kbd>V</kbd>', slow: '<kbd>Q</kbd>', fast: '<kbd>E</kbd>', tempoNote: ' (<kbd>T</kbd> turns Q / E between era travel and Tempo.)' };
 }

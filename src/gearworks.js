@@ -1,8 +1,11 @@
-// The Gearworks, inside the clock: Tempo (the Chronoheart's last gift) and the machines it bends.
+// Tempo, and the machines it bends: the Gearworks inside the clock, and the two regulators
+// beside the Clocktower door.
 //
-// Inside the clock the ages are wound too tightly to pull apart, so the era keys become a dial:
-// hold Q (back) to slow time around you, E (forward) to speed it up. Only machines within your
-// bubble feel it; Vivienne moves as she always does. Tempo runs on the Chronoheart's ring.
+// The Escapement Key teaches the Chronoheart Tempo: slow time around you, or speed it up. Only
+// machines within your bubble feel it; Vivienne moves as she always does. On touch it's the Slow
+// and Fast buttons. On a keyboard, T turns Q and E from era travel to Tempo and back; inside the
+// clock, where the ages are wound too tightly to pull apart, they are always Tempo. It runs on
+// the Chronoheart's ring.
 import * as THREE from 'three';
 import { ERA } from './core/util.js';
 import { audio } from './audio/audio.js';
@@ -18,6 +21,60 @@ const REWIND_EVERY = 5.5; // the lift room: the Tower's stutter throws the lift 
 
 const P = ERA.PRESENT;
 const COL = { slow: 0x7fd8ff, fast: 0xffb84a };
+
+// The regulators: two flywheels by the Clocktower door (Present), far enough apart that your
+// bubble only holds one. The Tower's stutter has knocked them out of step, and the great lock
+// won't turn until they beat together: bend one until its marker comes round with the other's.
+const REGS = [{ x: L.towerX0 - 13.5, phase: 0 }, { x: L.towerX0 - 2, phase: 0.4 }];
+const REG_PERIOD = 3; // seconds a turn
+const REG_TOL = 0.07; // how close (in turns) counts as in step
+const REG_HOLD = 1.2; // seconds they must stay in step, untouched, to lock together
+
+class Regulator {
+  constructor(parent, spec) {
+    this.cx = spec.x;
+    this.phase = spec.phase;
+    const brass = new THREE.MeshStandardMaterial({ color: 0xb8892e, metalness: 0.6, roughness: 0.4 });
+    const iron = new THREE.MeshStandardMaterial({ color: 0x4a4a54, metalness: 0.5, roughness: 0.6 });
+    this.mats = [brass];
+    const g = (this.group = new THREE.Group());
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.34, 2.3, 0.3), iron);
+    post.position.y = 1.15;
+    this.wheel = new THREE.Group();
+    this.wheel.add(new THREE.Mesh(new THREE.TorusGeometry(0.95, 0.11, 8, 28), brass));
+    for (let k = 0; k < 4; k++) {
+      const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.9, 0.08), brass);
+      spoke.rotation.z = (k / 4) * Math.PI;
+      this.wheel.add(spoke);
+    }
+    // the marker that comes round once a turn, and the notch it passes at the top
+    this.markMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const mark = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.2), this.markMat);
+    mark.position.y = 0.95;
+    this.wheel.add(mark);
+    this.wheel.position.set(0, 2.5, 0.22);
+    const notch = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.32, 0.2), iron);
+    notch.position.set(0, 3.72, 0.22);
+    this.lampMat = new THREE.MeshBasicMaterial({ color: 0x402c10 });
+    this.lamp = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.36, 0.36), this.lampMat);
+    this.lamp.position.set(0, 4.1, 0.22);
+    g.add(post, this.wheel, notch, this.lamp);
+    g.position.set(spec.x, 0, 0.45);
+    parent.add(g);
+  }
+  /** Returns true on the beat (as the marker passes the notch). */
+  update(dt, k, synced) {
+    const before = this.phase;
+    this.phase = (this.phase + dt / REG_PERIOD) % 1;
+    this.wheel.rotation.z = -this.phase * Math.PI * 2;
+    const flash = Math.max(0, 1 - Math.min(this.phase, 1 - this.phase) / 0.06);
+    const col = synced ? 0xffd070 : k < 1 ? COL.slow : k > 1 ? COL.fast : 0xff7040;
+    this.lampMat.color.setHex(col).multiplyScalar(0.25 + flash * 3);
+    this.markMat.color.setHex(col).multiplyScalar(2.2);
+    if (k !== this.k) tintAll(this.mats, (this.k = k));
+    return this.phase < before;
+  }
+}
 
 /** Machines inside your bubble glow in the tempo's colour, so you can see exactly what you're bending. */
 function tintAll(mats, k) {
@@ -244,6 +301,12 @@ export class Gearworks {
     this.bubble.visible = this.ring.visible = false;
     g.scene.add(this.bubble, this.ring);
     this.bubbleShown = 0;
+    // the regulators stand in the courtyard from the start, beating out of step
+    this.yard = new THREE.Group();
+    g.world.groups[P].add(this.yard);
+    this.regs = REGS.map((r) => new Regulator(this.yard, r));
+    if (g.state.flags.regulatorsSynced) this.regs[1].phase = this.regs[0].phase;
+    this.syncT = 0;
   }
 
   /** Is the player inside the clock? */
@@ -255,12 +318,40 @@ export class Gearworks {
     return Math.abs(this.game.player.body.x - x) < r;
   }
 
-  /** The tempo a machine at (x, y) feels right now. */
-  factor(m) {
+  /** The tempo something at (x, y) feels right now: 1 unless it's inside your bubble. */
+  tempoAt(x, y) {
     if (!this.mode) return 1;
     const b = this.game.player.body;
-    if (Math.abs(b.x - m.cx) > RADIUS || Math.abs(b.y - m.cy) > RADIUS + 1) return 1;
+    if (Math.abs(b.x - x) > RADIUS || Math.abs(b.y - y) > RADIUS + 1) return 1;
     return this.mode < 0 ? TEMPO.slow : TEMPO.fast;
+  }
+
+  factor(m) {
+    return this.tempoAt(m.cx, m.cy);
+  }
+
+  /** The courtyard regulators: each turns at its own tempo, and they lock once they agree. */
+  updateRegulators(dt) {
+    const g = this.game, f = g.state.flags, b = g.player.body;
+    const here = g.era === P && Math.abs(b.x - (REGS[0].x + REGS[1].x) / 2) < 16;
+    const synced = !!f.regulatorsSynced;
+    for (const r of this.regs) {
+      const k = synced || g.era !== P ? 1 : this.tempoAt(r.cx, 0);
+      if (r.update(dt * k, k, synced) && here && (!synced || r === this.regs[0])) audio.sfx('tick');
+    }
+    if (synced) return;
+    const [a, c] = this.regs;
+    let d = Math.abs(a.phase - c.phase);
+    d = Math.min(d, 1 - d);
+    this.syncT = d < REG_TOL && !this.mode ? this.syncT + dt : 0;
+    if (this.syncT > REG_HOLD && g.mode === 'play' && f.hasTempo) {
+      f.regulatorsSynced = true;
+      c.phase = a.phase;
+      audio.sfx('checkpoint');
+      for (const r of this.regs) g.bursts.emit(r.cx, 2.5, 0.8, 24, { color: [0xffd070, 0xffffff], speed: 3, life: 0.8, gravity: -0.5, glow: 2 });
+      g.hud.toast("<b>In step!</b> The regulators beat together, and the Clocktower's lock is free to turn.", 5000);
+      g.save();
+    }
   }
 
   crush() {
@@ -278,36 +369,45 @@ export class Gearworks {
     const g = this.game, f = g.state.flags;
     const open = !!f.gearworksOpen;
     this.group.visible = open;
-    if (!open) return;
     const inside = this.active;
-    // Tempo: hold Q to slow, E to speed up, while there's charge in the ring
+    // Tempo: the Slow / Fast buttons, or Q / E while the keys are turned to Tempo (always, in the clock)
     let want = 0;
-    if (inside && ctl && f.hasTempo) want = input.held('back') ? -1 : input.held('forward') ? 1 : 0;
-    // an empty ring needs you to let go before it works again
+    if (ctl && f.hasTempo && !input.held('peek')) {
+      const keys = inside || g.tempoMode;
+      want = input.held('slow') || (keys && input.held('back')) ? -1 : input.held('fast') || (keys && input.held('forward')) ? 1 : 0;
+    }
+    // it runs on the Chronoheart's ring: the clock's own inside the Gearworks, and outside it the
+    // same ring era travel uses. An empty ring needs you to let go before it works again.
     if (!want) this.spent = false;
-    else if (this.charge <= 0) this.spent = true;
+    else if ((inside ? this.charge : g.meter) <= 0.02) this.spent = true;
     if (this.spent) want = 0;
     if (want !== this.mode) {
       if (want) audio.sfx('shift', { era: want < 0 ? 0 : 2 });
       this.mode = want;
     }
-    if (this.mode && !f.steadyHeart) this.charge = Math.max(0, this.charge - dt / CHARGE_TIME);
-    else if (!this.mode) this.charge = Math.min(1, this.charge + dt / RECHARGE_TIME);
-    if (f.steadyHeart) this.charge = 1;
-    if (inside) g.hud.setMeter(this.charge, ERA.PRESENT, !!f.steadyHeart);
-    document.body.classList.toggle('tempo-slow', inside && this.mode < 0);
-    document.body.classList.toggle('tempo-fast', inside && this.mode > 0);
+    if (inside) {
+      if (this.mode && !f.steadyHeart) this.charge = Math.max(0, this.charge - dt / CHARGE_TIME);
+      else if (!this.mode) this.charge = Math.min(1, this.charge + dt / RECHARGE_TIME);
+      if (f.steadyHeart) this.charge = 1;
+      g.hud.setMeter(this.charge, ERA.PRESENT, !!f.steadyHeart);
+    } else {
+      this.charge = 1;
+      if (this.mode && !f.steadyHeart) g.meter = Math.max(0, g.meter - dt / CHARGE_TIME);
+    }
+    document.body.classList.toggle('tempo-slow', this.mode < 0);
+    document.body.classList.toggle('tempo-fast', this.mode > 0);
     document.body.classList.toggle('in-gearworks', inside && !!f.hasTempo);
 
     // the machines, each at its own tempo
     const running = g.mode === 'play' || g.mode === 'dialogue';
-    if (running) for (const m of this.machines) {
+    if (running) this.updateRegulators(dt);
+    if (open && running) for (const m of this.machines) {
       const k = this.factor(m);
       m.update(dt * k, k);
       if (k !== m.k) m.tint(k), (m.k = k);
     }
     // motes inside the bubble: drifting lazily when slow, streaking past when fast
-    if (inside && this.mode && running) {
+    if (this.mode && running) {
       const bb = g.player.body, n = this.mode > 0 ? 4 : 2;
       for (let i = 0; i < n; i++) {
         if (Math.random() > dt * 30) continue;
@@ -317,15 +417,17 @@ export class Gearworks {
           : { color: [COL.slow, 0xd8f4ff], speed: 0.25, life: 1.8, gravity: -0.1, jitter: 0.2 });
       }
     }
-    // inside the clock, the era dial reads Slow / Tempo / Fast, and the music keeps your time
-    if (inside !== this.wasInside) {
-      this.wasInside = inside;
+    // while Q / E are Tempo, the era dial reads Slow / Tempo / Fast, and the music keeps your time
+    const dial = inside || (!!g.tempoMode && !!f.hasTempo);
+    if (dial !== this.wasDial) {
+      this.wasDial = dial;
       const pills = document.querySelectorAll('#chrono .era-pill');
-      const names = inside ? ['Slow', 'Tempo', 'Fast'] : ['Past', 'Present', 'Future'];
+      const names = dial ? ['Slow', 'Tempo', 'Fast'] : ['Past', 'Present', 'Future'];
       pills.forEach((p) => (p.textContent = names[Number(p.dataset.e)]));
-      if (!inside) g.hud.setEra(g.era);
+      document.getElementById('chrono').classList.toggle('tempo', dial);
+      if (!dial) g.hud.setEra(g.era);
     }
-    if (inside) document.querySelectorAll('#chrono .era-pill').forEach((p) => p.classList.toggle('active', Number(p.dataset.e) === this.mode + 1));
+    if (dial) document.querySelectorAll('#chrono .era-pill').forEach((p) => p.classList.toggle('active', Number(p.dataset.e) === this.mode + 1));
     if (this.mode !== this.shownMode) {
       this.shownMode = this.mode;
       const badge = document.getElementById('tempo-badge');
@@ -337,7 +439,7 @@ export class Gearworks {
       }
     }
     // the Tower's stutter throws the lift back down; a flicker warns you just before
-    if (running) {
+    if (open && running) {
       this.rewindT -= dt;
       if (this.rewindT < 0.5 && this.rewindT + dt >= 0.5 && this.near(this.lift.cx, 14)) g.towerSurge = 0.5;
       if (this.rewindT <= 0) {
@@ -348,7 +450,7 @@ export class Gearworks {
     }
     // the gears: glitching between fast and slow on their own, steady to your tempo nearby
     const b = g.player.body;
-    for (const gear of this.gears) {
+    if (open) for (const gear of this.gears) {
       const u = gear.userData;
       u.glitchT -= dt;
       if (u.glitchT <= 0) {
@@ -359,7 +461,7 @@ export class Gearworks {
       gear.rotation.z += u.speed * dt * (mine ? (this.mode < 0 ? TEMPO.slow : TEMPO.fast) : u.glitch);
     }
     // the bubble
-    this.bubbleShown += ((this.mode && inside ? 1 : 0) - this.bubbleShown) * Math.min(1, dt * 10);
+    this.bubbleShown += ((this.mode ? 1 : 0) - this.bubbleShown) * Math.min(1, dt * 10);
     const show = this.bubbleShown > 0.02;
     this.bubble.visible = this.ring.visible = show;
     if (show) {

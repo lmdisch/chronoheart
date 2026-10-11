@@ -49,7 +49,7 @@ Every world, sprite, melody and sound in the game is generated from code: there 
 | --- | --- | --- |
 | **Stasis Seal** | Donald Eugene's satchel at Tamsin's Crossing (Present) | Hold something in its moment, so it stays exactly the same in every later age. Things that can be sealed shimmer with pale light; stand beside one and a **Seal** prompt appears. |
 | **Echo** | Donald Eugene's lectern at the Echo Gallery (Present) | Record up to 5 seconds of your own movement. Your echo replays it on a loop, forever. Present only, up to 3 echoes at once (a 4th replaces the oldest). Stand on an echo and press **Interact** to dispel it. |
-| **Tempo** | The third Era Key, in the Clocktower | Inside the clock, hold **Q** to slow time around you and **E** to speed it up. Only the machines within a few blocks feel it; you move as usual. It runs on the Chronoheart's ring, which refills when you let go. |
+| **Tempo** | The Escapement Key, in the Warden's Courtyard (Future) | Slow time around you, or speed it up. On touch, hold **Slow** or **Fast**. On a keyboard, press **T** to turn **Q** / **E** from era travel to Tempo (and back), then hold **Q** to slow and **E** to speed up; inside the clock they are always Tempo. Only the machines within a few blocks feel it; you move as usual. It runs on the Chronoheart's ring, which refills when you let go. |
 
 ---
 
@@ -64,9 +64,10 @@ Every world, sprite, melody and sound in the game is generated from code: there 
 | `Space` | Jump (hold for a higher jump); swim upward |
 | `Shift` | Sprint |
 | `C` | Dodge-roll |
-| `X` | Swing your wrench |
+| `X` | Swing your wrench: at enemies, and at anything stuck fast |
 | `F` | Interact: talk to people, use things |
-| `Q` / `E` | Travel one era back / forward. Inside the clock: hold to slow down / speed up time (Tempo) |
+| `Q` / `E` | Travel one era back / forward. Turned to Tempo (`T`), or inside the clock: hold to slow down / speed up time |
+| `T` | Turn `Q` / `E` between era travel and Tempo *(once learned; clicking the amulet does the same)* |
 | `Tab` | Hold to peek at another era (`Q`/`E` choose which) |
 | `R` | Stasis Seal *(once learned)* |
 | `V` | Echo: start / stop recording *(once learned)* |
@@ -80,7 +81,7 @@ Every world, sprite, melody and sound in the game is generated from code: there 
 On-screen controls appear automatically on touch screens.
 
 - **Joystick:** touch anywhere on the left half and drag. Push all the way to sprint.
-- **Buttons:** Jump, Attack, Roll, and **Interact** (it only appears when there's someone to talk to or something to use). **Seal** and **Echo** appear once learned; Seal only lights up beside something sealable. Inside the clock they're replaced by **Slow** and **Fast** (hold).
+- **Buttons:** Jump, Attack, Roll, and **Interact** (it only appears when there's someone to talk to or something to use). **Seal** and **Echo** appear once learned; Seal only lights up beside something sealable. **Slow** and **Fast** (hold) appear once you learn Tempo; inside the clock they replace Seal and Echo.
 - **Swipe** anywhere else: left to travel toward the Future, right toward the Past. Drag slowly to preview first. You can also tap the era names at the top.
 - **Top-right:** Menu, Help and Pause.
 - It plays best in landscape, but portrait works too.
@@ -123,7 +124,7 @@ The road runs west to east. Each area below lists what you need and how to get i
 ### 3. Sandstone Cliffs
 
 - In the Present, a cliff blocks the road. Old water stains run down it.
-- In the **Past**, pull the **lever** by the temple. A spring starts to trickle down the cliff, and a time-lapse shows it wearing a tunnel through the rock over 600 years.
+- In the **Past**, the **lever** by the temple has seized. Hit it three times with your wrench (`X`, or **Attack**) to knock it loose. A spring starts to trickle down the cliff, and a time-lapse shows it wearing a tunnel through the rock over 600 years.
 - Walk through the tunnel in the **Present**.
 
 ### 4. Rampart Row
@@ -151,7 +152,7 @@ The road runs west to east. Each area below lists what you need and how to get i
 ### 7. The Gatehouse: the Fusion Core (Era Key of the Future)
 
 - In the Present, the road beyond the gatehouse is buried under rubble.
-- In the **Future**, a security corridor runs through to a vault. Get past the two drones, and hop onto the vault pedestal for the **Fusion Core**.
+- In the **Future**, a security corridor runs through to a vault. Get past the two drones to the **shutter** that seals the corridor: its lock housing has rusted through, and three hits of your wrench break it. Then hop onto the vault pedestal for the **Fusion Core**.
 - Once you reach Millrace Hollow, the old **postern passage** opens behind you (Present), so you can always walk back west.
 
 ### 8. Millrace Hollow
@@ -194,7 +195,9 @@ Everything here happens in the **Present**: the gates, the steps and your echoes
   - If it catches you, you lose a heart and it throws you out to the courtyard gate.
   - In the Present, the key's spot is **inside a fountain**, so you can't just pop into the Future on top of it. You have to cover the last stretch in the Future, and walk clear of the fountain's footprint before switching back.
   - **Tip:** walk most of the way in the **Present** (there's no Warden there). Wait beside the fountain until the Warden's cone points away from you, then pop into the Future, take the key, step back clear of the fountain and switch back.
-- With all four keys, open the door in the **Present**. You keep the three Era Keys: the Tower needs them inside.
+- **Lifting the key teaches the Chronoheart Tempo**, and the Warden comes straight for you, in sight or not. Hold **Slow** (keyboard: **Q**; your keys start out turned to Tempo) and it drops to a crawl while it's near you. Walk clear, then switch ages.
+- **The regulators.** With all four keys the lock still won't turn: two brass flywheels in the **Present** courtyard, one by the door and one west of the fountain, beat out of step. Tempo only reaches machines near you, so stand beside just one and hold **Slow** (or **Fast**) until its marker passes the top at the same moment as the other's, then let go. Hold them in step for a moment and they lock together.
+- Then open the door in the **Present**. You keep the three Era Keys: the Tower needs them inside.
 
 ### 12. The Clocktower
 
@@ -208,7 +211,7 @@ Every key you place makes the Tower lurch, its gears turn faster, and its time-s
 
 ### 13. The Gearworks
 
-The third key opens the great clock face, and the Chronoheart learns **Tempo**. You're carried up into the clock itself, where the ages are wound too tightly to pull apart: **Q** and **E** now slow down and speed up the machines around you (see [Abilities](#abilities-you-pick-up-along-the-way)). A clock shrine saves at the entrance, and a glowing doorway on each side links the Gearworks and the Tower floor.
+The third key opens the great clock face. You're carried up into the clock itself, where the ages are wound too tightly to pull apart: here **Q** and **E** are always Tempo, slowing down and speeding up the machines around you (see [Abilities](#abilities-you-pick-up-along-the-way)). A clock shrine saves at the entrance, and a glowing doorway on each side links the Gearworks and the Tower floor.
 
 1. **The hammers.** Two hammers slam far too fast to slip under. Hold **Q** to slow them, wait for one to lift, and run.
 2. **The spring plate.** It kicks every beat, but only hard enough to reach the ledge when it runs fast. Stand on it, hold **E**, and steer onto the ledge.

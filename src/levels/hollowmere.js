@@ -1136,6 +1136,29 @@ function gatehouse(world) {
   b.glow(174.05, 1, 0.98, 7.9, 0.08, 0.04, NEON.cyan);
   filler(b, F, 157, 159, 82);
 
+  // Future: a security shutter seals the corridor before the vault. Its lock housing has rusted
+  // through, and three hits of the wrench break it (see Strikeable 'shutterLock').
+  world.addFeature({
+    id: 'shutter', eras: [F], key: (s) => String(!!s.flags.shutterBroken),
+    build: (b, era, s) => {
+      if (s.flags.shutterBroken) {
+        // dropped into its slot in the floor; the broken housing lies where it fell
+        b.deco(173.05, 0, 2.05, 0.9, 0.08, 2.9, 0x2a3040);
+        b.deco(172.2, 0, 3.2, 0.3, 0.2, 0.7, 0x8a4a2a);
+        b.deco(171.7, 0, 4.1, 0.25, 0.12, 0.3, 0x6a3a22);
+        return;
+      }
+      // hazard-striped, so it reads as a barrier from the road
+      for (let y = 0; y <= 3; y++)
+        for (let z = 2; z <= 4; z++) b.setCell(173, y, z, T.SOLID, (y + z) % 2 ? 0xc8a020 : 0x2a2f3a);
+      for (const y of [0.95, 1.95, 2.95]) {
+        b.glow(172.96, y, 2.05, 0.05, 0.08, 2.9, 0xffb020);
+        b.glow(173.05, y, 4.98, 0.9, 0.08, 0.05, 0xffb020);
+      }
+      b.light(172.3, 2.2, 3.5, 0xffb020, 3, 5, 0.15);
+    },
+  });
+
   // Present: rubble and the rock behind it. The Clocktower's old postern lever opens a passage
   // back to the gatehouse, so you can always return west for anything you missed.
   world.addFeature({
@@ -1712,7 +1735,10 @@ export const SPAWNS = [
   { type: 'interact', id: 'workbench', era: M, x: 9.0, y: 1, z: 0.5, prompt: 'Examine workbench' },
   { type: 'interact', id: 'wildLilies', era: P, x: 23.5, y: 0, z: 5.5, prompt: 'Wild flowers' },
   { type: 'interact', id: 'lilyBed', era: M, x: 23.5, y: 0, z: 5.5, prompt: 'Flower bed' },
-  { type: 'interact', id: 'lever', era: P, x: 63.4, y: 0, z: 0.35, prompt: 'Pull lever' },
+  { type: 'interact', id: 'lever', era: P, x: 63.4, y: 0, z: 0.35, prompt: 'Spring lever', needs: 'springOpen' },
+  // things only the wrench will shift: three good hits each
+  { type: 'strike', id: 'leverJam', era: P, x: 63.4, y: 0, z: 0.35, flag: 'springOpen', prompt: 'Strike the seized lever', hz: 1.7 },
+  { type: 'strike', id: 'shutterLock', era: F, x: 172.6, y: 0, z: 3.5, flag: 'shutterBroken', prompt: 'Strike the rusted lock', hx: 1.1, hz: 1.9 },
   { type: 'interact', id: 'cliffSign', era: M, x: 64.5, y: 0, z: 0.5, prompt: 'Inspect cliff' },
   { type: 'interact', id: 'soil', era: P, x: 92.5, y: 0, z: 3.5, prompt: 'Fertile soil' },
   { type: 'interact', id: 'soilM', era: M, x: 92.5, y: 0, z: 3.5, prompt: 'Planter box', hideIf: 'acornPlanted' },
@@ -1767,7 +1793,7 @@ export const SPAWNS = [
   { type: 'pushable', id: 'boulder', era: P, x: L.boulderStart.x, z: L.boulderStart.z, kind: 'stone', posKey: 'boulderPos', lockFlag: 'millDammed' },
 
   // Enemies
-  { type: 'enemy', kind: 'thornback', era: P, x: 58, z: 3.5, range: [53, 64] },
+  { type: 'enemy', kind: 'thornback', era: P, x: 57, z: 3.5, range: [53, 60] }, // clear of the seized lever
   { type: 'enemy', kind: 'thornback', era: P, x: 72, z: 2.5, range: [69, 77] },
   { type: 'enemy', kind: 'thornback', era: P, x: 150, y: 3, z: 4, range: [147, 155] },
   { type: 'enemy', kind: 'thornback', era: P, x: 122, z: 4, range: [117, 128] },
@@ -1783,7 +1809,7 @@ export const SPAWNS = [
   { type: 'enemy', kind: 'drone', era: F, x: 210, z: 3, range: [207, 212] },
   { type: 'warden', era: F, path: WARDEN_PATH },
   { type: 'enemy', kind: 'drone', era: F, x: 163, z: 3, range: [161, 167] },
-  { type: 'enemy', kind: 'drone', era: F, x: 171, z: 3.5, range: [168, 173] },
+  { type: 'enemy', kind: 'drone', era: F, x: 170, z: 3.5, range: [167, 171.5] },
 ];
 
 // ---------------------------------------------------------------------------

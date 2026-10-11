@@ -9,9 +9,9 @@ import { Ambient, Bursts } from './render/particles.js';
 import { World, T, W } from './world/world.js';
 import { hits } from './world/physics.js';
 import { buildLevel, SPAWNS, CHECKPOINTS, AREAS, L, COG_TOTAL, STUDY } from './levels/hollowmere.js';
-import { Player, NPC, Enemy, Warden, Pushable, Pickup, Interactable, Shrine } from './world/entities.js';
+import { Player, NPC, Enemy, Warden, Pushable, Pickup, Interactable, Strikeable, Shrine } from './world/entities.js';
 import { HUD, Dialogue, showInventoryPanel, setFade, letterbox } from './ui/ui.js';
-import { talk, interact, ITEMS, INTRO, ENDING, TEMPO_GIFT, FAVOURS } from './story.js';
+import { talk, interact, struck, ITEMS, INTRO, ENDING, TEMPO_GIFT, TEMPO_LEARN, FAVOURS } from './story.js';
 import { touchActive } from './ui/touch.js';
 import { currentGoal } from './objectives.js';
 import { Abilities } from './abilities.js';
@@ -72,6 +72,7 @@ export class Game {
     this.lockT = 0;
     this.peekTarget = null;
     this.shiftFrom = null; // the era being left, while a shift is still playing
+    this.tempoMode = false; // keyboard: Q / E are Tempo instead of era travel (T switches)
     this.blockFlashT = 0;
     this.areaIdx = -1;
     this.warnT = 0;
@@ -103,6 +104,7 @@ export class Game {
     this.pushables = [];
     this.pickups = [];
     this.interactables = [];
+    this.strikeables = [];
     for (const s of SPAWNS) {
       let e;
       if (s.type === 'npc') this.npcs.push((e = new NPC(this, s)));
@@ -115,6 +117,7 @@ export class Game {
       } else if (s.type === 'pickup') this.pickups.push((e = new Pickup(this, s, s.item)));
       else if (s.type === 'cog') this.pickups.push((e = new Pickup(this, s, 'cog')));
       else if (s.type === 'interact') this.interactables.push((e = new Interactable(this, s)));
+      else if (s.type === 'strike') this.strikeables.push((e = new Strikeable(this, s)));
       if (e) this.entities.push(e);
     }
     this.shrines = CHECKPOINTS.map((c) => new Shrine(this, c));
@@ -192,6 +195,11 @@ export class Game {
     }
     const f = this.state.flags;
     if (f.finished) return this.startNew();
+    // a save from before the gatehouse shutter existed, already past it: it stays open
+    if ((this.state.taken || []).includes('core') || f.posternOpen || f.millDammed) f.shutterBroken = true;
+    // saves from before Tempo came with the Escapement Key, and before the door's regulators
+    if (this.state.inventory.includes('clockKey') || f.towerUnlocked) f.hasTempo = true;
+    if (f.towerUnlocked) f.regulatorsSynced = true;
     // a save from before the Gearworks, with all three keys in: Tempo, and up into the clock
     if (Object.keys(this.state.sockets || {}).length === 3 && !f.hasTempo) {
       f.hasTempo = f.gearworksOpen = true;
@@ -394,6 +402,22 @@ export class Game {
       const h = e.cfg ? e.cfg.h : b.h;
       if (Math.abs(b.x - x) < 0.8 + b.hw && Math.abs(b.z - z) < 0.9 && y > b.y - 0.6 && y < b.y + h + 0.6) e.damage(1, facing);
     }
+    for (const s of this.strikeables) if (s.active() && s.struckAt(x, y, z)) s.strike();
+  }
+
+  /** A Strikeable has taken its last hit: the story says what gives. */
+  strikeDone(s) {
+    this.mode = 'dialogue';
+    Promise.resolve(struck(this, s)).then(() => {
+      if (this.mode === 'dialogue') this.mode = 'play';
+      this.lockT = 0.2;
+    });
+  }
+
+  /** Something close by that wants the wrench. */
+  nearestStrike() {
+    const b = this.player.body;
+    return this.strikeables.find((s) => s.active() && s.distTo(b) < 2.1) || null;
   }
 
   tryPushFrom(b, dir, t) {
@@ -464,6 +488,34 @@ export class Game {
     this.giveItem(p.icon);
     this.bursts.emit(p.x, p.y, p.z, 30, { color: [0x9ff4ff, 0xffffff], speed: 4, life: 0.8 });
     this.save();
+    if (p.id === 'clockKey') this.learnTempo();
+  }
+
+  /** Lifting the Escapement Key teaches the Chronoheart Tempo, and brings the Warden straight for you. */
+  async learnTempo() {
+    const f = this.state.flags;
+    if (f.hasTempo) return;
+    f.hasTempo = true;
+    this.tempoMode = !touchActive(); // on a keyboard, Q / E start out as Tempo: it's needed this instant
+    this.abilities.syncBody();
+    this.save();
+    await this.cutscene(TEMPO_LEARN);
+    this.warden?.hunt();
+    this.hud.toast(
+      touchActive()
+        ? '<b>Tempo!</b> Hold <b>Slow</b> to slow the machines near you, <b>Fast</b> to speed them up.'
+        : '<b>Tempo!</b> Hold <kbd>Q</kbd> to slow the machines near you, <kbd>E</kbd> to speed them up. <kbd>T</kbd> turns Q / E back to era travel.',
+      8000,
+    );
+  }
+
+  /** Keyboard: turn Q / E between era travel and Tempo. (Touch has Slow and Fast buttons instead.) */
+  toggleTempo() {
+    if (!this.state.flags.hasTempo || !this.controlsEnabled()) return;
+    audio.sfx('ui');
+    if (this.gearworks.active) return this.hud.toast('Inside the clock, the Chronoheart only turns Tempo.', 2500);
+    this.tempoMode = !this.tempoMode;
+    this.hud.toast(this.tempoMode ? '<kbd>Q</kbd> / <kbd>E</kbd>: <b>Tempo</b> (slow / fast)' : '<kbd>Q</kbd> / <kbd>E</kbd>: <b>era travel</b>', 2200);
   }
 
   giveItem(item) {
@@ -512,7 +564,7 @@ export class Game {
     if (Object.keys(this.sockets).length === 3) this.giftTempo();
   }
 
-  /** The third key: the clock face opens, and the Chronoheart learns Tempo. Then up into the clock. */
+  /** The third key: the clock face opens. Then up into the clock, where only Tempo works. */
   async giftTempo() {
     this.mode = 'cutscene';
     this.hud.showPrompt(null);
@@ -528,7 +580,7 @@ export class Game {
     this.state.checkpoint = 11;
     this.save();
     await this.enterGearworks();
-    this.hud.toast(touchActive() ? '<b>Tempo!</b> Hold <b>Slow</b> or <b>Fast</b> to bend time around you.' : '<b>Tempo!</b> In the clock, hold <kbd>Q</kbd> to slow time around you, <kbd>E</kbd> to speed it up.', 7000);
+    this.hud.toast(touchActive() ? 'Inside the clock there is only <b>Tempo</b>: hold <b>Slow</b> or <b>Fast</b>.' : 'Inside the clock, <kbd>Q</kbd> and <kbd>E</kbd> are always <b>Tempo</b>: hold to slow time around you, or speed it up.', 7000);
   }
 
   /** Up through the doorway on the Tower's east wall, into the clock. */
@@ -721,10 +773,12 @@ export class Game {
       if (input.hit('forward') && this.era < 2) this.peekTarget = this.era + 1;
     } else {
       this.peekTarget = null;
-      // inside the clock, Q and E are the Tempo dial instead (see gearworks.js)
-      if (ctl && !this.gearworks.active && input.hit('back')) this.tryShift(this.era - 1);
-      if (ctl && !this.gearworks.active && input.hit('forward')) this.tryShift(this.era + 1);
+      // inside the clock, or once T has turned them to Tempo, Q and E bend time instead (see gearworks.js)
+      const eraKeys = ctl && !this.gearworks.active && !(this.tempoMode && f.hasTempo);
+      if (eraKeys && input.hit('back')) this.tryShift(this.era - 1);
+      if (eraKeys && input.hit('forward')) this.tryShift(this.era + 1);
     }
+    if (input.hit('tempo')) this.toggleTempo();
 
     // meter
     if (f.steadyHeart) this.meter = 1; // the Everspring: the Chronoheart never drains again
@@ -742,7 +796,7 @@ export class Game {
         this.meter = 0;
         this.snapBack();
       }
-    } else this.meter = Math.min(1, this.meter + dt / 2.5);
+    } else if (!this.gearworks.mode) this.meter = Math.min(1, this.meter + dt / 2.5); // (Tempo is drawing on it)
     this.hud.setMeter(this.meter, this.era, !!f.steadyHeart);
 
     // once you reach Millrace Hollow, the old postern passage opens: a way back west in the Present
@@ -773,9 +827,16 @@ export class Game {
     const near = ctl ? this.nearestInteractive() : null;
     // with nothing to talk to, offer the Stasis Seal when something sealable is right here
     // ...or, standing on one of your echoes, offer to dispel it
-    const seal = ctl && !near ? this.abilities.sealTarget() : null;
-    const echo = ctl && !near && !seal ? this.abilities.dispelTarget() : null;
-    if (seal) this.hud.showPrompt(`Seal ${seal.name}`, 'seal');
+    const strike = ctl && !near ? this.nearestStrike() : null;
+    const seal = ctl && !near && !strike ? this.abilities.sealTarget() : null;
+    const echo = ctl && !near && !strike && !seal ? this.abilities.dispelTarget() : null;
+    if (strike) {
+      this.hud.showPrompt(strike.prompt(), 'strike');
+      if (!f.strikeHint) {
+        f.strikeHint = true;
+        this.hud.toast(`Stuck fast. A few good hits should shift it: ${touchActive() ? '<b>Attack</b>' : '<kbd>X</kbd>'} swings your wrench.`, 5000);
+      }
+    } else if (seal) this.hud.showPrompt(`Seal ${seal.name}`, 'seal');
     else if (echo) this.hud.showPrompt('Dispel echo', 'dispel');
     else this.hud.showPrompt(near ? (near.prompt ? near.prompt() : 'Interact') : null);
     if (echo && input.hit('interact')) this.abilities.dispel(echo);

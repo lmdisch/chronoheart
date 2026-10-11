@@ -313,7 +313,7 @@ body.in-dialogue #touch-controls { opacity: 0.35; }
   box-shadow: 0 6px 24px rgba(232, 170, 60, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 .tc-jump svg { width: 30px; height: 30px; }
-.tc-talk.ready { color: #140f1c; background: var(--era); border-color: transparent; box-shadow: 0 0 24px var(--era-glow); animation: talkPulse 1.2s ease-in-out infinite; }
+.tc-talk.ready, .tc-attack.ready { color: #140f1c; background: var(--era); border-color: transparent; box-shadow: 0 0 24px var(--era-glow); animation: talkPulse 1.2s ease-in-out infinite; }
 @keyframes talkPulse { 50% { transform: scale(1.07); } }
 
 .tc-top { position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); right: calc(14px + env(safe-area-inset-right, 0px)); display: flex; gap: 8px; }
@@ -368,7 +368,7 @@ body.touch #toasts { top: calc(66px + env(safe-area-inset-top, 0px)); right: cal
   .stats div { padding: 10px 16px; min-width: 120px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .tc-talk.ready, .rotate-phone { animation: none; }
+  .tc-talk.ready, .tc-attack.ready, .rotate-phone { animation: none; }
 }
 
 /* short landscape: keep the area banner clear of the amulet, fit the touch help in two columns */
@@ -567,11 +567,17 @@ body:not(.has-seal) .needs-seal, body:not(.has-echo) .needs-echo { display: none
 }
 .tc-abil .tc-btn { width: 54px; height: 54px; }
 body:not(.has-seal) .tc-seal, body:not(.has-echo) .tc-echo { display: none; }
-body:not(.in-gearworks) .tc-slow, body:not(.in-gearworks) .tc-fast { display: none; }
+body:not(.has-tempo) .tc-slow, body:not(.has-tempo) .tc-fast { display: none; }
 body.in-gearworks .tc-seal, body.in-gearworks .tc-echo { display: none; }
 .tc-slow.on { color: #0e1a24; background: #7fd8ff; border-color: transparent; box-shadow: 0 0 22px rgba(127, 216, 255, 0.7); }
 .tc-fast.on { color: #241405; background: #ffb84a; border-color: transparent; box-shadow: 0 0 22px rgba(255, 184, 74, 0.7); }
 body:not(.has-tempo) .needs-tempo { display: none !important; }
+/* keyboard: the amulet shows what Q / E do now, and a click on it (or T) switches */
+body.has-tempo:not(.touch) #chrono .chrono-dial { pointer-events: auto; cursor: pointer; }
+#chrono.tempo .chrono-dial svg { filter: drop-shadow(0 0 10px rgba(255, 184, 74, 0.7)); }
+#chrono.tempo .era-pill[data-e='0'] { color: #7fd8ff; border-color: rgba(127, 216, 255, 0.45); }
+#chrono.tempo .era-pill[data-e='2'] { color: #ffb84a; border-color: rgba(255, 184, 74, 0.45); }
+#chrono.tempo .era-pill.active { color: #140f1c; }
 /* Tempo: a cool vignette when slowing time, a warm one when speeding it up */
 #app::after { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 5; opacity: 0; transition: opacity 0.25s; }
 body.tempo-slow #app::after { opacity: 1; background: radial-gradient(ellipse at center, transparent 45%, rgba(80, 170, 255, 0.42)); }

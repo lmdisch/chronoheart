@@ -13,6 +13,7 @@ export const STAGES = [
   ['cliff lever', { springOpen: true }],
   ['acorn (Past)', { acornPlanted: true }],
   ['sun block', {}, (s) => (s.blockPos = { ...L.pillarTarget })],
+  ['gatehouse shutter', { shutterBroken: true }],
   ['boulder in gully', { millDammed: true }],
   ['sluice closed', { sluiceClosed: true }],
   ['bridge built', { bridgeBuilt: true }],

@@ -69,6 +69,7 @@ export class TouchControls {
     if (this.on === on) return;
     this.on = on;
     document.body.classList.toggle('touch', on);
+    if (on) this.game.tempoMode = false; // touch has its own Slow / Fast buttons: Q / E stay era travel
     if (!on) this.releaseAll();
   }
 
@@ -144,6 +145,7 @@ export class TouchControls {
     this.hold(roll, 'KeyC');
     this.hold(talk, 'KeyF');
     this.talkBtn = talk;
+    this.attackBtn = attack;
 
     const top = document.createElement('div');
     top.className = 'tc-top';
@@ -160,12 +162,12 @@ export class TouchControls {
     abil.className = 'tc-abil';
     const seal = make('tc-seal', 'Seal', ICON.seal);
     const echo = make('tc-echo', 'Echo', ICON.echo);
-    // Tempo, inside the clock: hold to slow or speed up time around you (see body.in-gearworks)
+    // Tempo, once learned: hold to slow or speed up the machines around you (see body.has-tempo)
     const slow = make('tc-slow', 'Slow', ICON.slow);
     const fast = make('tc-fast', 'Fast', ICON.fast);
     abil.append(seal, echo, slow, fast);
-    this.hold(slow, 'KeyQ');
-    this.hold(fast, 'KeyE');
+    this.hold(slow, 'TempoSlow');
+    this.hold(fast, 'TempoFast');
     this.sealBtn = seal;
     this.tap(seal, () => this.pulse('KeyR'));
     this.tap(echo, () => this.pulse('KeyV'));
@@ -319,7 +321,7 @@ export class TouchControls {
     if (dial) this.hold(dial, 'Tab');
 
     const prompt = document.getElementById('prompt');
-    this.tap(prompt, () => this.pulse(prompt.dataset.action === 'seal' ? 'KeyR' : 'KeyF'));
+    this.tap(prompt, () => this.pulse({ seal: 'KeyR', strike: 'KeyX' }[prompt.dataset.action] || 'KeyF'));
 
     // during cutscenes and conversations, a tap anywhere (controls included) moves the dialogue on
     const advance = () => {
@@ -329,12 +331,14 @@ export class TouchControls {
     this.root.addEventListener('pointerdown', advance, true);
   }
 
-  /** Called every frame: highlight Talk when there's something to talk to. */
+  /** Called every frame: show Interact when there's something to use, light Attack when there's something to strike. */
   update(hasPrompt) {
     if (!this.on) return;
     // controls hidden mid-press (the HUD goes away for cutscenes): the finger's release won't arrive
     if ((this.stickId !== null || this.holds.size) && !this.zone.offsetWidth) this.releaseAll();
-    this.talkBtn.classList.toggle('ready', !!hasPrompt && document.getElementById('prompt').dataset.action !== 'seal');
+    const action = hasPrompt ? document.getElementById('prompt').dataset.action : null;
+    this.talkBtn.classList.toggle('ready', !!action && action !== 'seal' && action !== 'strike');
+    this.attackBtn.classList.toggle('ready', action === 'strike');
     this.sealBtn.classList.toggle('ready', !!this.game.abilities?.sealTarget());
   }
 }

@@ -59,7 +59,7 @@ export class HUD {
   setCogs(n) {
     this.cogs.textContent = `${n}/${COG_TOTAL}`;
   }
-  /** kind: 'interact' / 'dispel' (F) or 'seal' (R); touch taps on the prompt do the same action. */
+  /** kind: 'interact' / 'dispel' (F), 'seal' (R) or 'strike' (X); touch taps on the prompt do the same action. */
   showPrompt(text, kind = 'interact') {
     const key = text && `${kind}|${text}`;
     if (key === this.lastPrompt) return;
@@ -69,7 +69,7 @@ export class HUD {
       return;
     }
     this.prompt.dataset.action = kind;
-    this.prompt.querySelector('kbd').textContent = kind === 'seal' ? 'R' : 'F';
+    this.prompt.querySelector('kbd').textContent = kind === 'seal' ? 'R' : kind === 'strike' ? 'X' : 'F';
     this.promptText.textContent = text;
     this.prompt.classList.add('visible');
   }

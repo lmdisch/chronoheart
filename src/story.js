@@ -37,12 +37,19 @@ export const INTRO = [
   Wr("Wait. Something's glowing on his workbench..."),
 ];
 
-// The third key: the clock face opens, and the Chronoheart learns to turn time faster or slower.
+// The Escapement Key: the part of a clock that sets its tempo teaches the Chronoheart to do the same.
+export const TEMPO_LEARN = [
+  N('The Escapement Key hums against the Chronoheart. Its ring divides in two: one half turning slowly, one racing.'),
+  Wr('An escapement sets how fast a clock runs... and now the Chronoheart can, too. Any machine near me: slower, or faster.'),
+  N('Across the yard, the Warden swings round. It knows the key is gone.'),
+  Wr("Then I'll start with that one."),
+];
+
+// The third key: the clock face opens, and the way up into the clock with it.
 export const TEMPO_GIFT = [
   N('The third key slides home. High above, the great clock face splits along its seams and swings open.'),
-  N('Golden light pours down the shaft and into the Chronoheart. Its ring divides in two: one turning slowly, one racing.'),
-  Wr("It isn't just which age any more... I can feel how fast time is running. I can turn it, like a dial."),
-  N("But the Tower's heart still stutters. Somewhere up inside the clock, the great mainspring is running wild."),
+  N("Golden light pours down the shaft. But the Tower's heart still stutters: somewhere up inside the clock, the great mainspring is running wild."),
+  Wr("Up there the ages are wound too tightly to step between. But I can still turn time slower and faster."),
   Wr('Then that is where I am going.'),
 ];
 
@@ -280,6 +287,25 @@ export async function talk(game, npc) {
 /** "a", "a and b", "a, b and c" */
 const listOf = (xs) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
 
+/** Something the wrench has just knocked loose (see Strikeable). */
+export async function struck(game, ent) {
+  const f = game.state.flags;
+  const say = (lines) => game.dialogue.run(Array.isArray(lines) ? lines : [lines]);
+  switch (ent.id) {
+    case 'leverJam':
+      // freed at last: it swings over, and the spring runs
+      return interact(game, { id: 'lever' });
+    case 'shutterLock':
+      f.shutterBroken = true;
+      audio.sfx('gate');
+      game.renderer.shake = 0.6;
+      game.refreshWorld();
+      await say([N('The rusted lock housing bursts apart, and the shutter drops into the floor.'), Wr('Three hundred years of rust, and one good wrench.')]);
+      game.save();
+      return;
+  }
+}
+
 export async function interact(game, ent) {
   const s = game.state, f = s.flags, inv = s.inventory;
   const say = (lines) => game.dialogue.run(Array.isArray(lines) ? lines : [lines]);
@@ -313,7 +339,7 @@ export async function interact(game, ent) {
       audio.sfx('splash');
       game.renderer.shake = 0.5;
       game.refreshWorld();
-      await say([N('With a heavy clunk, a stone plug slides away. Spring water starts trickling down the cliff.'), Wr("Just a trickle... but if it keeps dripping for a few hundred years..."), Wr('Water wears away stone, given enough time!')]);
+      await say([N('The lever jolts free and swings over. With a heavy clunk, a stone plug slides away. Spring water starts trickling down the cliff.'), Wr("Just a trickle... but if it keeps dripping for a few hundred years..."), Wr('Water wears away stone, given enough time!')]);
       await game.timelapse({ to: ERA.PRESENT, focus: [66.5, 2.5, 4.5], years: 600, caption: 'Drip by drip, the spring wears through the cliff...', erode: { cells: erosionCells(), origin: [66.6, 4, 7] } });
       game.save();
       return;
@@ -450,6 +476,13 @@ export async function interact(game, ent) {
         return say([
           N("The Clocktower's great lock has four keyholes: one for a many-toothed key, and three shaped like a sun, a bell hammer and a power core."),
           Wr(missing.length === 4 ? "I don't have anything that fits yet." : `I'm still missing ${missing.length === 1 ? 'the one' : 'the ones'} shaped like ${listOf(missing.map(([, d]) => d))}.`),
+        ]);
+      }
+      if (!f.regulatorsSynced) {
+        return say([
+          N('Every key fits, but the Escapement Key will not turn. On either side of the yard, a brass flywheel ticks round: one, then the other, never together.'),
+          Wr("The lock's two regulators are out of step. It won't turn until they beat as one."),
+          Wr("Tempo only reaches what's close to me. If I stand by just one of them and slow it down, or hurry it up..."),
         ]);
       }
       game.removeItem('clockKey');

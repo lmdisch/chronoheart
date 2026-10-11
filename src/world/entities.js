@@ -493,7 +493,7 @@ export class Warden extends EraEntity {
   }
   reset() {
     const [x, z] = this.path[0];
-    Object.assign(this, { x, z, wp: 1, state: 'patrol', stateT: 0, lostT: 0, pauseT: 0 });
+    Object.assign(this, { x, z, wp: 1, state: 'patrol', stateT: 0, lostT: 0, pauseT: 0, huntT: 0 });
     const [nx, nz] = this.path[1];
     this.heading = Math.atan2(nz - z, nx - x);
   }
@@ -529,9 +529,19 @@ export class Warden extends EraEntity {
     if (free(this.x, nz)) this.z = nz;
     return d - step;
   }
+  /** It knows where you are (the key has just been lifted): it comes for you, in sight or not. */
+  hunt(secs = 7) {
+    // through its usual wind-up first, so there's a moment to react
+    Object.assign(this, { state: 'alert', stateT: 0, lostT: 0, huntT: secs });
+    audio.sfx('blocked');
+  }
   update(dt) {
     const g = this.game, p = g.player.body;
+    // it's a machine: Tempo slows it down or hurries it along when it's inside your bubble
+    const tempo = g.era === this.era ? g.gearworks.tempoAt(this.x, 0) : 1;
+    dt *= tempo;
     this.stateT += dt;
+    this.huntT = Math.max(0, this.huntT - dt);
     const seen = this.sees();
     if (this.state === 'patrol' || this.state === 'return') {
       if (seen) {
@@ -568,9 +578,9 @@ export class Warden extends EraEntity {
         audio.sfx('glitch');
       }
     } else if (this.state === 'chase') {
-      this.lostT = seen ? 0 : this.lostT + dt;
+      this.lostT = seen || this.huntT > 0 ? 0 : this.lostT + dt;
       if (g.era === this.era) this.moveToward(p.x, p.z, WARDEN.charge, dt);
-      if (this.lostT > WARDEN.giveUp || this.stateT > 5) {
+      if (this.lostT > WARDEN.giveUp || (this.stateT > 5 && this.huntT <= 0)) {
         this.state = 'return';
         let best = 0;
         this.path.forEach(([x, z], i) => {
@@ -583,7 +593,7 @@ export class Warden extends EraEntity {
     if (g.era === this.era && g.mode === 'play' && !(g.shiftGrace > 0) && Math.hypot(p.x - this.x, p.z - this.z) < 0.9 && p.y < 2) g.caughtByWarden();
 
     const alarmed = this.state === 'alert' || this.state === 'chase';
-    this.coneMat.color.setHex(alarmed ? 0xff3040 : 0xffd040);
+    this.coneMat.color.setHex(tempo < 1 ? 0x7fd8ff : tempo > 1 ? 0xffb84a : alarmed ? 0xff3040 : 0xffd040);
     this.coneMat.opacity = alarmed ? 0.32 : 0.22;
     this.cone.position.set(this.x, 0.04, this.z);
     this.cone.rotation.y = -this.heading;
@@ -737,6 +747,9 @@ export class Interactable extends EraEntity {
   constructor(game, spec) {
     super(game, spec);
     this.buildVisual();
+    // the seized lever is on show (and shudders when struck) before it can be used
+    if (this.id === 'lever') this.alwaysUpdate = true;
+    this.jolt = 0;
   }
   buildVisual() {
     const id = this.id;
@@ -795,7 +808,9 @@ export class Interactable extends EraEntity {
     const s = this.game.state, t = this.game.time;
     if (this.id === 'lever' || this.id === 'postern') {
       const target = (this.id === 'lever' ? s.flags.springOpen : s.flags.posternOpen) ? -0.9 : 0.9;
-      this.handle.rotation.z = damp(this.handle.rotation.z, target, 10, dt);
+      this.rest = damp(this.rest ?? target, target, 10, dt);
+      this.jolt = Math.max(0, this.jolt - dt * 3);
+      this.handle.rotation.z = this.rest + Math.sin(t * 55) * 0.12 * this.jolt;
     } else if (this.id === 'workbench') {
       this.amulet.visible = !s.flags.hasAmulet;
       this.amulet.position.set(this.x, this.y + 0.3 + Math.sin(t * 2) * 0.06, this.z);
@@ -819,6 +834,70 @@ export class Interactable extends EraEntity {
       this.ring.position.set(this.x, this.y + 0.05, this.z);
       this.ring.scale.setScalar(placed ? 1 + Math.sin(t * 6) * 0.1 : 0.8);
       this.ring.material.color.setHex(placed ? 0x9ff4ff : 0xffd070).multiplyScalar(placed ? 3 : 1.5);
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+/**
+ * Something stuck fast that a few good swings of the wrench will knock loose. spec.flag is set
+ * (by the story, see struck()) once it gives; hx / hz: how wide a swing still lands on it.
+ */
+export class Strikeable extends EraEntity {
+  constructor(game, spec) {
+    super(game, spec);
+    this.need = spec.hits ?? 3;
+    this.hits = 0;
+    this.jolt = 0;
+    if (this.id === 'shutterLock') {
+      // the shutter's lock housing: a rusted box on its west face, with a tell-tale lamp
+      this.box = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.7, 0.8), new THREE.MeshStandardMaterial({ color: 0x8a4a2a, roughness: 0.9, metalness: 0.3 }));
+      this.lamp = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.14, 0.3), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xff3040).multiplyScalar(2.5) }));
+      this.lamp.position.set(-0.17, 0.12, 0);
+      this.box.add(this.lamp);
+      this.box.position.set(spec.x - 0.25, 1.25, spec.z);
+      this.group.add(this.box);
+    }
+    this.group.visible = !game.state.flags[spec.flag];
+  }
+  active() {
+    return super.active() && !this.game.state.flags[this.spec.flag];
+  }
+  /** The prompt shows how far along it is. */
+  prompt() {
+    return `${this.spec.prompt} ${'●'.repeat(this.hits)}${'○'.repeat(this.need - this.hits)}`;
+  }
+  /** Does a wrench swing at (x, y, z) land on it? */
+  struckAt(x, y, z) {
+    return Math.abs(x - this.x) < (this.spec.hx ?? 1) && Math.abs(z - this.z) < (this.spec.hz ?? 1.2) && y > this.y - 0.5 && y < this.y + 2.4;
+  }
+  strike() {
+    const g = this.game;
+    if (this.hits >= this.need) return;
+    this.hits++;
+    this.jolt = 1;
+    audio.sfx('hit');
+    audio.sfx('lever');
+    g.renderer.shake = Math.max(g.renderer.shake, 0.2 + 0.1 * this.hits);
+    const sy = this.box ? this.box.position.y : this.y + 0.9, sx = this.box ? this.box.position.x : this.x;
+    g.bursts.emit(sx, sy, this.z, 10 + this.hits * 4, { color: [0xffd070, 0xffffff, 0xff8a3a], speed: 4, life: 0.4, gravity: 9, glow: 2.5 });
+    if (this.id === 'leverJam') {
+      const lever = g.interactables.find((e) => e.id === 'lever');
+      if (lever) lever.jolt = 1;
+    }
+    if (this.hits >= this.need) {
+      this.group.visible = false;
+      g.strikeDone(this);
+    }
+  }
+  update(dt) {
+    this.jolt = Math.max(0, this.jolt - dt * 3.5);
+    if (this.box) {
+      // each hit knocks it further askew, and its lamp gutters
+      const t = this.game.time;
+      this.box.rotation.x = this.hits * 0.16 + Math.sin(t * 60) * 0.1 * this.jolt;
+      this.box.rotation.z = -this.hits * 0.09;
+      this.lamp.visible = this.hits === 0 || Math.sin(t * (14 + this.hits * 12)) > -0.2 * this.hits;
     }
   }
 }
