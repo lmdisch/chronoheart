@@ -42,6 +42,19 @@ export const SURFACES = {
   crate: { side: 'crate', top: 'crate' },
   skyline: { side: 'skyline', top: 'darkPanel' },
   mudBrick: { side: 'mudBrick', top: 'sand' },
+  mud: { side: 'mud', top: 'mudTop' },
+  salt: { side: 'salt', top: 'saltTop' },
+  shingle: { side: 'shingle', top: 'shingle' },
+  seaRock: { side: 'seaRock', top: 'seaRockTop' },
+  drift: { side: 'drift', top: 'drift' },
+  reed: { side: 'reed', top: 'reed' },
+  coral: { side: 'coral', top: 'coral' },
+  whitewash: { side: 'whitewash', top: 'whitewash' },
+  roofSea: { side: 'seaRoof', top: 'seaRoof' },
+  hull: { side: 'hull', top: 'drift' },
+  rustHull: { side: 'rustHull', top: 'rustHull' },
+  brass: { side: 'brass', top: 'brass' },
+  wellStone: { side: 'wellStone', top: 'wellStone', alt: ['glyphSea', 0.05] },
 };
 
 export const SURFACE_NAMES = Object.keys(SURFACES);

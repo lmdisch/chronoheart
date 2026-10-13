@@ -1,6 +1,7 @@
 // Voxel world: per-era collision grids, dynamic overlays, and greedy-meshed textured visuals.
 import * as THREE from 'three';
 import { hash3 } from '../core/util.js';
+import { theme } from '../chapter.js';
 import { getVoxelMaterial, surfaceOf, SURFACE_NAMES } from '../render/materials.js';
 import { GeoBuilder, meshVoxels, meshBox, meshRoof } from '../render/mesher.js';
 import { makeWater, makeWaterfall } from '../render/water.js';
@@ -8,7 +9,7 @@ import { buildTufts, buildCanopies } from '../render/foliage.js';
 
 export const T = { AIR: 0, SOLID: 1, WATER: 2, LADDER: 3, HAZARD: 4 };
 
-export const W = 346; // level length (x): the valley, then the Gearworks inside the clock
+export const W = theme.width; // level length (x), set by the chapter
 export const YMIN = -5;
 export const YMAX = 26;
 export const ZMIN = -16;
@@ -46,6 +47,7 @@ export class Builder {
     this.decos = [];
     this.glows = [];
     this.waters = [];
+    this.muds = [];
     this.hazards = [];
     this.featureCells = []; // [x,y,z,color] visual cells for features
     this.lights = [];
@@ -105,6 +107,12 @@ export class Builder {
   hazard(x0, y0, z0, x1, y1, z1, color, glow = false, surfaceDrop = 0.3) {
     for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) for (let z = z0; z <= z1; z++) this.setCell(x, y, z, T.HAZARD);
     (glow ? this.hazards : this.waters).push({ x0, y0, z0, x1: x1 + 1, y1: y1 + 1 - surfaceDrop, z1: z1 + 1, color });
+  }
+
+  /** Sinking mud: deadly like any hazard, but it looks like what it is. */
+  mud(x0, y0, z0, x1, y1, z1, color, surfaceDrop = 0.35) {
+    for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) for (let z = z0; z <= z1; z++) this.setCell(x, y, z, T.HAZARD);
+    this.muds.push({ x0, y0, z0, x1: x1 + 1, y1: y1 + 1 - surfaceDrop, z1: z1 + 1, color });
   }
 
   /** Visual-only box: min corner (x,y,z) and size. */
@@ -183,6 +191,7 @@ function addSharedVisuals(world, era, b, group) {
   };
   meshes.push(makeInstanced(glowMat, b.glows, group, false, false));
   for (const w of b.waters) add(makeWater(w, world.shoreFn(era, w), false));
+  for (const w of b.muds) add(makeWater(w, world.shoreFn(era, w), 'mud'));
   for (const w of b.hazards) add(makeWater(w, world.shoreFn(era, w), true));
   for (const w of b.streams) add(makeWater(w, world.shoreFn(era, w), false));
   for (const f of b.falls) add(makeWaterfall(f));

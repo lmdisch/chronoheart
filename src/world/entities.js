@@ -1,4 +1,5 @@
-// Game entities: player, NPCs, enemies, the Warden, pushables, pickups, interactables, shrines.
+// Game entities shared by every chapter: player, NPCs, enemies, the Warden, pushables, pickups,
+// interactables, bells, shrines. (A chapter's own set pieces live in its folder.)
 import * as THREE from 'three';
 import { input } from '../core/input.js';
 import { clamp, damp, ERA } from '../core/util.js';
@@ -6,7 +7,7 @@ import { audio } from '../audio/audio.js';
 import { moveBody, overlapsType, hits } from './physics.js';
 import { T } from './world.js';
 import { getSheets, SpriteActor, iconTexture } from '../render/sprites.js';
-import { ITEMS } from '../story.js';
+import { theme, content } from '../chapter.js';
 
 const GRAV = 28;
 
@@ -66,6 +67,28 @@ export class Player {
   place(x, y, z) {
     Object.assign(this.body, { x, y, z, vx: 0, vy: 0, vz: 0 });
     this.state = 'normal';
+    this.game.craft?.clearTrail(); // Chapter Two's pocketwatch can't follow you through a jump like that
+  }
+
+  /** While the pocketwatch runs you backward, the watch moves you: just draw where it puts you. */
+  showAt(anim, flip, dt) {
+    const g = this.game, b = this.body;
+    b.vx = b.vy = b.vz = 0;
+    this.state = 'normal';
+    b.h = 1.45;
+    this.wasGround = true;
+    this.wasWater = overlapsType(g.world, g.era, b, T.WATER, 0.25, 0.65);
+    this.facing = flip ? -1 : 1;
+    this.actor.flip = flip;
+    this.actor.play(anim);
+    this.actor.update(dt * 2);
+    this.mesh.position.set(b.x, b.y - 0.1, b.z);
+    this.mesh.quaternion.copy(g.renderer.billboardQ);
+    this.mesh.visible = true;
+    const gy = groundBelow(g.world, g.era, b.x, b.y + 0.2, b.z);
+    this.shadow.visible = gy > -50;
+    this.shadow.position.set(b.x, gy + 0.02, b.z);
+    this.shadow.scale.setScalar(clamp(1.0 - (b.y - gy) * 0.12, 0.4, 1.0));
   }
 
   hurt(n, fromX, { force = 6, ignoreRoll = false } = {}) {
@@ -274,7 +297,7 @@ export class Player {
     // safe spot tracking
     // (never on a hazard's bed: you could land there before the respawn kicks in)
     // the last solid footing at all (narrow log rafts never pass the "safe" test below)
-    const machine = g.unsafeSpot?.(b.x, b.y); // never remember a spot under a hammer or on a lift
+    const machine = g.unsafeSpot(b.x, b.y, b.z); // never remember a spot you couldn't get out of (see each chapter)
     if (b.onGround && !inWater && !inHazard && !g.respawning && !machine && world.cell(era, Math.floor(b.x), Math.floor(b.y + 0.01) - 1, Math.floor(b.z)) === T.SOLID)
       this.lastGround = { x: b.x, y: b.y, z: b.z, era };
     if (b.onGround && this.state !== 'hurt' && !inWater && !inHazard && !g.respawning && !machine) {
@@ -313,7 +336,7 @@ export class Player {
 }
 
 // ---------------------------------------------------------------------------
-class EraEntity {
+export class EraEntity {
   constructor(game, spec) {
     this.game = game;
     this.spec = spec;
@@ -386,6 +409,7 @@ export class NPC extends EraEntity {
 // ---------------------------------------------------------------------------
 const ENEMY = {
   thornback: { hp: 2, speed: 1.5, chase: 3.1, hw: 0.5, hd: 0.3, h: 0.7, size: 2.0, sight: 5 },
+  crab: { hp: 2, speed: 1.4, chase: 3.0, hw: 0.5, hd: 0.3, h: 0.6, size: 2.0, sight: 5 },
   rat: { hp: 1, speed: 2.0, chase: 3.8, hw: 0.35, hd: 0.25, h: 0.4, size: 1.6, sight: 5 },
   drone: { hp: 2, speed: 1.8, chase: 3.0, hw: 0.35, hd: 0.35, h: 0.7, size: 1.6, sight: 6, fly: true },
 };
@@ -408,6 +432,12 @@ export class Enemy extends EraEntity {
   reset() {
     Object.assign(this.body, { x: this.home.x, y: this.home.y, z: this.home.z, vx: 0, vy: 0, vz: 0 });
   }
+  active() {
+    // (spec.hideIf: gone for good once that flag is set)
+    const gone = this.spec.hideIf && this.game.state.flags[this.spec.hideIf];
+    this.group.visible = !gone;
+    return super.active() && !gone;
+  }
   damage(n, dir) {
     if (this.hurtT > 0) return;
     this.hp -= n;
@@ -418,7 +448,7 @@ export class Enemy extends EraEntity {
     this.game.bursts.emit(this.body.x, this.body.y + this.cfg.h * 0.6, this.body.z, 10, { color: [0xffffff, 0xffd070], speed: 4, life: 0.3 });
     if (this.hp <= 0) {
       audio.sfx('enemyDie');
-      const col = this.spec.kind === 'drone' ? [0x36f0ff, 0xff3fd2] : this.spec.kind === 'rat' ? [0xaaaaaa, 0xffffff] : [0x8ab04a, 0xffd070];
+      const col = theme.enemyBurst[this.spec.kind] || theme.enemyBurst.other;
       this.game.bursts.emit(this.body.x, this.body.y + 0.4, this.body.z, 26, { color: col, speed: 4.5, life: 0.7 });
       if (Math.random() < 0.4) this.game.spawnHeart(this.era, this.body.x, this.body.y + 0.4, this.body.z);
       this.remove();
@@ -473,10 +503,11 @@ export class Enemy extends EraEntity {
 
 // ---------------------------------------------------------------------------
 /**
- * The Warden guards the Clocktower key in the Future courtyard. It walks a loop of waypoints,
- * pausing at each corner to turn, and sees you inside its vision cone (drawn on the ground)
- * unless something solid is in the way. Spotted, it winds up and charges; caught, you're thrown
- * out of the courtyard. Hide behind pillars, or slip into another era to lose it.
+ * A Warden guards something in the Future (the Clocktower key in Chapter One, the Dusk Bell in
+ * Chapter Two). It walks a loop of waypoints, pausing at each corner to turn, and sees you inside
+ * its vision cone (drawn on the ground) unless something solid is in the way. Spotted, it winds
+ * up and charges; caught, you're thrown out of its yard. Break its line of sight, or slip into
+ * another era to lose it. It's a machine: where a chapter can bend time (game.tempoAt), it bends too.
  */
 // tuned to be fair: a short, narrow cone, a slow walk, long looks around at each corner, a
 // clear wind-up before it charges, and it gives up quickly once you're out of sight
@@ -542,7 +573,7 @@ export class Warden extends EraEntity {
   update(dt) {
     const g = this.game, p = g.player.body;
     // it's a machine: Tempo slows it down or hurries it along when it's inside your bubble
-    const tempo = g.era === this.era ? g.gearworks.tempoAt(this.x, 0) : 1;
+    const tempo = g.era === this.era ? g.tempoAt(this.x, 0) : 1;
     dt *= tempo;
     this.stateT += dt;
     this.huntT = Math.max(0, this.huntT - dt);
@@ -554,7 +585,7 @@ export class Warden extends EraEntity {
         audio.sfx('blocked');
         if (!g.state.flags.wardenHint) {
           g.state.flags.wardenHint = true;
-          g.hud.toast('Spotted! Hide behind a pillar, or slip into another age.', 3500);
+          g.hud.toast(...g.lines.spotted);
         }
       } else if (this.state === 'return') {
         const [tx, tz] = this.path[this.wp];
@@ -639,7 +670,7 @@ export class Searchlight extends EraEntity {
   }
   update(dt) {
     const g = this.game, p = g.player.body, [ax, az] = this.spec.a, [bx, bz] = this.spec.b;
-    const tempo = g.era === this.era ? g.gearworks.tempoAt(this.x, 0) : 1;
+    const tempo = g.era === this.era ? g.tempoAt(this.x, 0) : 1;
     this.t += (dt * tempo) / this.spec.period;
     const k = 0.5 - 0.5 * Math.cos(this.t * Math.PI * 2); // there and back, easing at each end
     this.x = ax + (bx - ax) * k;
@@ -656,7 +687,7 @@ export class Searchlight extends EraEntity {
       g.warden.hunt(3.5);
       if (!g.state.flags.lightHint) {
         g.state.flags.lightHint = true;
-        g.hud.toast('Caught in a searchlight! The Warden is coming. Slow the lights down to slip past them.', 4500);
+        g.hud.toast(...g.lines.searchlight);
       }
     }
   }
@@ -753,7 +784,7 @@ export class Pickup extends EraEntity {
     this.icon = icon;
     const tex = iconTexture(icon);
     // Era Keys are drawn larger and at normal brightness: overbright gold vanished into the bloom
-    const key = ITEMS[icon]?.key || ITEMS[icon]?.showcase;
+    const key = content.ITEMS[icon]?.key || content.ITEMS[icon]?.showcase;
     const big = spec.type === 'cog' ? 0.75 : key ? 1.3 : 0.85;
     this.sprite = new THREE.Mesh(
       new THREE.PlaneGeometry(big, big),
@@ -798,51 +829,51 @@ export class Pickup extends EraEntity {
 }
 
 // ---------------------------------------------------------------------------
+const glowOf = (hex, k = 2) => new THREE.MeshBasicMaterial({ color: new THREE.Color(hex).multiplyScalar(k) });
+const std = (hex, o = {}) => new THREE.MeshStandardMaterial({ color: hex, roughness: 0.8, ...o });
+
+/**
+ * Something to use. spec.visual picks what stands there (most are part of the level's own
+ * scenery and need none):
+ *   'lever'   a lever that works a gate (spec.gate), or one that stays thrown (spec.flag)
+ *   'console' a hanging control panel (spec.gate)
+ *   spec.icon something to take from it, floating above until spec.goneFlag is set
+ * spec.lens: it can be used through the time lens from another age, once you have the Loupe;
+ * spec.lensOnly: and no other way.
+ */
 export class Interactable extends EraEntity {
   constructor(game, spec) {
     super(game, spec);
     this.buildVisual();
-    // the seized lever is on show (and shudders when struck) before it can be used
-    if (this.id === 'lever') this.alwaysUpdate = true;
+    if (spec.lens || spec.visual) this.alwaysUpdate = true; // on show through the lens, and levers swing back on their own
     this.jolt = 0;
   }
   buildVisual() {
-    const id = this.id;
-    if (id === 'lever' || id === 'postern') {
-      const base = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.4, 0.3), new THREE.MeshStandardMaterial({ color: 0x7a5a3a }));
-      base.position.set(this.x, 0.2, this.z);
+    const v = this.spec.visual;
+    if (v === 'lever') {
+      const base = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.4, 0.3), std(this.era === ERA.FUTURE ? 0x4a5260 : this.era === ERA.PAST ? 0x8a7a5a : 0x7a5a3a));
+      base.position.set(this.x, this.y + 0.2, this.z);
       this.handle = new THREE.Group();
-      const stick = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.8, 0.1), new THREE.MeshStandardMaterial({ color: 0x6b4428 }));
+      const stick = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.8, 0.1), std(0x6b4428));
       stick.position.y = 0.4;
-      const knob = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), new THREE.MeshBasicMaterial({ color: new THREE.Color(0x3ad0c0).multiplyScalar(2) }));
+      this.knobMat = glowOf(this.spec.color ?? 0xffc040);
+      const knob = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), this.knobMat);
       knob.position.y = 0.82;
       this.handle.add(stick, knob);
-      this.handle.position.set(this.x, 0.35, this.z);
+      this.handle.position.set(this.x, this.y + 0.35, this.z);
       this.group.add(base, this.handle);
-    } else if (id === 'workbench') {
-      this.amulet = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.6, 0.6),
-        new THREE.MeshBasicMaterial({ map: iconTexture('amulet'), alphaTest: 0.5, side: THREE.DoubleSide }),
-      );
-      this.amulet.material.color.setScalar(1.8);
-      this.group.add(this.amulet);
-    } else if (id === 'soil') {
-      this.sparkT = 0;
-    } else if (id.startsWith('socket')) {
-      const item = { socketSun: 'disc', socketBell: 'hammer', socketCore: 'core' }[id];
-      this.placedIcon = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.8, 0.8),
-        new THREE.MeshBasicMaterial({ map: iconTexture(item), alphaTest: 0.5, side: THREE.DoubleSide }),
-      );
-      this.placedIcon.material.color.setScalar(2.2);
-      this.group.add(this.placedIcon);
-      this.ring = new THREE.Mesh(
-        new THREE.TorusGeometry(0.6, 0.05, 6, 24),
-        new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffd070).multiplyScalar(2.5) }),
-      );
-      this.ring.rotation.x = Math.PI / 2;
-      this.group.add(this.ring);
-    } else if (this.spec.icon) {
+    } else if (v === 'console') {
+      // a control panel hanging from the bridge on its cable, over nothing at all
+      const cable = new THREE.Mesh(new THREE.BoxGeometry(0.06, 2.2, 0.06), std(0x2a2e36));
+      cable.position.set(this.x, this.y + 1.5, this.z);
+      const box = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.6, 0.3), std(0x4a5260, { metalness: 0.5 }));
+      box.position.set(this.x, this.y + 0.1, this.z);
+      this.knobMat = glowOf(this.spec.color ?? 0xffb03a);
+      const face = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.34, 0.06), this.knobMat);
+      face.position.set(this.x, this.y + 0.12, this.z + 0.16);
+      this.group.add(cable, box, face);
+    }
+    if (this.spec.icon) {
       // something to pick up from it: floats above until its flag is set
       this.floatIcon = new THREE.Mesh(
         new THREE.PlaneGeometry(0.6, 0.6),
@@ -855,48 +886,42 @@ export class Interactable extends EraEntity {
   prompt() {
     return this.spec.prompt;
   }
-  active() {
+  /** There to be used at all (whatever age you're standing in)? */
+  available() {
     const f = this.game.state.flags;
-    return super.active() && !(this.spec.hideIf && f[this.spec.hideIf]) && !(this.spec.needs && !f[this.spec.needs]);
+    return this.alive && !(this.spec.hideIf && f[this.spec.hideIf]) && !(this.spec.needs && !f[this.spec.needs]);
+  }
+  active() {
+    return super.active() && this.available();
   }
   update(dt) {
-    const s = this.game.state, t = this.game.time;
-    if (this.id === 'lever' || this.id === 'postern') {
-      const target = (this.id === 'lever' ? s.flags.springOpen : s.flags.posternOpen) ? -0.9 : 0.9;
-      this.rest = damp(this.rest ?? target, target, 10, dt);
-      this.jolt = Math.max(0, this.jolt - dt * 3);
-      this.handle.rotation.z = this.rest + Math.sin(t * 55) * 0.12 * this.jolt;
-    } else if (this.id === 'workbench') {
-      this.amulet.visible = !s.flags.hasAmulet;
-      this.amulet.position.set(this.x, this.y + 0.3 + Math.sin(t * 2) * 0.06, this.z);
-      this.amulet.quaternion.copy(this.game.renderer.billboardQ);
-      if (!s.flags.hasAmulet && Math.random() < dt * 8) this.game.bursts.emit(this.x, this.y + 0.35, this.z, 1, { color: 0x7ff6ff, speed: 0.6, life: 0.8, gravity: -0.5, jitter: 0.5 });
-    } else if (this.id === 'soil') {
-      if (!s.flags.acornPlanted && !s.flags.acornPlantedM && Math.random() < dt * 5) this.game.bursts.emit(this.x, 0.15, this.z, 1, { color: 0x9aff7a, speed: 0.4, life: 1, gravity: -0.6, jitter: 0.8 });
-    } else if (this.id === 'soilM') {
-      if (!s.flags.acornPlanted && !s.flags.acornPlantedM && Math.random() < dt * 5) this.game.bursts.emit(this.x, 0.55, this.z, 1, { color: 0x9aff7a, speed: 0.4, life: 1, gravity: -0.6, jitter: 0.6 });
-    } else if (this.floatIcon) {
-      const waiting = !s.flags[this.spec.goneFlag];
+    const g = this.game, s = g.state, t = g.time;
+    if (this.handle) {
+      // a gate's lever swings back as its gate runs out of time; a flag's lever stays thrown
+      const frac = this.spec.gate ? g.craft.gateFrac(this.spec.gate) : s.flags[this.spec.flag] ? 1 : 0;
+      this.rest = damp(this.rest ?? 0.9 - 1.8 * frac, 0.9 - 1.8 * frac, 12, dt);
+      this.handle.rotation.z = this.rest;
+      this.knobMat.color.setHex(this.spec.color ?? 0xffc040).multiplyScalar(frac > 0 ? 3 : 1.4 + Math.sin(t * 4) * 0.3);
+    } else if (this.knobMat) {
+      const frac = g.craft.gateFrac(this.spec.gate);
+      this.knobMat.color.setHex(frac > 0 ? 0x7cff6a : this.spec.color ?? 0xffb03a).multiplyScalar(frac > 0 ? 2.6 : 1.5 + Math.sin(t * 3) * 0.5);
+    }
+    if (this.floatIcon) {
+      const waiting = !s.flags[this.spec.goneFlag] && this.available();
       this.floatIcon.visible = waiting;
       this.floatIcon.position.set(this.x, this.y + 0.5 + Math.sin(t * 2) * 0.06, this.z);
-      this.floatIcon.quaternion.copy(this.game.renderer.billboardQ);
-      if (waiting && Math.random() < dt * 8) this.game.bursts.emit(this.x, this.y + 0.5, this.z, 1, { color: 0x7ff6ff, speed: 0.6, life: 0.8, gravity: -0.5, jitter: 0.5 });
-    } else if (this.placedIcon) {
-      const placed = this.game.sockets[this.id];
-      this.placedIcon.visible = !!placed;
-      this.placedIcon.position.set(this.x, this.y + 0.6 + Math.sin(t * 3) * 0.08, this.z);
-      this.placedIcon.quaternion.copy(this.game.renderer.billboardQ);
-      this.ring.position.set(this.x, this.y + 0.05, this.z);
-      this.ring.scale.setScalar(placed ? 1 + Math.sin(t * 6) * 0.1 : 0.8);
-      this.ring.material.color.setHex(placed ? 0x9ff4ff : 0xffd070).multiplyScalar(placed ? 3 : 1.5);
+      this.floatIcon.quaternion.copy(g.renderer.billboardQ);
+      if (waiting && this.era === g.era && Math.random() < dt * 8) g.bursts.emit(this.x, this.y + 0.5, this.z, 1, { color: 0x7ff6ff, speed: 0.6, life: 0.8, gravity: -0.5, jitter: 0.5 });
     }
   }
 }
 
 // ---------------------------------------------------------------------------
 /**
- * Something stuck fast that a few good swings of the wrench will knock loose. spec.flag is set
- * (by the story, see struck()) once it gives; hx / hz: how wide a swing still lands on it.
+ * Something a few good swings of the wrench will ring or knock loose. spec.flag is set (by the
+ * story, see struck()) once it has had its hits; hx / hz: how wide a swing still lands on it.
+ * spec.visual 'bell': one of the three Tide Bells (spec.color), which swings and sings when hit
+ * and hangs there for good. spec.lens / spec.lensOnly: as for Interactable.
  */
 export class Strikeable extends EraEntity {
   constructor(game, spec) {
@@ -904,34 +929,32 @@ export class Strikeable extends EraEntity {
     this.need = spec.hits ?? 3;
     this.hits = 0;
     this.jolt = 0;
-    if (this.id === 'shutterLock') {
-      // the shutter's lock housing: a rusted box on its west face, with a tell-tale lamp
-      this.box = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.7, 0.8), new THREE.MeshStandardMaterial({ color: 0x8a4a2a, roughness: 0.9, metalness: 0.3 }));
-      this.lamp = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.14, 0.3), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xff3040).multiplyScalar(2.5) }));
-      this.lamp.position.set(-0.17, 0.12, 0);
-      this.box.add(this.lamp);
-      this.box.position.set(spec.x - 0.25, 1.25, spec.z);
-      this.group.add(this.box);
+    this.alwaysUpdate = true;
+    if (spec.visual === 'bell') {
+      const col = spec.color ?? 0xc9a44a;
+      const metal = std(col, { metalness: 0.7, roughness: 0.35, emissive: col, emissiveIntensity: 0.12 });
+      this.metal = metal;
+      this.bell = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.52, 0.8, 10), metal);
+      body.position.y = -0.55;
+      const lip = new THREE.Mesh(new THREE.CylinderGeometry(0.58, 0.6, 0.12, 12), metal);
+      lip.position.y = -0.98;
+      const crown = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.2, 0.16), std(0x3a2a14));
+      crown.position.y = -0.1;
+      this.tongue = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.5, 0.1), std(0x4a4a52, { metalness: 0.6 }));
+      this.tongue.position.y = -0.95;
+      this.bell.add(body, lip, crown, this.tongue);
+      this.bell.position.set(spec.x, (spec.y ?? 0) + (spec.hang ?? 2.5), spec.z);
+      this.group.add(this.bell);
+      body.castShadow = true;
     }
-    if (this.id.startsWith('plug')) {
-      // a stone plug in the wall of the spring's trough
-      this.box = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.52, 0.62), new THREE.MeshStandardMaterial({ color: 0xb98a54, roughness: 0.95 }));
-      this.box.position.set(spec.x + 0.05, 0.34, spec.z);
-      const ring = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.26, 0.26), new THREE.MeshBasicMaterial({ color: new THREE.Color(0x3ad0c0).multiplyScalar(1.6) }));
-      ring.position.set(-0.22, 0, 0);
-      this.box.add(ring);
-      this.group.add(this.box);
-    }
-    // gone once it has given (spec.keep: it stays put, e.g. a plug that was the wrong one)
-    this.group.visible = !game.state.flags[spec.flag] || !!spec.keep;
+  }
+  available() {
+    const f = this.game.state.flags;
+    return this.alive && !f[this.spec.flag] && !(this.spec.needs && !f[this.spec.needs]);
   }
   active() {
-    return super.active() && !this.game.state.flags[this.spec.flag];
-  }
-  /** Back as it was, to be struck again (the story re-seats a wrong plug). */
-  reseat() {
-    this.hits = 0;
-    this.group.visible = true;
+    return super.active() && this.available();
   }
   /** The prompt shows how far along it is. */
   prompt() {
@@ -947,27 +970,21 @@ export class Strikeable extends EraEntity {
     this.hits++;
     this.jolt = 1;
     audio.sfx('hit');
-    audio.sfx('lever');
+    if (this.bell) audio.sfx('bell', { freq: this.spec.freq, gain: 0.5 + 0.25 * this.hits });
+    else audio.sfx('lever');
     g.renderer.shake = Math.max(g.renderer.shake, 0.2 + 0.1 * this.hits);
-    const sy = this.box ? this.box.position.y : this.y + 0.9, sx = this.box ? this.box.position.x : this.x;
-    g.bursts.emit(sx, sy, this.z, 10 + this.hits * 4, { color: [0xffd070, 0xffffff, 0xff8a3a], speed: 4, life: 0.4, gravity: 9, glow: 2.5 });
-    if (this.id === 'leverJam') {
-      const lever = g.interactables.find((e) => e.id === 'lever');
-      if (lever) lever.jolt = 1;
-    }
-    if (this.hits >= this.need) {
-      this.group.visible = false;
-      g.strikeDone(this);
-    }
+    const sy = this.bell ? this.bell.position.y - 0.6 : this.y + 0.9;
+    g.bursts.emit(this.x, sy, this.z, 10 + this.hits * 4, { color: [this.spec.color ?? 0xffd070, 0xffffff], speed: 4, life: 0.5, gravity: 5, glow: 2.5 });
+    g.onStrike?.(this);
+    if (this.hits >= this.need) g.strikeDone(this);
   }
   update(dt) {
-    this.jolt = Math.max(0, this.jolt - dt * 3.5);
-    if (this.box) {
-      // each hit knocks it further askew, and its lamp gutters
-      const t = this.game.time;
-      this.box.rotation.x = this.hits * 0.16 + Math.sin(t * 60) * 0.1 * this.jolt;
-      this.box.rotation.z = -this.hits * 0.09;
-      if (this.lamp) this.lamp.visible = this.hits === 0 || Math.sin(t * (14 + this.hits * 12)) > -0.2 * this.hits;
+    this.jolt = Math.max(0, this.jolt - dt * 1.4);
+    if (this.bell) {
+      const t = this.game.time, rung = this.game.state.flags[this.spec.flag];
+      if (this.spec.needs) this.tongue.visible = !!this.game.state.flags[this.spec.needs];
+      this.bell.rotation.z = Math.sin(t * 9) * 0.35 * this.jolt + (rung ? Math.sin(t * 1.3) * 0.03 : 0);
+      this.metal.emissiveIntensity = 0.12 + this.jolt * 0.9 + (rung ? 0.25 + Math.sin(t * 2) * 0.08 : 0);
     }
   }
 }
@@ -977,17 +994,18 @@ export class Shrine extends EraEntity {
   constructor(game, spec) {
     super(game, { ...spec, era: -1 });
     this.cp = spec;
+    const y0 = spec.y ?? 0;
     const base = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.6, 0.8), new THREE.MeshStandardMaterial({ color: 0x8a8378, roughness: 0.9 }));
-    base.position.set(this.x, 0.3, this.z);
+    base.position.set(this.x, y0 + 0.3, this.z);
     base.castShadow = true;
     const col = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.9, 0.4), new THREE.MeshStandardMaterial({ color: 0x9a958a }));
-    col.position.set(this.x, 1.05, this.z);
+    col.position.set(this.x, y0 + 1.05, this.z);
     col.castShadow = true;
     this.baseMat = base.material;
     this.colMat = col.material;
     this.ringMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffd070) });
     this.ring = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.05, 6, 20), this.ringMat);
-    this.ring.position.set(this.x, 1.85, this.z);
+    this.ring.position.set(this.x, y0 + 1.85, this.z);
     this.hand = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.24, 0.04), this.ringMat);
     this.hand.geometry.translate(0, 0.12, 0);
     this.hand.position.copy(this.ring.position);
@@ -995,7 +1013,7 @@ export class Shrine extends EraEntity {
     this.lit = false;
   }
   setEra(era) {
-    const c = [[0xc9935a, 0xd29e64], [0x8a8378, 0x9a958a], [0x4a5260, 0x6a7484]][era];
+    const c = theme.shrine[era];
     this.baseMat.color.setHex(c[0]);
     this.colMat.color.setHex(c[1]);
   }
@@ -1005,7 +1023,7 @@ export class Shrine extends EraEntity {
     this.ring.rotation.y = t * (on ? 2 : 0.5);
     this.hand.rotation.z = -t * (on ? 3 : 0.3);
     this.ringMat.color.setHex(on ? 0x7ff6ff : 0xffd070).multiplyScalar(on ? 3 : 1.2);
-    const p = this.game.player.body;
-    if (!on && Math.abs(p.x - this.x) < 1.0 && Math.abs(p.z - this.z) < 1.4 && p.y < 2) this.game.activateCheckpoint(this.cp.id);
+    const p = this.game.player.body, y0 = this.cp.y ?? 0;
+    if (!on && Math.abs(p.x - this.x) < 1.0 && Math.abs(p.z - this.z) < 1.4 && p.y > y0 - 0.5 && p.y < y0 + 2) this.game.activateCheckpoint(this.cp.id);
   }
 }

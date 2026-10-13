@@ -1,7 +1,10 @@
 // Hollowmere: one valley built three times (Ancient / Medieval / Chrome future).
-import { T, W, ZMIN, ZMAX } from '../world/world.js';
-import { makeRng, hash3, shade } from '../core/util.js';
-import { tagPalettes } from '../render/materials.js';
+import { T, ZMIN, ZMAX } from '../../world/world.js';
+import { makeRng, hash3, shade } from '../../core/util.js';
+import { tagPalettes } from '../../render/materials.js';
+import theme from './theme.js';
+
+const W = theme.width; // level length (x)
 
 const P = 0, M = 1, F = 2;
 

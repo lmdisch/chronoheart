@@ -1,8 +1,8 @@
 // The on-screen goal. Each step has a gentle nudge (always shown) and a direct hint
 // (revealed only when the player asks for it), based on where the player is and what
 // they've done. Earlier unfinished steps are named when they block the end of the game.
-import { ERA } from './core/util.js';
-import { L, GEAR } from './levels/hollowmere.js';
+import { ERA } from '../../core/util.js';
+import { L, GEAR } from './level.js';
 
 const X = {
   ford: 38, fordFar: 48, cliff: 66, rampart: 79, wall: 97, smithy: 105, terrace: 130, gate: 157,

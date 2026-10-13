@@ -18,6 +18,7 @@ const BIND = {
   controls: ['KeyH'],
   hint: ['KeyG'],
   seal: ['KeyR'],
+  rewind: ['KeyR'],
   echo: ['KeyV'],
   // Tempo's own buttons on touch (virtual codes: no physical key sends them)
   slow: ['TempoSlow'],

@@ -12,6 +12,7 @@ const ICON = {
   talk: '<svg viewBox="0 0 24 24"><path d="M4 5h16v10H10l-5 4v-4H4z"/></svg>',
   slow: '<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm0 2.2a6.8 6.8 0 1 1 0 13.6 6.8 6.8 0 0 1 0-13.6zM11 7v5.6l4 2.4 1-1.6-3-1.8V7z"/></svg>',
   fast: '<svg viewBox="0 0 24 24"><path d="M4 6l7 6-7 6zm8 0l7 6-7 6z"/></svg>',
+  rewind: '<svg viewBox="0 0 24 24"><path d="M12 6l-7 6 7 6zm8 0l-7 6 7 6z"/></svg>',
   menu: '<svg viewBox="0 0 24 24"><path d="M4 6h16v2.5H4zm0 4.75h16v2.5H4zM4 15.5h16V18H4z"/></svg>',
   help: '<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm1 14h-2v-2h2zm2.1-6.6-.9.9c-.7.7-1.2 1.3-1.2 2.7h-2v-.5c0-1.1.5-2.1 1.2-2.8l1.2-1.3A1.5 1.5 0 1 0 10.5 8.5h-2a3.5 3.5 0 1 1 6.6 1.9z"/></svg>',
   pause: '<svg viewBox="0 0 24 24"><path d="M7 5h3.5v14H7zm6.5 0H17v14h-3.5z"/></svg>',
@@ -156,7 +157,8 @@ export class TouchControls {
     this.tap(help, onHelp);
     this.tap(pause, onPause);
 
-    // abilities learned east of the gatehouse (shown once unlocked, see body.has-seal / has-echo)
+    // abilities, each shown once its chapter has taught it (see body.has-seal / has-echo / has-tempo /
+    // has-rewind). Chapter One: Seal and Echo, learned east of the gatehouse
     const abil = document.createElement('div');
     abil.className = 'tc-abil';
     const seal = make('tc-seal', 'Seal', ICON.seal);
@@ -164,7 +166,10 @@ export class TouchControls {
     // Tempo, once learned: hold to slow or speed up the machines around you (see body.has-tempo)
     const slow = make('tc-slow', 'Slow', ICON.slow);
     const fast = make('tc-fast', 'Fast', ICON.fast);
-    abil.append(seal, echo, slow, fast);
+    // Chapter Two: the pocketwatch, once Michelle has shown you how. Hold to run yourself backward
+    const rewind = make('tc-rewind', 'Rewind', ICON.rewind);
+    abil.append(seal, echo, slow, fast, rewind);
+    this.hold(rewind, 'KeyR');
     this.hold(slow, 'TempoSlow');
     this.hold(fast, 'TempoFast');
     this.sealBtn = seal;
@@ -320,7 +325,7 @@ export class TouchControls {
     if (dial) this.hold(dial, 'Tab');
 
     const prompt = document.getElementById('prompt');
-    this.tap(prompt, () => this.pulse({ seal: 'KeyR', strike: 'KeyX' }[prompt.dataset.action] || 'KeyF'));
+    this.tap(prompt, () => this.pulse({ seal: 'KeyR', strike: 'KeyX', reachStrike: 'KeyX' }[prompt.dataset.action] || 'KeyF'));
 
     // during cutscenes and conversations, a tap anywhere (controls included) moves the dialogue on
     const advance = () => {
@@ -336,8 +341,9 @@ export class TouchControls {
     // controls hidden mid-press (the HUD goes away for cutscenes): the finger's release won't arrive
     if ((this.stickId !== null || this.holds.size) && !this.zone.offsetWidth) this.releaseAll();
     const action = hasPrompt ? document.getElementById('prompt').dataset.action : null;
-    this.talkBtn.classList.toggle('ready', !!action && action !== 'seal' && action !== 'strike');
-    this.attackBtn.classList.toggle('ready', action === 'strike');
+    const strike = action === 'strike' || action === 'reachStrike';
+    this.talkBtn.classList.toggle('ready', !!action && action !== 'seal' && !strike);
+    this.attackBtn.classList.toggle('ready', strike);
     this.sealBtn.classList.toggle('ready', !!this.game.abilities?.sealTarget());
   }
 }

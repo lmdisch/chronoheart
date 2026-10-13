@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Chronoheart: A Time-Travel Puzzle Adventure</title>
-    <meta name="description" content="Chronoheart is an HD-2D time-travel puzzle adventure. Shift between the Ancient, Medieval and Chrome ages of Hollowmere to restart the great Clocktower." />
+    <title>Chronoheart</title>
+    <meta name="description" content="Chronoheart is an HD-2D time-travel puzzle adventure in chapters. Restart the great Clocktower of Hollowmere, then follow the tide out of Saltwick with a pocketwatch that runs you backward." />
     <meta name="theme-color" content="#120e1e" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -19,7 +19,7 @@
       <div id="hud" hidden>
         <div class="hud-left glass">
           <div id="hearts" aria-label="Health"></div>
-          <div class="cogs"><img id="cog-icon" alt="Lost cogs" /><span id="cog-count">0/10</span></div>
+          <div class="cogs"><img id="cog-icon" alt="Lost cogs" /><span id="cog-count">0</span></div>
         </div>
 
         <div id="chrono" class="locked" data-era="present" aria-label="Chronoheart">
@@ -46,11 +46,11 @@
 
         <div class="hud-right">
           <div id="inventory" aria-label="Inventory"></div>
-          <div class="hud-keys kb-only"><span id="hud-menu-key"><kbd>I</kbd> Menu</span> · <kbd>Tab</kbd> Peek · <button id="hud-controls" class="hud-key-btn" type="button"><kbd>H</kbd> Controls</button> · <kbd>Esc</kbd> Pause<span class="needs-seal"> · <kbd>R</kbd> Seal</span><span class="needs-echo"> · <kbd>V</kbd> Echo</span><span class="needs-tempo"> · hold <kbd>Q</kbd> / <kbd>E</kbd> Tempo</span></div>
+          <div class="hud-keys kb-only"><span id="hud-menu-key"><kbd>I</kbd> Menu</span> · <kbd>Tab</kbd> <span class="only-hollowmere">Peek</span><span class="only-saltwick">Lens</span> · <button id="hud-controls" class="hud-key-btn" type="button"><kbd>H</kbd> Controls</button> · <kbd>Esc</kbd> Pause<span class="needs-seal"> · <kbd>R</kbd> Seal</span><span class="needs-echo"> · <kbd>V</kbd> Echo</span><span class="needs-tempo"> · hold <kbd>Q</kbd> / <kbd>E</kbd> Tempo</span><span class="needs-rewind"> · hold <kbd>R</kbd> Rewind</span></div>
         </div>
 
         <div id="resonance" hidden>
-          <span>Tower resonance</span>
+          <span><span class="only-hollowmere">Tower resonance</span><span class="only-saltwick">Resonance</span></span>
           <div class="res-track"><div id="resonance-bar"></div></div>
         </div>
       </div>
@@ -112,13 +112,15 @@
         <div class="title-content">
           <p class="eyebrow">A tale told across three ages</p>
           <h1 id="game-title">Chronoheart</h1>
-          <p class="tagline">Change the past. Borrow from the future. Restart the Clocktower of Hollowmere.</p>
+          <!-- the chapters, and which one is showing behind the title (filled in by src/main.js) -->
+          <div id="chapter-select" class="chapter-select" role="group" aria-label="Chapters"></div>
+          <p id="chapter-tagline" class="tagline"></p>
           <nav class="menu">
             <button id="btn-continue" class="btn primary" hidden>Continue</button>
             <button id="btn-new" class="btn primary">New Game</button>
           </nav>
           <div class="era-strip" aria-hidden="true">
-            <span class="past">Ancient</span><span class="dot">◆</span><span class="present">Medieval</span><span class="dot">◆</span><span class="future">Chrome</span>
+            <span class="past"></span><span class="dot">◆</span><span class="present"></span><span class="dot">◆</span><span class="future"></span>
           </div>
         </div>
       </section>
@@ -127,8 +129,8 @@
         <h2>Controls</h2>
         <div class="controls-grid touch-only">
           <span class="tc-legend">Joystick</span><span>Touch anywhere on the left side and drag. Push all the way to sprint. Up and down move into and out of the scene and climb ladders.</span>
-          <span class="tc-legend">Jump</span><span>Hold for a higher jump · swim upward</span>
-          <span class="tc-legend">Attack</span><span>Swing your wrench</span>
+          <span class="tc-legend">Jump</span><span>Hold for a higher jump · hold to swim upward</span>
+          <span class="tc-legend">Attack</span><span>Swing your wrench<span class="only-saltwick">: at crabs, rats and drones, and at bells</span></span>
           <span class="tc-legend">Roll</span><span>Dodge-roll</span>
           <span class="tc-legend">Interact</span><span>Talk to people and use things. It appears when there's something to interact with. You can also tap the prompt.</span>
           <span class="tc-legend">Swipe</span><span>Swipe left to travel toward the Future, right toward the Past. Drag slowly to preview first.</span>
@@ -137,28 +139,33 @@
           <span class="tc-legend needs-seal">Seal</span><span class="needs-seal">Lights up beside something that shimmers. Tap to hold it in its moment, unchanged in every later age.</span>
           <span class="tc-legend needs-echo">Echo</span><span class="needs-echo">In the Present: tap to start recording, tap again to stop (up to 5 seconds). Your echo repeats those moves, over and over. Up to 3 at once. Stand on an echo and tap <b>Dispel echo</b> to remove it.</span>
           <span class="tc-legend needs-tempo">Slow · Fast</span><span class="needs-tempo">Tempo: hold to slow down or speed up the machines near you. Uses the Chronoheart's ring.</span>
+          <span class="tc-legend needs-rewind">Rewind</span><span class="needs-rewind">Hold to run yourself backward along the path you just took: up drops, across gaps, back through era shifts. Only you: the world keeps going. The amulet's ring shows how much the watch remembers.</span>
+          <span class="tc-legend needs-reach">Reach</span><span class="needs-reach">While the time lens is open, <b>Interact</b> and <b>Attack</b> go through it: use, take or strike something in the other age.</span>
           <span class="tc-legend">Dialogue</span><span>Tap anywhere to continue</span>
           <span class="tc-legend">Menu</span><span>Your current goal (tap Hint if you're stuck), your items and your favors. The game pauses while it's open.</span>
         </div>
         <div class="controls-grid kb-only">
           <span><kbd>A</kbd><kbd>D</kbd></span><span>Move left / right</span>
-          <span><kbd>W</kbd><kbd>S</kbd></span><span>Move into / out of the scene · climb ladders &amp; vines</span>
-          <span><kbd>Space</kbd></span><span>Jump (hold for higher) · swim upward</span>
+          <span><kbd>W</kbd><kbd>S</kbd></span><span>Move into / out of the scene · climb ladders<span class="only-hollowmere"> &amp; vines</span></span>
+          <span><kbd>Space</kbd></span><span>Jump (hold for higher) · hold to swim upward</span>
           <span><kbd>Shift</kbd></span><span>Sprint</span>
           <span><kbd>C</kbd></span><span>Dodge-roll</span>
-          <span><kbd>X</kbd></span><span>Wrench attack</span>
+          <span><kbd>X</kbd></span><span>Swing your wrench<span class="only-saltwick">: at crabs, rats and drones, and at bells</span></span>
           <span><kbd>F</kbd></span><span>Interact: talk to people, use things</span>
           <span><kbd>Q</kbd> / <kbd>E</kbd></span><span>Travel one era back / forward</span>
           <span><kbd>Tab</kbd></span><span>Time lens: hold to open a window onto another era around you (Q/E chooses which). You can walk about with it</span>
           <span class="needs-seal"><kbd>R</kbd></span><span class="needs-seal">Stasis Seal: hold something in its moment, unchanged in every later age</span>
           <span class="needs-echo"><kbd>V</kbd></span><span class="needs-echo">Echo (Present only): start / stop recording, up to 5 seconds; up to 3 echoes. Stand on one and press <kbd>F</kbd> to dispel it</span>
           <span class="needs-tempo">hold <kbd>Q</kbd> / <kbd>E</kbd></span><span class="needs-tempo">Tempo: hold <kbd>Q</kbd> to slow down the machines near you, <kbd>E</kbd> to speed them up (a quick tap still travels an era). Uses the Chronoheart's ring</span>
+          <span class="needs-rewind">hold <kbd>R</kbd></span><span class="needs-rewind">Rewind: run yourself backward along the path you just took: up drops, across gaps, back through era shifts. Only you: the world keeps going. The amulet's ring shows how much the watch remembers</span>
+          <span class="needs-reach"><kbd>Tab</kbd> + <kbd>F</kbd> / <kbd>X</kbd></span><span class="needs-reach">Reach: while the time lens is open, use, take or strike something in the other age</span>
           <span><kbd>I</kbd></span><span>Menu: your goal, items and favors (pauses the game)</span>
           <span><kbd>G</kbd></span><span>Open the Menu with the hint for your goal showing</span>
           <span><kbd>H</kbd></span><span>Show these controls</span>
           <span><kbd>Esc</kbd></span><span>Pause</span>
         </div>
-        <p class="muted small">Push blocks by walking into them. The Chronoheart drains while you're in the Past or Future and recharges in the Present.</p>
+        <p class="muted small only-hollowmere">Push blocks by walking into them. The Chronoheart drains while you're in the Past or Future and recharges in the Present.</p>
+        <p class="muted small only-saltwick">The Chronoheart is mended: stay in any age for as long as you like. Clean sea water is safe to swim in. Mud, and the tide-rip, are not.</p>
         <button id="btn-close-controls" class="btn primary">Got it</button>
       </div>
 
@@ -182,17 +189,21 @@
 
       <section id="credits" hidden aria-labelledby="credits-title">
         <div class="credits-inner">
-          <p class="eyebrow">The Clocktower ticks again</p>
+          <p id="credits-eyebrow" class="eyebrow"></p>
           <h2 id="credits-title">Chronoheart</h2>
+          <p id="credits-chapter" class="credits-chapter"></p>
           <div class="stats">
             <div><span>Time</span><strong id="stat-time">0m</strong></div>
-            <div><span><img data-icon="cog" alt="" /> Lost Cogs</span><strong id="stat-cogs">0/10</strong></div>
+            <div><span><img data-icon="cog" alt="" /> Lost Cogs</span><strong id="stat-cogs">0</strong></div>
             <div><span><img data-icon="heart" alt="" /> Kindness</span><strong id="stat-kind">0/3</strong></div>
           </div>
-          <p id="credits-bonus" class="bonus" hidden>You found every Lost Cog! Donald Eugene's old pocketwatch starts ticking again... but that's a story for another time.</p>
-          <p class="to-be-continued">Somewhere, another clock is ticking. To be continued...</p>
+          <p id="credits-bonus" class="bonus" hidden></p>
+          <p id="credits-more" class="to-be-continued"></p>
           <p class="muted">Every world, sprite, melody and sound in this game was generated from code.</p>
-          <button id="btn-credits-title" class="btn primary">Return to Title</button>
+          <nav class="menu credits-menu">
+            <button id="btn-credits-next" class="btn primary" hidden></button>
+            <button id="btn-credits-title" class="btn">Return to Title</button>
+          </nav>
           <p class="memorial">In loving memory of Donald Disch</p>
         </div>
       </section>

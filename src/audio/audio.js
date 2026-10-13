@@ -1,24 +1,11 @@
 // Procedural audio: three synchronized era music layers + synthesized SFX (Web Audio, no files).
 
+import { theme } from '../chapter.js';
+
 const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
 
-// A minor progression: Am - F - C - G (one chord per bar, 16 steps per bar)
-const CHORDS = [
-  [57, 60, 64],
-  [53, 57, 60],
-  [48, 52, 55],
-  [55, 59, 62],
-];
-const ROOTS = [45, 41, 48, 43];
-const PENTA = [57, 60, 62, 64, 67, 69, 72, 74, 76];
-// hand-authored melody (step -> scale index), 64 steps
-const MELODY = {
-  0: 5, 4: 4, 6: 3, 8: 4, 12: 2,
-  16: 3, 20: 2, 22: 1, 24: 2, 28: 0,
-  32: 1, 34: 2, 36: 4, 40: 5, 42: 6, 44: 5,
-  48: 4, 52: 3, 54: 2, 56: 3, 60: 1,
-};
-const MELODY2 = { 2: 7, 10: 6, 18: 5, 26: 4, 34: 6, 38: 7, 46: 8, 50: 7, 58: 5, 62: 4 };
+// the chapter's own tune: chords, bass notes, scale and melodies (see each chapter's theme.js)
+const { chords: CHORDS, roots: ROOTS, penta: PENTA, melody: MELODY, melody2: MELODY2, tempo: TEMPO } = theme.music;
 
 class AudioEngine {
   constructor() {
@@ -27,12 +14,12 @@ class AudioEngine {
     this.layerTarget = [0, 1, 0];
     this.musicOn = true;
     this.step = 0;
-    this.tempo = 84;
+    this.tempo = TEMPO;
   }
 
   /** Tempo, inside the clock: the music slows down or speeds up with time around you. */
   setTempoScale(k) {
-    this.tempo = 84 * k;
+    this.tempo = TEMPO * k;
   }
 
   init() {
@@ -338,11 +325,22 @@ class AudioEngine {
       case 'grow':
         [57, 60, 64, 69, 72, 76].forEach((m, i) => this.osc('sine', mtof(m), t + i * 0.1, 0.2, 0.06, d, { release: 0.8 }));
         break;
-      case 'bell':
+      case 'bell': {
+        // opt.freq / opt.gain: each bell can have its own voice; the chapter sets how bells ring
+        const { partials, release } = theme.bell;
+        const f0 = opt.freq ?? 220, gain = theme.bell.gain * (opt.gain ?? 1);
         [0, 0.01].forEach((dt, k) => {
-          [1, 2.76, 5.4].forEach((h, i) => this.osc('sine', 220 * h * (k ? 1.003 : 1), t + dt, 0.05, 0.12 / (i + 1), d, { release: 3.5 }));
+          partials.forEach((h, i) => this.osc('sine', f0 * h * (k ? 1.003 : 1), t + dt, 0.05, gain / (i + 1), d, { release }));
         });
         break;
+      }
+      case 'rewind': {
+        // the pocketwatch catches: a falling whirr and a run of backward ticks
+        const o = this.osc('sawtooth', 900, t, 0.25, 0.05, d, { filter: 1800, release: 0.3 }).o;
+        o.frequency.exponentialRampToValueAtTime(180, t + 0.35);
+        [84, 79, 76, 72, 67].forEach((m, i) => this.osc('triangle', mtof(m), t + i * 0.045, 0.03, 0.06, d, { release: 0.2 }));
+        break;
+      }
       case 'socket':
         [64, 71, 76].forEach((m, i) => this.osc('triangle', mtof(m), t + i * 0.07, 0.15, 0.09, d, { release: 0.9 }));
         break;

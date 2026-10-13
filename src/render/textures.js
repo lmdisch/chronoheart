@@ -810,6 +810,24 @@ export const TILE_DEFS = {
   darkPanel: P((pc) => paintDarkPanel(pc, 0x22262f, 47)),
   crate: P((pc) => paintCrate(pc, 0xa8743e, 48)),
   skyline: P((pc) => paintWindows(pc, 0x181a30, 49)),
+  // The shore (Chronoheart II)
+  mud: P((pc) => paintDirt(pc, 0x5e5247, 51, 3)),
+  mudTop: P((pc) => paintSand(pc, 0x6a5d50, 52)),
+  salt: P((pc) => paintSand(pc, 0xd8d2c4, 53)),
+  saltTop: P((pc) => paintSand(pc, 0xe4dfd2, 54)),
+  shingle: P((pc) => paintCobble(pc, 0x9a968c, 55, 0x5a564e)),
+  seaRock: P((pc) => paintStrata(pc, 0x4f5866, 56)),
+  seaRockTop: P((pc) => paintMossyStone(pc, 0x5a6470, 0x3f7a5a, 57)),
+  drift: P((pc) => paintWoodGrain(pc, 0x9a917e, 58, { vertical: false, plankW: 4, nails: true })),
+  reed: P((pc) => paintThatch(pc, 0xa8a45a, 59)),
+  coral: P((pc) => paintSand(pc, 0xe89484, 60)),
+  whitewash: P((pc) => paintPlaster(pc, 0xf0eee6, 61)),
+  seaRoof: P((pc) => paintRoofTiles(pc, 0x3d6f88, 62, { rowH: 4, tileW: 4, round: true })),
+  hull: P((pc) => paintWoodGrain(pc, 0x3a2e28, 63, { vertical: false, plankW: 4, nails: true })),
+  rustHull: P((pc) => paintMetal(pc, 0x7c5f4e, 64, { panel: 16, rough: 0.9 })),
+  brass: P((pc) => paintMetal(pc, 0xb8862a, 65, { panel: 16, rough: 0.3 })),
+  wellStone: P((pc) => paintBricks(pc, 0x3f5a62, 66, { rowH: 8, brickW: 8, offsets: [0, 4], spread: 0.4 })),
+  glyphSea: P((pc) => paintGlyph(pc, 0x3f5a62, 67)),
 };
 
 export const TILE_NAMES = Object.keys(TILE_DEFS);

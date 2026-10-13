@@ -1,5 +1,6 @@
 // Particle systems: ambient era motes + pooled burst particles.
 import * as THREE from 'three';
+import { theme } from '../chapter.js';
 
 function dotTexture() {
   const c = document.createElement('canvas');
@@ -17,11 +18,7 @@ function dotTexture() {
 }
 const DOT = dotTexture();
 
-const AMBIENT = [
-  { count: 220, colors: [0xffe6a0, 0xffd070, 0xfff4d0], size: 0.12, vy: 0.08, drift: 0.25, glow: 2.0 },
-  { count: 220, colors: [0xfff6d8, 0xffd9a0, 0xe0884a], size: 0.11, vy: -0.05, drift: 0.35, glow: 1.6 },
-  { count: 260, colors: [0x36f0ff, 0xff3fd2, 0xa0e8ff], size: 0.09, vy: 0.25, drift: 0.15, glow: 1.6 },
-];
+const AMBIENT = theme.ambient;
 
 export class Ambient {
   constructor(scene) {

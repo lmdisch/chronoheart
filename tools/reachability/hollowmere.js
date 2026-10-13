@@ -1,11 +1,11 @@
 // Dev tool: can the player always get back to the start? Run in the browser console on the dev
-// server:  const r = await import('/tools/reachability.js'); r.checkAll(window.__game)
+// server:  const r = await import('/tools/reachability/hollowmere.js'); r.checkAll(window.__game)
 //
 // It walks the voxel world the way the player moves (walk, 1-block jump-ups, short gap jumps,
 // falls, ladders, swimming, era switches with the same safety rules as Game.tryShift) for a
 // series of story states, and reports any place you can reach but can't get back from.
-import { T, W, YMIN, YMAX } from '../src/world/world.js';
-import { L } from '../src/levels/hollowmere.js';
+import { T, W, YMIN, YMAX } from '../../src/world/world.js';
+import { L } from '../../src/chapters/hollowmere/level.js';
 
 // The story so far, one step at a time: each stage adds to the one before it.
 export const STAGES = [

@@ -1,13 +1,13 @@
 // Powers the Chronoheart gains east of the gatehouse: the Stasis Seal, and the Echo, plus the
 // Echo Gallery's buttons and the stone steps they raise.
 import * as THREE from 'three';
-import { input } from './core/input.js';
-import { ERA } from './core/util.js';
-import { audio } from './audio/audio.js';
-import { getSheets, SpriteActor } from './render/sprites.js';
-import { ECHO_BUTTONS, ECHO_STEPS, ECHO_GATES, GATE_BUTTONS, SEALABLES, L } from './levels/hollowmere.js';
-import { T } from './world/world.js';
-import { touchActive } from './ui/touch.js';
+import { input } from '../../core/input.js';
+import { ERA } from '../../core/util.js';
+import { audio } from '../../audio/audio.js';
+import { getSheets, SpriteActor } from '../../render/sprites.js';
+import { ECHO_BUTTONS, ECHO_STEPS, ECHO_GATES, GATE_BUTTONS, SEALABLES, L } from './level.js';
+import { T } from '../../world/world.js';
+import { touchActive } from '../../ui/touch.js';
 
 const ECHO_MAX = 5; // seconds of movement an echo can hold
 const ECHO_LIMIT = 3; // echoes at once; a new one replaces the oldest

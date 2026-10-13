@@ -7,11 +7,11 @@
 // Game.updatePlay); inside the clock, where the ages are wound too tightly to pull apart, they
 // are Tempo from the first instant. It runs on the Chronoheart's ring.
 import * as THREE from 'three';
-import { ERA } from './core/util.js';
-import { audio } from './audio/audio.js';
-import { input } from './core/input.js';
-import { T } from './world/world.js';
-import { GEAR, L } from './levels/hollowmere.js';
+import { ERA } from '../../core/util.js';
+import { audio } from '../../audio/audio.js';
+import { input } from '../../core/input.js';
+import { T } from '../../world/world.js';
+import { GEAR, L } from './level.js';
 
 export const TEMPO = { slow: 0.3, fast: 2.5 };
 const RADIUS = 5.5; // how far the bubble reaches, in cells

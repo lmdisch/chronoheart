@@ -1,4 +1,7 @@
-// Game orchestrator: modes, era shifting, meter, saving, interactions, finale.
+// The game itself, as every chapter plays it: modes, era shifting, the time lens, saving,
+// fighting, favors, checkpoints and time-lapses. A chapter is a subclass (see
+// src/chapters/<id>/game.js) that adds its own powers, set pieces and ending through the
+// hooks gathered under "for a chapter to fill in" below.
 import * as THREE from 'three';
 import { input } from './core/input.js';
 import { ERA, ERA_SHORT } from './core/util.js';
@@ -6,29 +9,17 @@ import { audio } from './audio/audio.js';
 import { Renderer } from './render/renderer.js';
 import { Post } from './render/post.js';
 import { Ambient, Bursts } from './render/particles.js';
-import { World, T, W } from './world/world.js';
+import { World, T } from './world/world.js';
 import { hits } from './world/physics.js';
-import { buildLevel, SPAWNS, CHECKPOINTS, AREAS, L, COG_TOTAL, STUDY } from './levels/hollowmere.js';
 import { Player, NPC, Enemy, Warden, Searchlight, Pushable, Pickup, Interactable, Strikeable, Shrine } from './world/entities.js';
 import { HUD, Dialogue, showInventoryPanel, setFade, letterbox } from './ui/ui.js';
-import { talk, interact, struck, ITEMS, INTRO, ENDING, TEMPO_GIFT, TEMPO_LEARN, FAVORS } from './story.js';
 import { touchActive } from './ui/touch.js';
-import { currentGoal } from './objectives.js';
-import { Abilities } from './abilities.js';
-import { Finale } from './finale.js';
-import { Gearworks } from './gearworks.js';
+import { chapter, theme, progress, content } from './chapter.js';
 
-const SAVE_KEY = 'chronoheart-save-v1';
-// Storage can be unavailable (private windows, embedded viewers): the game still runs, it just won't save.
-const store = {
-  get: (k) => { try { return localStorage.getItem(k); } catch { return null; } },
-  set: (k, v) => { try { localStorage.setItem(k, v); } catch { /* saving unavailable */ } },
-  remove: (k) => { try { localStorage.removeItem(k); } catch { /* saving unavailable */ } },
-};
-const ERA_RING = [0xffc060, 0xbff6ff, 0xff4fd8];
-const DRAIN_TIME = 10; // seconds of charge away from the present
-const TAP_TIME = 0.2; // Q / E held less than this is a tap (era travel); longer is Tempo
-const BASE_HP = 5;
+export const ERA_RING = theme.eraRing;
+const ERA_COLORS = theme.eraCss;
+export const BASE_HP = 5;
+export const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 /** Short vibration on phones that support it (Android); silently ignored elsewhere. */
 export function haptic(ms) {
   try {
@@ -37,28 +28,29 @@ export function haptic(ms) {
     /* not allowed here */
   }
 }
-const ERA_COLORS = ['#ffc060', '#bff6ff', '#ff5fe0'];
-const ERA_LABEL = ['Ancient Age', 'Medieval Age', 'Age of Chrome'];
 
-export function newState() {
+/** What every chapter's save starts from. */
+export function baseState() {
   return {
     flags: {},
     inventory: [],
     taken: [],
     cogs: [],
-    kindness: [], // completed favors (see FAVORS in story.js)
-    blockPos: { ...L.blockStart },
-    cratePos: { ...L.crateStart },
-    boulderPos: { ...L.boulderStart },
-    sockets: {}, // Era Keys placed in the Clocktower (saved, so a key is never lost mid-finale)
+    kindness: [], // completed favors (see FAVORS in the chapter's story.js)
     checkpoint: 0,
     playTime: 0,
   };
 }
 
 export class Game {
-  constructor(container) {
-    this.L = L;
+  /**
+   * ch: the chapter's content: { L, buildLevel, SPAWNS, CHECKPOINTS, AREAS, COG_TOTAL, talk,
+   * interact, struck, ITEMS, INTRO, FAVORS, currentGoal }.
+   */
+  constructor(container, ch) {
+    this.ch = ch;
+    this.L = ch.L;
+    Object.assign(content, { ITEMS: ch.ITEMS, FAVORS: ch.FAVORS, COG_TOTAL: ch.COG_TOTAL }); // for the shared UI and entities
     this.renderer = new Renderer(container);
     this.scene = this.renderer.scene;
     this.post = new Post(this.renderer);
@@ -69,19 +61,15 @@ export class Game {
     this.mode = 'title';
     this.time = 0;
     this.era = ERA.PRESENT;
-    this.meter = 1;
     this.lockT = 0;
     this.peekTarget = null;
+    this.reachEra = null; // the age the lens is open on, in a chapter where it can be reached through
     this.shiftFrom = null; // the era being left, while a shift is still playing
-    this.tempoHold = 0; // Q / E held past a tap: -1 slow, +1 fast (see updatePlay)
-    this.keyT = { back: 0, forward: 0 }; // how long each has been held
     this.blockFlashT = 0;
     this.areaIdx = -1;
-    this.warnT = 0;
-    this.state = newState();
-    this.abilities = new Abilities(this);
-    this.finale = new Finale(this);
-    this.gearworks = new Gearworks(this);
+    this.kinds = { interact: Interactable, strike: Strikeable };
+    this.state = this.newState();
+    this.setup();
     this.buildWorld();
     this.clock = new THREE.Clock();
     this.titleT = 0;
@@ -90,6 +78,90 @@ export class Game {
     this.renderer.camTarget.set(16, 1, 3);
   }
 
+  // ------------------------------------------------------------------ for a chapter to fill in
+  /** A fresh save for this chapter. */
+  newState() {
+    return baseState();
+  }
+  /** Create the chapter's own systems (before the world is built). */
+  setup() {}
+  /** The world has just been (re)built: hook the chapter's systems up to it. */
+  attach() {}
+  /** Set anything about the look of the world that depends on the story so far. */
+  setMood() {}
+  /** Show or hide the chapter's ability buttons and hints to match the save. */
+  syncBody() {}
+  /** The opening cutscene is over: first-steps toasts. */
+  afterIntro() {}
+  /** Could this saved game be picked up again? */
+  canContinue() {
+    return true;
+  }
+  /** A save has just been loaded into this.state: patch up anything an older version left out. */
+  migrate() {}
+  welcomeBack() {
+    return 'Welcome back, Vivienne.';
+  }
+  /** May the player travel to `target` right now? (Say why not, if not.) */
+  canShift() {
+    return true;
+  }
+  /** True while something other than the player's own legs is moving them. */
+  get rewinding() {
+    return false;
+  }
+  /** Something has cut in (a fall, a capture, a death): drop whatever the player was in the middle of. */
+  interrupt() {}
+  /** A Strikeable took a hit. */
+  onStrike() {}
+  /** A Lost Cog was just picked up. */
+  onCog() {}
+  /** An item was just picked up off the ground. */
+  onCollected() {}
+  /** How high above where an enemy fell its heart floats. */
+  heartY(y) {
+    return y + 0.1;
+  }
+  /** Somewhere a player sent back from a hazard must never be put: a spot with no way out. */
+  unsafeSpot() {
+    return false;
+  }
+  /** How fast time runs for a machine at (x, y): 1 unless the chapter can bend it. */
+  tempoAt() {
+    return 1;
+  }
+  /** Toasts ([text, ms]) the shared entities show. */
+  get lines() {
+    return {
+      spotted: ['Spotted! Break its line of sight, or slip into another age.', 3500],
+      searchlight: ['Caught in a searchlight! The Warden is coming.', 4000],
+    };
+  }
+  /** The splash when the player falls into a hazard. */
+  hazardBurst() {
+    return [0x9fe0ff, 0xffffff];
+  }
+  /** The player has just been put back at `spot` after a hazard... */
+  onHazardPlaced() {}
+  /** ...and has lost their heart for it. */
+  onHazardDone() {}
+  /** Where the Warden throws you out to (x, in the Present). */
+  wardenExitX() {
+    return this.L.start.x;
+  }
+  /** Back at the shrine after running out of hearts. */
+  revive() {}
+  /** What an age is called (a chapter's story may rename one). */
+  eraLabel(era) {
+    return theme.eraNames[era];
+  }
+  /** The chapter's own per-frame play: input, powers, set pieces. Must be overridden. */
+  updatePlay() {}
+  /** Screen effects of the chapter's own, each frame, before the picture is finished. */
+  updateEffects() {}
+  /** The chapter's ending. */
+  async runEnding() {}
+
   // ------------------------------------------------------------------ world
   buildWorld() {
     if (this.world) {
@@ -97,8 +169,9 @@ export class Game {
       for (const s of this.shrines || []) s.remove();
       if (this.player) this.scene.remove(this.player.mesh, this.player.shadow);
     }
+    this.setMood();
     this.world = new World();
-    buildLevel(this.world, this.state);
+    this.ch.buildLevel(this.world, this.state);
     for (const g of this.world.groups) this.scene.add(g);
     this.entities = [];
     this.npcs = [];
@@ -107,7 +180,7 @@ export class Game {
     this.pickups = [];
     this.interactables = [];
     this.strikeables = [];
-    for (const s of SPAWNS) {
+    for (const s of this.ch.SPAWNS) {
       let e;
       if (s.type === 'npc') this.npcs.push((e = new NPC(this, s)));
       else if (s.type === 'enemy') this.enemies.push((e = new Enemy(this, s)));
@@ -119,51 +192,21 @@ export class Game {
         e.start = { x: s.x, z: s.z };
       } else if (s.type === 'pickup') this.pickups.push((e = new Pickup(this, s, s.item)));
       else if (s.type === 'cog') this.pickups.push((e = new Pickup(this, s, 'cog')));
-      else if (s.type === 'interact') this.interactables.push((e = new Interactable(this, s)));
-      else if (s.type === 'strike') this.strikeables.push((e = new Strikeable(this, s)));
+      else if (s.type === 'interact') this.interactables.push((e = new this.kinds.interact(this, s)));
+      else if (s.type === 'strike') this.strikeables.push((e = new this.kinds.strike(this, s)));
       if (e) this.entities.push(e);
     }
-    this.shrines = CHECKPOINTS.map((c) => new Shrine(this, c));
+    this.shrines = this.ch.CHECKPOINTS.map((c) => new Shrine(this, c));
     this.entities.push(...this.shrines);
     this.player = new Player(this);
     this.player.maxHp = this.player.hp = BASE_HP + this.state.kindness.length; // each kindness adds a heart
-    const cp = CHECKPOINTS[this.state.checkpoint] || CHECKPOINTS[0];
-    this.player.place(cp.x + 1.2, 0, 3.5);
-    this.abilities.attach();
-    this.finale.attach();
-    this.gearworks.attach();
+    this.placeAtShrine();
+    this.attach();
   }
 
-  /** Through the door with the brass gear, into the hidden room (Past only). */
-  async enterStudy() {
-    this.mode = 'cutscene';
-    setFade(1);
-    await new Promise((r) => setTimeout(r, 350));
-    this.world.pocket = STUDY.pocket;
-    this.refreshWorld();
-    this.player.place(STUDY.door - 0.4, 0, -1.4);
-    this.player.body.vx = this.player.body.vz = 0;
-    audio.sfx('lever');
-    setFade(0);
-    this.mode = 'play';
-    this.lockT = 0.3;
-  }
-
-  async leaveStudy() {
-    this.mode = 'cutscene';
-    setFade(1);
-    await new Promise((r) => setTimeout(r, 300));
-    this.world.pocket = null;
-    this.refreshWorld();
-    this.player.place(STUDY.door - 0.4, 0, 0.8);
-    setFade(0);
-    this.mode = 'play';
-    this.lockT = 0.2;
-  }
-
-  /** Era Keys placed in the Clocktower, keyed by socket id. */
-  get sockets() {
-    return (this.state.sockets ||= {});
+  placeAtShrine() {
+    const cp = this.ch.CHECKPOINTS[this.state.checkpoint] || this.ch.CHECKPOINTS[0];
+    this.player.place(cp.x + 1.2, cp.y ?? 0, 3.5);
   }
 
   refreshWorld() {
@@ -173,61 +216,32 @@ export class Game {
 
   // ------------------------------------------------------------------ flow
   startNew() {
-    store.remove(SAVE_KEY);
-    this.state = newState();
+    progress.clearSlot(chapter.id);
+    this.state = this.newState();
     this.buildWorld();
     this.beginPlay();
-    this.player.place(L.start.x, 0, L.start.z);
-    this.renderer.camTarget.set(L.start.x + 4, 1, 3);
-    this.cutscene(INTRO).then(() => {
-      if (touchActive()) {
-        this.hud.toast('Drag the left side to move. <b>?</b> shows all controls.', 5000);
-      } else {
-        this.hud.toast('Move <kbd>WASD</kbd> · Jump <kbd>Space</kbd> · Interact <kbd>F</kbd> · All controls <kbd>H</kbd>', 5000);
-      }
-    });
+    this.player.place(this.L.start.x, 0, this.L.start.z);
+    this.renderer.camTarget.set(this.L.start.x + 4, 1, 3);
+    this.cutscene(this.ch.INTRO).then(() => this.afterIntro());
   }
 
   continueGame() {
-    const raw = store.get(SAVE_KEY);
-    if (!raw) return this.startNew();
-    try {
-      this.state = Object.assign(newState(), JSON.parse(raw));
-    } catch {
-      return this.startNew();
-    }
-    const f = this.state.flags;
-    if (f.finished) return this.startNew();
-    // a save from before the gatehouse shutter existed, already past it: it stays open
-    if ((this.state.taken || []).includes('core') || f.posternOpen || f.millDammed) f.shutterBroken = true;
-    // a save where the star chart was returned before the valley began remembering it
-    if ((this.state.kindness || []).includes('chart')) f.chartReturned = f.statueShown = true;
-    // saves from before Tempo came with the Escapement Key, and before the door's regulators
-    if (this.state.inventory.includes('clockKey') || f.towerUnlocked) f.hasTempo = true;
-    if (f.towerUnlocked) f.regulatorsSynced = true;
-    // a save from before the Gearworks, with all three keys in: Tempo, and up into the clock
-    if (Object.keys(this.state.sockets || {}).length === 3 && !f.hasTempo) {
-      f.hasTempo = f.gearworksOpen = true;
-      this.state.checkpoint = 11;
-    }
+    const saved = progress.slot(chapter.id);
+    if (!saved || !this.canContinue(saved)) return this.startNew();
+    this.state = Object.assign(this.newState(), JSON.parse(JSON.stringify(saved)));
+    this.migrate();
     this.buildWorld();
     this.beginPlay();
-    this.hud.toast('Welcome back, Vivienne.');
+    this.hud.toast(this.welcomeBack());
   }
 
   hasSave() {
-    const raw = store.get(SAVE_KEY);
-    if (!raw) return false;
-    try {
-      return !JSON.parse(raw).flags?.finished; // a finished story can't be continued
-    } catch {
-      return false;
-    }
+    const saved = progress.slot(chapter.id);
+    return !!saved?.flags && this.canContinue(saved);
   }
 
   beginPlay() {
     this.mode = 'play';
-    this.meter = 1;
     this.applyEra(ERA.PRESENT, true);
     this.post.trans = 1;
     this.post.peekAmt = 0;
@@ -237,14 +251,23 @@ export class Game {
     this.hud.setInventory(this.state.inventory);
     this.hud.setCogs(this.state.cogs.length);
     this.hud.setResonance(null);
-    this.abilities.syncBody();
+    this.syncBody();
     this.areaIdx = -1;
     audio.setEra(ERA.PRESENT);
     audio.setMusicVolume(0.55);
   }
 
+  /** Write this chapter's progress into the save all the chapters share. */
   save() {
-    store.set(SAVE_KEY, JSON.stringify(this.state));
+    progress.setSlot(chapter.id, this.state);
+  }
+
+  /** The chapter's story is told: later chapters open, whatever becomes of this one's save. */
+  finishStory() {
+    this.state.flags.finished = true;
+    progress.markDone(chapter.id);
+    if (chapter.keepsSave) this.save();
+    else progress.clearSlot(chapter.id);
   }
 
   async cutscene(lines) {
@@ -305,21 +328,9 @@ export class Game {
   }
 
   tryShift(target) {
-    if (!this.state.flags.hasAmulet || target < 0 || target > 2 || target === this.era) return;
-    if (this.gearworks.active) {
-      audio.sfx('blocked');
-      this.hud.flashBlocked();
-      this.hud.toast('Inside the clock, the ages are wound too tightly to pull apart.', 3000);
-      return;
-    }
+    if (target < 0 || target > 2 || target === this.era || !this.canShift(target)) return;
     if (this.post.trans < 0.27) return;
     const b = this.player.body;
-    if (target !== ERA.PRESENT && this.meter < 0.06) {
-      audio.sfx('blocked');
-      this.hud.flashBlocked();
-      this.hud.toast('The Chronoheart needs to recharge in the Present.');
-      return;
-    }
     if (hits(this.world, target, b)) {
       audio.sfx('blocked');
       this.hud.flashBlocked();
@@ -352,7 +363,7 @@ export class Game {
     return false;
   }
 
-  /** True if the first non-air cell below the player in `era` is a hazard (deep river, toxic canal...). */
+  /** True if the first non-air cell below the player in `era` is a hazard (a deep river, sinking mud...). */
   overHazard(era) {
     const b = this.player.body;
     const x = Math.floor(b.x), z = Math.floor(b.z);
@@ -376,29 +387,6 @@ export class Game {
     this.shiftGrace = 1.5;
   }
 
-  snapBack() {
-    const b = this.player.body;
-    let ok = !hits(this.world, ERA.PRESENT, b);
-    if (!ok) {
-      const ox = b.x, oz = b.z, oy = b.y;
-      outer: for (let r = 1; r <= 4; r++)
-        for (const [dx, dz, dy] of [[r, 0, 0], [-r, 0, 0], [0, r, 0], [0, -r, 0], [0, 0, r], [r, 0, r], [-r, 0, r]]) {
-          Object.assign(b, { x: ox + dx * 0.6, z: oz + dz * 0.6, y: oy + dy });
-          if (!hits(this.world, ERA.PRESENT, b)) {
-            ok = true;
-            break outer;
-          }
-        }
-    }
-    if (!ok || this.overHazard(ERA.PRESENT)) {
-      const s = this.lastSafePresent || CHECKPOINTS[this.state.checkpoint];
-      this.player.place(s.x, s.y ?? 0, s.z);
-    }
-    this.doShift(ERA.PRESENT);
-    audio.sfx('snap');
-    this.hud.toast('Out of charge: pulled back to the Present.', 3000);
-  }
-
   // ------------------------------------------------------------------ gameplay hooks
   playerAttack(x, y, z, facing) {
     for (const e of this.enemies) {
@@ -407,23 +395,40 @@ export class Game {
       const h = e.cfg ? e.cfg.h : b.h;
       if (Math.abs(b.x - x) < 0.8 + b.hw && Math.abs(b.z - z) < 0.9 && y > b.y - 0.6 && y < b.y + h + 0.6) e.damage(1, facing);
     }
-    for (const s of this.strikeables) if (s.active() && s.struckAt(x, y, z)) s.strike();
+    for (const s of this.strikeables) {
+      if (!s.struckAt(x, y, z)) continue;
+      // where the lens can be reached through, and is open on its age, the wrench goes through
+      if (s.era === this.reachEra && s.spec.lens && s.available()) s.strike();
+      else if (s.active() && !s.spec.lensOnly) s.strike();
+    }
   }
 
-  /** A Strikeable has taken its last hit: the story says what gives. */
+  /** A Strikeable has taken its last hit: the story says what happens. */
   strikeDone(s) {
     this.mode = 'dialogue';
-    Promise.resolve(struck(this, s)).then(() => {
+    Promise.resolve(this.ch.struck(this, s)).then(() => {
       if (this.mode === 'dialogue') this.mode = 'play';
       this.lockT = 0.2;
     });
   }
 
-  /** Something close by that wants the wrench. */
-  nearestStrike() {
+  /** Something close by that wants the wrench: in this age, or (lens = an era) through the lens. */
+  nearestStrike(lens = null) {
     const b = this.player.body;
-    return this.strikeables.find((s) => s.active() && s.distTo(b) < 2.1) || null;
+    return this.strikeables.find((s) => (lens === null ? s.active() && !s.spec.lensOnly : s.era === lens && s.spec.lens && s.available()) && s.distTo(b) < 2.1) || null;
   }
+
+  /** Talk to someone, or use something: the chapter's story takes it from here. */
+  use(target) {
+    this.mode = 'dialogue';
+    const p = target instanceof NPC ? this.ch.talk(this, target) : this.ch.interact(this, target);
+    Promise.resolve(p).then(() => {
+      if (this.mode === 'dialogue') this.mode = 'play';
+      this.lockT = 0.2;
+    });
+  }
+
+  /** Walking into a pushable block at cell-edge `dir`: true while it's being pushed (or can't be). */
 
   tryPushFrom(b, dir, t) {
     const cx = Math.floor(b.x + dir[0] * (b.hw + 0.06));
@@ -440,23 +445,9 @@ export class Game {
     return false;
   }
 
+  /** A pushed block has come to rest. */
   onPushed(p) {
     this.state[p.spec.posKey] = { x: p.cx, z: p.cz };
-    if (p.id === 'block') {
-      this.refreshWorld();
-      const t = L.pillarTarget;
-      if (p.cx === t.x && p.cz === t.z) {
-        audio.sfx('socket');
-        this.bursts.emit(t.x + 0.5, 0.8, t.z + 0.5, 30, { color: [0x3ad0c0, 0xffe070], speed: 3, life: 0.8 });
-        this.save();
-        this.timelapse({ to: ERA.PRESENT, focus: [t.x + 0.5, 1.5, t.z], years: 600, caption: 'Generations build on the ancient stone...', grow: ['pillar'] }).then(() =>
-          this.hud.toast('A pillar now stands beside the bench.', 3500),
-        );
-      } else if (!this.state.flags.pushHint) {
-        this.state.flags.pushHint = true;
-        this.hud.toast('That glowing outline looks made for this block...', 3500);
-      }
-    }
   }
 
   collect(p) {
@@ -465,8 +456,9 @@ export class Game {
       s.cogs.push(p.id);
       audio.sfx('cog');
       this.hud.setCogs(s.cogs.length);
-      this.hud.toast(`<b>Lost Cog found!</b> (${s.cogs.length}/${COG_TOTAL})`);
+      this.hud.toast(`<b>Lost Cog found!</b> (${s.cogs.length}/${this.ch.COG_TOTAL})`);
       this.bursts.emit(p.x, p.y, p.z, 30, { color: [0xffd070, 0xffffff], speed: 4, life: 0.8 });
+      this.onCog();
       this.save();
       return;
     }
@@ -481,44 +473,15 @@ export class Game {
     this.giveItem(p.icon);
     this.bursts.emit(p.x, p.y, p.z, 30, { color: [0x9ff4ff, 0xffffff], speed: 4, life: 0.8 });
     this.save();
-    if (p.id === 'clockKey') this.learnTempo();
-  }
-
-  /**
-   * Lifting the Escapement Key brings the Warden straight for you. (Tempo is normally learned at
-   * the courtyard gate; anyone who walked past that learns it here instead.)
-   */
-  async learnTempo() {
-    const f = this.state.flags;
-    if (!f.hasTempo) {
-      this.grantTempo();
-      await this.cutscene(TEMPO_LEARN);
-      this.tempoToast();
-    } else this.hud.toast('The Warden knows the key is gone. <b>Slow it down</b> and get clear!', 4500);
-    this.warden?.hunt();
-  }
-
-  grantTempo() {
-    this.state.flags.hasTempo = true;
-    this.abilities.syncBody();
-    this.save();
-  }
-
-  tempoToast() {
-    this.hud.toast(
-      touchActive()
-        ? '<b>Tempo!</b> Hold <b>Slow</b> to slow the machines near you, <b>Fast</b> to speed them up.'
-        : '<b>Tempo!</b> <b>Hold</b> <kbd>Q</kbd> to slow the machines near you, <b>hold</b> <kbd>E</kbd> to speed them up. A quick tap still travels.',
-      8000,
-    );
+    this.onCollected(p);
   }
 
   giveItem(item) {
     this.state.inventory.push(item);
     this.hud.setInventory(this.state.inventory);
-    const it = ITEMS[item];
+    const it = this.ch.ITEMS[item];
     audio.sfx(it.key ? 'key' : 'pickup');
-    this.hud.toast(`${it.key ? 'Era Key:' : 'Got:'} <b>${it.name}</b>`, 3000);
+    this.hud.toast(`${it.key ? `${theme.keyBadge}:` : 'Got:'} <b>${it.name}</b>`, 3000);
   }
 
   removeItem(item) {
@@ -528,7 +491,7 @@ export class Game {
   }
 
   spawnHeart(era, x, y, z) {
-    const h = new Pickup(this, { type: 'heart', id: 'heart' + Math.random(), era, x, y: Math.max(y, 0.5), z }, 'heart');
+    const h = new Pickup(this, { type: 'heart', id: 'heart' + Math.random(), era, x, y: this.heartY(y), z }, 'heart');
     this.pickups.push(h);
     this.entities.push(h);
   }
@@ -541,137 +504,28 @@ export class Game {
       this.state.flags.shrineHint = true;
       this.hud.toast('Clock shrines save your progress.', 3000);
     }
-    const c = CHECKPOINTS[id];
-    this.bursts.emit(c.x, 1.8, c.z, 30, { color: [0x7ff6ff, 0xffd070], speed: 3, life: 0.8 });
+    const c = this.ch.CHECKPOINTS[id];
+    this.bursts.emit(c.x, (c.y ?? 0) + 1.8, c.z, 30, { color: [0x7ff6ff, 0xffd070], speed: 3, life: 0.8 });
     this.save();
-  }
-
-  placeKey(socketId, item) {
-    this.removeItem(item);
-    this.sockets[socketId] = item;
-    audio.sfx('socket');
-    if (socketId === 'socketBell') audio.sfx('bell');
-    const ent = this.interactables.find((i) => i.id === socketId);
-    this.bursts.emit(ent.x, ent.y + 0.6, ent.z, 40, { color: [0xffd070, 0x9ff4ff], speed: 4, life: 0.9 });
-    this.renderer.shake = 0.5;
-    this.save();
-    this.finale.lurch(socketId);
-    if (Object.keys(this.sockets).length === 3) this.giftTempo();
-  }
-
-  /** The third key: the clock face opens. Then up into the clock, where only Tempo works. */
-  async giftTempo() {
-    this.mode = 'cutscene';
-    this.hud.showPrompt(null);
-    this.abilities.cancelRecording();
-    await new Promise((r) => setTimeout(r, 1600));
-    const f = this.state.flags;
-    f.gearworksOpen = true;
-    this.refreshWorld();
-    this.mode = 'play';
-    await this.cutscene(TEMPO_GIFT);
-    f.hasTempo = true;
-    this.abilities.syncBody();
-    this.state.checkpoint = 11;
-    this.save();
-    await this.enterGearworks();
-    this.hud.toast(touchActive() ? 'Inside the clock there is only <b>Tempo</b>: hold <b>Slow</b> or <b>Fast</b>.' : 'Inside the clock, <kbd>Q</kbd> and <kbd>E</kbd> are always <b>Tempo</b>: hold to slow time around you, or speed it up.', 7000);
-  }
-
-  /** Up through the doorway on the Tower's east wall, into the clock. */
-  async enterGearworks() {
-    this.mode = 'cutscene';
-    setFade(1, '#fff6e0');
-    await new Promise((r) => setTimeout(r, 450));
-    this.applyEra(ERA.PRESENT, true);
-    this.player.place(L.gearX0 + 2.5, 0, 3.5);
-    this.player.facing = 1;
-    this.player.body.vx = this.player.body.vz = 0;
-    setFade(0);
-    this.mode = 'play';
-    this.lockT = 0.3;
-  }
-
-  async leaveGearworks() {
-    this.mode = 'cutscene';
-    setFade(1, '#000');
-    await new Promise((r) => setTimeout(r, 350));
-    this.applyEra(ERA.PRESENT, true);
-    this.player.place(L.towerX1 - 3.5, 0, 4.5);
-    this.player.facing = -1;
-    setFade(0);
-    this.mode = 'play';
-    this.lockT = 0.3;
-  }
-
-  /** Somewhere a crushed or drowned player must never be put back: under a hammer, on the lift. */
-  unsafeSpot(x, y) {
-    return this.gearworks.active && this.gearworks.unsafeAt(x, y);
-  }
-
-  async runEnding() {
-    this.mode = 'ending';
-    this.hud.showPrompt(null);
-    this.abilities.cancelRecording();
-    // a flash of white, and you're back down on the Tower floor for the ending
-    setFade(1, '#fff6e0');
-    await new Promise((r) => setTimeout(r, 450));
-    this.player.place(L.towerX0 + 9.5, 0, 3.5);
-    this.player.facing = 1;
-    this.applyEra(ERA.PRESENT, true);
-    setFade(0);
-    audio.sfx('bell');
-    audio.sfx('fanfare');
-    this.renderer.shake = 1.5;
-    const b = this.player.body;
-    for (let i = 0; i < 4; i++) setTimeout(() => this.bursts.emit(b.x + (Math.random() - 0.5) * 8, 4 + Math.random() * 6, 1, 60, { color: [0xffd070, 0x9ff4ff, 0xff4fd8], speed: 6, life: 1.4, gravity: 1 }), i * 400);
-    // cycle eras for drama
-    for (const e of [ERA.PAST, ERA.FUTURE, ERA.PRESENT]) {
-      await new Promise((r) => setTimeout(r, 700));
-      this.doShift(e);
-    }
-    await new Promise((r) => setTimeout(r, 900));
-    // Donald Eugene appears
-    const os = new NPC(this, { type: 'npc', id: 'eugeneEnd', era: ERA.PRESENT, x: b.x + 2.2, z: b.z, sheet: 'eugene', name: 'Donald Eugene' });
-    this.npcs.push(os);
-    this.entities.push(os);
-    this.bursts.emit(os.x, 1, os.z, 60, { color: [0x9ff4ff, 0xffffff], speed: 4, life: 1 });
-    audio.sfx('shift', { era: 1 });
-    letterbox(true);
-    await this.dialogue.run(ENDING);
-    letterbox(false);
-    this.state.flags.finished = true;
-    store.remove(SAVE_KEY); // the story is told: from here it's a new game
-    // fade to white and show credits
-    let f = 0;
-    await new Promise((r) => {
-      const step = () => {
-        f += 0.02;
-        setFade(Math.min(1, f), '#fff6e0');
-        if (f < 1) requestAnimationFrame(step);
-        else r();
-      };
-      step();
-    });
-    this.mode = 'credits';
-    this.hud.show(false);
-    this.onCredits?.(this.state);
   }
 
   onHazard() {
-    if (this.respawning || this.mode !== 'play') return;
+    if (this.respawning || this.mode !== 'play' || this.rewinding) return;
     this.respawning = true;
     audio.sfx('splash');
-    this.abilities.cancelRecording();
+    this.interrupt();
     const b = this.player.body;
-    this.bursts.emit(b.x, b.y + 0.5, b.z, 24, { color: this.era === ERA.FUTURE ? [0x7cff6a] : [0x9fe0ff, 0xffffff], speed: 4, life: 0.6 });
+    this.bursts.emit(b.x, b.y + 0.5, b.z, 24, { color: this.hazardBurst(), speed: 4, life: 0.6 });
     // straight back to the last safe spot, unless the world has changed under it since (a
     // dry hollow that's a pond now): then the shrine
     let s = [this.player.lastSafe, this.player.lastGround].find((p) => p && this.isSafeSpot(p));
-    if (!s) s = { ...CHECKPOINTS[this.state.checkpoint], x: CHECKPOINTS[this.state.checkpoint].x + 1.2, y: 0, z: 3.5, era: ERA.PRESENT };
+    if (!s) {
+      const cp = this.ch.CHECKPOINTS[this.state.checkpoint];
+      s = { x: cp.x + 1.2, y: cp.y ?? 0, z: 3.5, era: ERA.PRESENT };
+    }
     this.player.place(s.x, s.y, s.z);
     if (s.era !== this.era) this.applyEra(s.era, true);
-    if (s.era !== ERA.PRESENT) this.meter = Math.max(this.meter, 0.6);
+    this.onHazardPlaced(s);
     this.player.body.vx = this.player.body.vy = this.player.body.vz = 0;
     this.player.state = 'normal';
     // lose a heart, without the usual knockback (that could shove you straight back in)
@@ -685,13 +539,14 @@ export class Game {
     setFade(0.45, '#000');
     setTimeout(() => setFade(0), 90);
     this.respawning = false;
+    this.onHazardDone();
     if (this.player.hp <= 0) this.onDeath();
   }
 
-  /** The Warden got you: lose a heart and land back at the courtyard gate, in the Present. */
+  /** The Warden got you: lose a heart and land back outside its yard, in the Present. */
   caughtByWarden() {
-    if (this.respawning) return;
-    this.abilities.cancelRecording();
+    if (this.respawning || this.rewinding) return;
+    this.interrupt();
     audio.sfx('hurt');
     this.renderer.shake = 0.6;
     if (!this.godMode) {
@@ -699,13 +554,13 @@ export class Game {
       this.hud.setHearts(this.player.hp, this.player.maxHp);
     }
     this.player.invuln = 1.5;
-    this.player.place(L.yardX0 + 2.5, 0, 3.5);
+    this.player.place(this.wardenExitX(), 0, 3.5);
     this.applyEra(ERA.PRESENT, true);
     this.warden?.reset();
     setFade(0.6, '#200008');
     setTimeout(() => setFade(0), 160);
     this.lockT = 0.4;
-    this.hud.toast('Caught! Stay out of the Warden\'s sight cone.', 3500);
+    this.hud.toast("Caught! Stay out of the Warden's sight cone.", 3500);
     if (this.player.hp <= 0) this.onDeath();
   }
 
@@ -720,16 +575,15 @@ export class Game {
   onDeath() {
     if (this.mode !== 'play') return;
     this.mode = 'dead';
-    this.abilities.cancelRecording();
+    this.interrupt();
     setFade(1, '#05040a', 'Time rewinds...');
     audio.setMusicVolume(0.15);
     setTimeout(() => {
-      const cp = CHECKPOINTS[this.state.checkpoint];
-      this.player.place(cp.x + 1.2, 0, 3.5);
+      this.placeAtShrine();
       this.player.hp = this.player.maxHp;
       this.player.invuln = 1.5;
       this.applyEra(ERA.PRESENT, true);
-      this.meter = 1;
+      this.revive();
       for (const e of this.enemies) if (e.alive && e.reset) e.reset();
       this.warden?.reset();
       this.hud.setHearts(this.player.hp, this.player.maxHp);
@@ -740,11 +594,13 @@ export class Game {
   }
 
   // ------------------------------------------------------------------ per-frame
-  nearestInteractive() {
+  /** The nearest thing to talk to or use: in this age, or (lens = an era) through the lens. */
+  nearestInteractive(lens = null) {
     const b = this.player.body;
     let best = null, bd = 1.7;
-    for (const e of [...this.npcs, ...this.interactables]) {
-      if (!e.active()) continue;
+    const list = lens === null ? [...this.npcs, ...this.interactables] : this.interactables;
+    for (const e of list) {
+      if (lens === null ? !e.active() || e.spec.lensOnly : !(e.era === lens && e.spec.lens && e.available())) continue;
       const d = e.distTo(b);
       if (d < Math.min(bd, e.spec.reach ?? 1.7)) {
         bd = d;
@@ -754,76 +610,8 @@ export class Game {
     return best;
   }
 
-  updatePlay(dt) {
-    const s = this.state, f = s.flags;
-    s.playTime += dt;
-    this.lockT = Math.max(0, this.lockT - dt);
-    const ctl = this.controlsEnabled();
-
-    // era input / peek
-    const peeking = ctl && f.hasAmulet && input.held('peek');
-    if (peeking) {
-      if (this.peekTarget === null) this.peekTarget = this.era === ERA.PRESENT ? ERA.FUTURE : ERA.PRESENT;
-      if (input.hit('back') && this.era > 0) this.peekTarget = this.era - 1;
-      if (input.hit('forward') && this.era < 2) this.peekTarget = this.era + 1;
-    } else {
-      this.peekTarget = null;
-    }
-    // Q / E. Before Tempo is learned, a press travels one era. After it, a quick tap still
-    // travels (on letting go) and holding bends time instead: no mode to switch. Inside the
-    // clock, where the ages can't be pulled apart, they are Tempo from the first instant.
-    this.tempoHold = 0;
-    for (const [name, dir] of [['back', -1], ['forward', 1]]) {
-      const held = ctl && !peeking && input.held(name);
-      const t = this.keyT[name];
-      if (!ctl || peeking) this.keyT[name] = 0;
-      else if (!f.hasTempo) {
-        if (input.hit(name) && !this.gearworks.active) this.tryShift(this.era + dir);
-      } else if (this.gearworks.active) {
-        if (held) this.tempoHold = dir;
-      } else if (held) {
-        this.keyT[name] = t + dt;
-        if (this.keyT[name] >= TAP_TIME) this.tempoHold = dir;
-      } else {
-        // let go (or a touch tap on an era name, down for a single frame)
-        if ((t > 0 && t < TAP_TIME) || (t === 0 && input.hit(name))) this.tryShift(this.era + dir);
-        this.keyT[name] = 0;
-      }
-    }
-
-    // meter
-    if (f.steadyHeart) this.meter = 1; // the Everspring: the Chronoheart never drains again
-    else if (this.world.pocket) this.meter = Math.max(this.meter, 0.3); // time stands still in the hideaway
-    else if (this.era !== ERA.PRESENT && this.mode === 'play') {
-      this.meter -= dt / DRAIN_TIME;
-      if (this.meter < 0.25) {
-        this.warnT -= dt;
-        if (this.warnT <= 0) {
-          audio.sfx('tick');
-          this.warnT = this.meter < 0.12 ? 0.25 : 0.5;
-        }
-      }
-      if (this.meter <= 0) {
-        this.meter = 0;
-        this.snapBack();
-      }
-    } else if (!this.gearworks.mode) this.meter = Math.min(1, this.meter + dt / 2.5); // (Tempo is drawing on it)
-    this.hud.setMeter(this.meter, this.era, !!f.steadyHeart);
-
-    // once you reach Millrace Hollow, the old postern passage opens: a way back west in the Present
-    if (!f.posternOpen && this.player.body.x > L.millX0 + 1.5 && this.mode === 'play') {
-      f.posternOpen = true;
-      this.refreshWorld();
-      this.save();
-      this.hud.toast('<b>A way back:</b> the old postern passage behind you is open, in the Present.', 5000);
-    }
-
-    // walking out of Donald Eugene's hideaway
-    if (this.world.pocket && ctl && this.player.body.z > -0.7) this.leaveStudy();
-
-    // entities
-    this.player.update(dt);
-    if (this.era === ERA.PRESENT && this.player.body.onGround) this.lastSafePresent = { x: this.player.body.x, y: this.player.body.y, z: this.player.body.z };
+  /** Everyone and everything but the player takes its turn. */
+  updateEntities(dt) {
     const talking = this.dialogue.active;
     for (const e of this.entities) {
       if (!e.alive || !(e.active() || e instanceof Pushable || e.alwaysUpdate)) continue;
@@ -833,64 +621,12 @@ export class Game {
     this.entities = this.entities.filter((e) => e.alive);
     this.enemies = this.enemies.filter((e) => e.alive);
     this.pickups = this.pickups.filter((e) => e.alive);
+  }
 
-    // interaction
-    const near = ctl ? this.nearestInteractive() : null;
-    // with nothing to talk to, offer the Stasis Seal when something sealable is right here
-    // ...or, standing on one of your echoes, offer to dispel it
-    const strike = ctl && !near ? this.nearestStrike() : null;
-    const seal = ctl && !near && !strike ? this.abilities.sealTarget() : null;
-    const echo = ctl && !near && !strike && !seal ? this.abilities.dispelTarget() : null;
-    if (strike) {
-      this.hud.showPrompt(strike.prompt(), 'strike');
-      if (!f.strikeHint) {
-        f.strikeHint = true;
-        this.hud.toast(`Stuck fast. A few good hits should shift it: ${touchActive() ? '<b>Attack</b>' : '<kbd>X</kbd>'} swings your wrench.`, 5000);
-      }
-    } else if (seal) this.hud.showPrompt(`Seal ${seal.name}`, 'seal');
-    else if (echo) this.hud.showPrompt('Dispel echo', 'dispel');
-    else this.hud.showPrompt(near ? (near.prompt ? near.prompt() : 'Interact') : null);
-    if (echo && input.hit('interact')) this.abilities.dispel(echo);
-    if (near && ctl && input.hit('interact')) {
-      this.mode = 'dialogue';
-      const p = near instanceof NPC ? talk(this, near) : interact(this, near);
-      Promise.resolve(p).then(() => {
-        if (this.mode === 'dialogue') this.mode = 'play';
-        this.lockT = 0.2;
-      });
-    }
-
-    this.abilities.update(dt, ctl);
-
-
-    this.finale.update(dt);
-    this.gearworks.update(dt, ctl);
-
-    // first time a hostile creature gets close, remind the player how to fight
-    if (!f.attackHint && ctl) {
-      const b = this.player.body;
-      if (this.enemies.some((e) => e.active() && !e.dead && Math.abs(e.body.x - b.x) < 7)) {
-        f.attackHint = true;
-        this.hud.toast(`Enemy nearby! ${touchActive() ? '<b>Attack</b>' : '<kbd>X</kbd>'} swings your wrench.`, 3500);
-      }
-    }
-
-    // Sun Terrace hints: point at the foundation in the Present, at the block in the Past
-    {
-      const bx = this.player.body.x, t = L.pillarTarget, bp = s.blockPos;
-      const solved = bp.x === t.x && bp.z === t.z;
-      if (!solved && !f.terraceHint && this.era !== ERA.PAST && bx > 137 && bx < 146 && ctl) {
-        f.terraceHint = true;
-        this.hud.toast('Too high to climb. That empty foundation by the bench looks like it\'s waiting for something...', 5000);
-      }
-      if (!solved && !f.blockHint2 && this.era === ERA.PAST && Math.abs(bx - (bp.x + 0.5)) < 5 && ctl) {
-        f.blockHint2 = true;
-        this.hud.toast('Walk into the carved block to push it.', 3500);
-      }
-    }
-
+  /** Keep the Menu's goal and hint current, and name each area the first time you walk in. */
+  updateGoalAndArea(dt) {
     // the goal (shown in the Menu, with its hint behind a button): announce real changes
-    const { goal, hint } = currentGoal(this);
+    const { goal, hint } = this.ch.currentGoal(this);
     const key = goal + '|' + hint;
     if (key !== this.goalText) {
       const prevGoal = this.goalText?.split('|')[0];
@@ -906,12 +642,12 @@ export class Game {
     // area banner
     const bx = this.player.body.x;
     let ai = 0;
-    for (let i = 0; i < AREAS.length; i++) if (bx >= AREAS[i].x) ai = i;
+    for (let i = 0; i < this.ch.AREAS.length; i++) if (bx >= this.ch.AREAS[i].x) ai = i;
     if (ai !== this.areaIdx) {
       this.areaIdx = ai;
       // each area's name shows once, the first time you walk in
       this.seenAreas ||= new Set();
-      if (!this.seenAreas.has(ai) && this.mode === 'play') this.hud.showBanner(AREAS[ai].name, this.era, AREAS[ai].subtitle);
+      if (!this.seenAreas.has(ai) && this.mode === 'play') this.hud.showBanner(this.ch.AREAS[ai].name, this.era, this.ch.AREAS[ai].subtitle || this.eraLabel(this.era));
       this.seenAreas.add(ai);
     }
   }
@@ -924,7 +660,7 @@ export class Game {
   // ------------------------------------------------------------------ kindness side quests
   favorList() {
     const s = this.state;
-    return FAVORS.filter((fv) => s.flags[fv.start] || s.kindness.includes(fv.id)).map((fv) => ({
+    return this.ch.FAVORS.filter((fv) => s.flags[fv.start] || s.kindness.includes(fv.id)).map((fv) => ({
       title: fv.title,
       text: s.kindness.includes(fv.id) ? fv.done : fv.todo,
       done: s.kindness.includes(fv.id),
@@ -932,7 +668,7 @@ export class Game {
   }
 
   startFavor(id) {
-    const fv = FAVORS.find((x) => x.id === id);
+    const fv = this.ch.FAVORS.find((x) => x.id === id);
     if (!fv) return;
     audio.sfx('ui');
     this.hud.toast(`New favor: <b>${fv.title}</b>`, 3500);
@@ -963,10 +699,10 @@ export class Game {
    * feature ids scaled up from the ground, starting at `growFrom` of full height: water rising
    * from a shallow pool, say), drops into place (`drop`) or floats up with rising water
    * (`float`: { ids, by } rises `by` cells). Then shift back. `to` can be the age you're in:
-   * then nothing shifts, and the change simply plays out in front of you.
-   * Any tap / key after a moment skips ahead.
+   * then nothing shifts, and the change simply plays out in front of you. `unit`: what's being
+   * counted, if not years. Any tap / key after a moment skips ahead.
    */
-  async timelapse({ to, focus, years, caption, grow = [], drop = [], float = null, growFrom = 0, effect = null, erode = null }) {
+  async timelapse({ to, focus, years, caption, grow = [], drop = [], float = null, growFrom = 0, effect = null, erode = null, unit = ['year', 'years'] }) {
     if (this.lapse || (this.mode !== 'play' && this.mode !== 'dialogue')) return;
     const from = this.era;
     const r = this.renderer;
@@ -982,7 +718,7 @@ export class Game {
     let skip = false;
     const wantSkip = () => (skip = true);
     const skipKeys = (e) => ['Space', 'Enter', 'KeyF', 'KeyX', 'Escape'].includes(e.code) && wantSkip();
-    const wait = (ms) => new Promise((res) => {
+    const hold = (ms) => new Promise((res) => {
       const t0 = performance.now();
       const tick = () => (skip || performance.now() - t0 >= ms ? res() : requestAnimationFrame(tick));
       tick();
@@ -993,13 +729,13 @@ export class Game {
     const targets = (ids) => this.world.features.filter((f) => ids.includes(f.id)).flatMap((f) => f.meshes[to] || []);
 
     overlay.querySelector('.lapse-caption').textContent = caption;
-    overlay.querySelector('.lapse-era').textContent = to === from ? ERA_LABEL[to] : `${ERA_LABEL[from]}  →  ${ERA_LABEL[to]}`;
+    overlay.querySelector('.lapse-era').textContent = to === from ? this.eraLabel(to) : `${this.eraLabel(from)}  →  ${this.eraLabel(to)}`;
     overlay.style.setProperty('--lapse-color', ERA_COLORS[to]);
-    yearsEl.textContent = '+0 years';
+    yearsEl.textContent = `+0 ${unit[1]}`;
     overlay.hidden = false;
     requestAnimationFrame(() => overlay.classList.add('in'));
 
-    await wait(650); // camera settles on the spot
+    await hold(650); // camera settles on the spot
     setTimeout(() => {
       window.addEventListener('keydown', skipKeys);
       window.addEventListener('pointerdown', wantSkip);
@@ -1050,12 +786,12 @@ export class Game {
       if (shifted) this.post.trans = Math.min(0.999, a * a * (3 - 2 * a));
       const e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2; // ease in-out
       const n = Math.round(e * years);
-      yearsEl.textContent = `+${n.toLocaleString()} ${n === 1 ? 'year' : 'years'}`;
+      yearsEl.textContent = `+${n.toLocaleString()} ${n === 1 ? unit[0] : unit[1]}`;
       // days and nights racing past
-      const night = Math.max(0, Math.sin(k * Math.PI * 10)) * (1 - k) * 0.9;
+      const night = Math.max(0, Math.sin(k * Math.PI * (years > 1 ? 10 : 2))) * (1 - k) * 0.9;
       r.sun.intensity = r.atmos.sunI * (1 - night * 0.85);
       r.hemi.intensity = r.atmos.hemiI * (1 - night * 0.55);
-      r.skyUniforms.stars.value = night;
+      r.skyUniforms.stars.value = Math.max(night, r.atmos.stars ?? 0);
       // the consequence waits until the new age has begun to show through, then unfolds in it
       const kc = THREE.MathUtils.clamp((k - 0.25) / 0.75, 0, 1);
       const g = 1 - Math.pow(1 - Math.min(1, kc * 1.15), 3); // growth ease-out
@@ -1074,13 +810,14 @@ export class Game {
         R.mesh.instanceMatrix.needsUpdate = true;
       }
       if (Math.random() < dt * 14) {
-        const f = lapse.focus;
-        if (effect === 'carve') this.bursts.emit(f.x - 0.5 + Math.random(), 0.5 + Math.random() * 2, f.z - 1 + Math.random() * 2, 3, { color: [0x7fd8ff, 0xd8c09a], speed: 2.5, life: 0.7, gravity: 4 });
-        else if (effect === 'shine') this.bursts.emit(f.x - 1 + Math.random() * 2, f.y + Math.random(), f.z, 2, { color: [0xffd070, 0xffffff], speed: 1.2, life: 0.8, gravity: -0.5, glow: 2 });
-        else this.bursts.emit(f.x - 1.5 + Math.random() * 3, f.y + Math.random() * 3, f.z - 1 + Math.random() * 2, 1, { color: [0xffe6a0, 0x9aff7a], speed: 0.8, life: 0.9, gravity: -0.4 });
+        const c = lapse.focus, fx = theme.lapse;
+        if (effect === 'carve') this.bursts.emit(c.x - 0.5 + Math.random(), 0.5 + Math.random() * 2, c.z - 1 + Math.random() * 2, 3, { color: [0x7fd8ff, 0xd8c09a], speed: 2.5, life: 0.7, gravity: 4 });
+        else if (effect === 'shine') this.bursts.emit(c.x - 1 + Math.random() * 2, c.y + Math.random(), c.z, 2, { color: fx.shine, speed: 1.2, life: 0.8, gravity: -0.5, glow: 2 });
+        else if (float && fx.splash) this.bursts.emit(c.x - 5 + Math.random() * 10, c.y - 1 + Math.random(), c.z - 2 + Math.random() * 6, 2, { color: fx.splash, speed: 1.6, life: 0.7, gravity: 3 });
+        else this.bursts.emit(c.x - 1.5 + Math.random() * 3, c.y - fx.motesDrop + Math.random() * 3, c.z - 1 + Math.random() * 2, 1, { color: fx.motes, speed: 0.8, life: 0.9, gravity: -0.4 });
       }
     };
-    await wait(DUR * 1000);
+    await hold(DUR * 1000);
     lapse.t = DUR;
     lapse.update(0);
     lapse.update = null;
@@ -1093,7 +830,7 @@ export class Game {
     r.applyAtmos(r.atmos);
     r.skyUniforms.stars.value = r.atmos.stars ?? 0;
     audio.sfx('checkpoint');
-    await wait(1100); // admire the result
+    await hold(1100); // admire the result
 
     // back to the player's own age
     overlay.classList.remove('in');
@@ -1105,7 +842,7 @@ export class Game {
     window.removeEventListener('pointerdown', wantSkip);
     this.lapse = null;
     p.mesh.visible = p.shadow.visible = true;
-    await new Promise((res) => setTimeout(res, 450));
+    await wait(450);
     overlay.hidden = true;
     document.body.classList.remove('lapse');
     letterbox(false);
@@ -1120,93 +857,6 @@ export class Game {
     const btn = document.getElementById('goal-hint-btn');
     btn.textContent = on ? 'Hide hint' : 'Hint';
     btn.setAttribute('aria-expanded', String(on));
-  }
-
-  /**
-   * While the Clocktower is stopped, it stutters between the three ages: short bursts where
-   * slices of the tower show another era. Bursts come faster as you get close, and faster
-   * still once Era Keys are placed. It stops for good once the Tower is restarted.
-   */
-  updateTowerGlitch(dt) {
-    const tu = this.post.time.uniforms;
-    const g = (this.glitch ||= { t: 1, on: 0, era: 0, seedT: 0, era2: 0 });
-    tu.glitch.value = 0;
-    const r = this.renderer;
-    const busy =
-      this.state.flags.finished || this.mode === 'ending' || this.mode === 'credits' || this.lapse ||
-      this.post.trans < 1 || this.post.peekAmt > 0.01 || this.blockFlashT > 0 || this.swipePeek || this.peekTarget !== null;
-    const prox = Math.min(1, Math.max(0, (r.camTarget.x - (L.towerX0 - 16)) / 14));
-    if (busy || prox <= 0) {
-      g.on = 0;
-      return;
-    }
-    const keys = Object.keys(this.sockets).length;
-    // calmer inside the clock, where the puzzles need your eyes, and for reduced-motion players
-    const calm = (this.gearworks.active ? 0.6 : 1) * (matchMedia('(prefers-reduced-motion: reduce)').matches ? 0.5 : 1);
-    // right after a key goes in, the stutter flares: bursts come back to back, a little stronger
-    this.towerSurge = Math.max(0, (this.towerSurge || 0) - dt);
-    const surge = this.towerSurge > 0;
-    if (surge) g.t = Math.min(g.t, 0.05);
-    g.t -= dt;
-    if (g.on <= 0 && g.t <= 0) {
-      g.on = 0.1 + Math.random() * (0.16 + keys * 0.03);
-      g.t = (2.2 + Math.random() * 3.5) / (1 + keys * 0.3) / (0.5 + prox * 0.5) / calm;
-      const others = [0, 1, 2].filter((e) => e !== this.era);
-      g.era = others[Math.floor(Math.random() * others.length)];
-      if (prox > 0.5) audio.sfx('glitch');
-      if (!this.state.flags.towerGlitchSeen && !this.glitchExplaining && this.player.body.x > L.towerX0 - 14 && this.controlsEnabled()) this.explainTowerGlitch();
-    }
-    if (g.on <= 0) return;
-    g.on -= dt;
-    // stutter: reshuffle the slices a few times per burst, sometimes flipping era
-    g.seedT -= dt;
-    if (g.seedT <= 0) {
-      g.seedT = 0.03 + Math.random() * 0.05;
-      tu.glitchSeed.value = Math.random() * 100;
-      if (Math.random() < 0.25) g.era = [0, 1, 2].filter((e) => e !== this.era)[Math.floor(Math.random() * 2)];
-    }
-    tu.glitch.value = prox * (0.18 + Math.random() * 0.18 + keys * 0.03) * (surge ? 1.4 : 1) * calm;
-    tu.glitchTint.value.setHex(ERA_RING[g.era]);
-    // screen-space bounds of the tower
-    const cam = r.camera, v = new THREE.Vector3();
-    let x0 = 1, y0 = 1, x1 = 0, y1 = 0;
-    for (const cx of [L.towerX0, W]) for (const cy of [0.5, 23]) for (const cz of [-16, 7]) {
-      v.set(cx, cy, cz).project(cam);
-      const u = v.x * 0.5 + 0.5, w = v.y * 0.5 + 0.5;
-      x0 = Math.min(x0, u); x1 = Math.max(x1, u); y0 = Math.min(y0, w); y1 = Math.max(y1, w);
-    }
-    tu.glitchRect.value.set(Math.max(0, x0), Math.max(0, y0), Math.min(1, x1), Math.min(1, y1));
-    if (x1 <= 0 || x0 >= 1) {
-      tu.glitch.value = 0;
-      return;
-    }
-    // render the other era into the shared "previous frame" target
-    const groups = this.world.groups;
-    groups.forEach((grp, i) => (grp.visible = i === g.era));
-    this.post.capture();
-    groups.forEach((grp, i) => (grp.visible = i === this.era));
-  }
-
-  /** The first time the stopped Tower stutters in front of you, Vivienne says what it is. */
-  explainTowerGlitch() {
-    this.glitchExplaining = true;
-    const V = (text) => ({ who: 'vivienne', name: 'Vivienne', text });
-    setTimeout(() => {
-      this.glitchExplaining = false;
-      if (this.mode !== 'play' || this.dialogue.active) return; // busy: try again on the next stutter
-      this.state.flags.towerGlitchSeen = true;
-      this.save();
-      this.mode = 'dialogue';
-      this.dialogue
-        .run([
-          V('Whoa! Did the Tower wall just flicker into another age?'),
-          V("Its heart has stopped, so it's stuttering between the ages. Once I restart it, it should hold steady."),
-        ])
-        .then(() => {
-          if (this.mode === 'dialogue') this.mode = 'play';
-          this.lockT = 0.2;
-        });
-    }, 900);
   }
 
   /**
@@ -1239,8 +889,8 @@ export class Game {
 
   updateTitle(dt) {
     this.titleT += dt;
-    const x = 16 + Math.sin(this.titleT * 0.08) * 10;
-    this.renderer.camTarget.set(x, 1.5, 3);
+    const { x, sway } = theme.titleCam;
+    this.renderer.camTarget.set(x + Math.sin(this.titleT * 0.08) * sway, 1.5, 3);
     if (this.titleT > 6) {
       this.titleT = 0;
       this.titleEra = (this.titleEra + 1) % 3;
@@ -1255,13 +905,11 @@ export class Game {
 
     if (this.mode === 'title' || this.mode === 'credits') {
       this.updateTitle(dt);
-      if (this.mode === 'title') this.player.mesh.visible = this.player.shadow.visible = false;
-    } else if (this.mode === 'play' || this.mode === 'dialogue' || this.mode === 'ending') {
-      if (this.mode === 'play' || this.mode === 'dialogue') this.updatePlay(dt);
-      else {
-        this.player.update(dt);
-        for (const e of this.entities) if (e.alive && e.active()) e.update(dt);
-      }
+      this.player.mesh.visible = this.player.shadow.visible = false;
+    } else if (this.mode === 'play' || this.mode === 'dialogue') this.updatePlay(dt);
+    else if (this.mode === 'ending') {
+      this.player.update(dt);
+      for (const e of this.entities) if (e.alive && e.active()) e.update(dt);
     }
 
     const r = this.renderer;
@@ -1271,8 +919,8 @@ export class Game {
       this.lapse.update?.(dt);
     } else if (this.mode !== 'title' && this.mode !== 'credits') {
       const b = this.player.body;
-      const lead = this.mode === 'play' ? this.player.facing * 1.3 + THREE.MathUtils.clamp(b.vx * 0.15, -0.8, 0.8) : 0;
-      r.updateCamera(dt, new THREE.Vector3(b.x, Math.max(b.y, 0) + 0.6, b.z * 0.6 + 1.2), L.cameraBounds, lead);
+      const lead = this.mode === 'play' && !this.rewinding ? this.player.facing * 1.3 + THREE.MathUtils.clamp(b.vx * 0.15, -0.8, 0.8) : 0;
+      r.updateCamera(dt, new THREE.Vector3(b.x, Math.max(b.y, theme.camFloor) + 0.6, b.z * 0.6 + 1.2), this.L.cameraBounds, lead);
     } else r.updateCamera(dt, r.camTarget.clone(), [r.camTarget.x - 100, r.camTarget.x + 100]);
     r.updateLights(this.world.lights[this.era], r.camTarget, this.time);
     r.tickShaders(this.time);
@@ -1280,12 +928,12 @@ export class Game {
     this.bursts.update(dt);
 
     // depth-of-field focus: camera distance to the player (or the camera target on the title)
-    const fp = this.lapse ? this.lapse.focus : this.player && this.mode !== 'title' ? new THREE.Vector3(this.player.body.x, this.player.body.y + 0.8, this.player.body.z) : r.camTarget;
+    const fp = this.lapse ? this.lapse.focus : this.player && this.mode !== 'title' && this.mode !== 'credits' ? new THREE.Vector3(this.player.body.x, this.player.body.y + 0.8, this.player.body.z) : r.camTarget;
     const focus = fp.clone().applyMatrix4(r.camera.matrixWorldInverse).z * -1;
     const gu = this.post.grade.uniforms;
     gu.hurt.value = Math.max(0, gu.hurt.value - dt * 2.5);
     this.renderPeek();
-    this.updateTowerGlitch(dt);
+    this.updateEffects(dt);
     this.post.update(dt, this.time, focus);
     this.post.render();
     input.endFrame();

@@ -1,5 +1,6 @@
 // Procedural pixel-art: every sprite, creature, item icon and portrait is drawn in code.
 import * as THREE from 'three';
+import { theme } from '../chapter.js';
 
 const OUTLINE = '#1b1424';
 
@@ -550,6 +551,42 @@ function thornbackSheet() {
   return s.build();
 }
 
+function crabSheet() {
+  const s = new Sheet(32, 32, 3, 8, { '#d8604a': 'scales', '#a8402e': 'scales' });
+  const draw = (ctx, ox, oy, t, hurt) => {
+    const B = hurt ? '#f6e4dc' : '#d8604a', Bd = hurt ? '#d8b8a8' : '#a8402e';
+    const y = 22 + (t ? 1 : 0);
+    rect(ctx, ox + 9, oy + y, 14, 6, B); // shell
+    rect(ctx, ox + 10, oy + y - 1, 12, 1, B);
+    rect(ctx, ox + 11, oy + y + 1, 10, 1, '#f08a6a');
+    rect(ctx, ox + 10, oy + y + 5, 12, 1, Bd);
+    // eyes on stalks
+    rect(ctx, ox + 13, oy + y - 4, 1, 3, Bd);
+    rect(ctx, ox + 18, oy + y - 4, 1, 3, Bd);
+    px(ctx, ox + 13, oy + y - 5, '#1a1a1a');
+    px(ctx, ox + 18, oy + y - 5, '#1a1a1a');
+    // claws, snapping
+    line(ctx, ox + 9, oy + y + 2, ox + 5, oy + y - 1 - (t ? 1 : 0), Bd, 2);
+    line(ctx, ox + 22, oy + y + 2, ox + 26, oy + y - 1 - (t ? 0 : 1), Bd, 2);
+    rect(ctx, ox + 3, oy + y - 4 - (t ? 1 : 0), 4, 3, B);
+    rect(ctx, ox + 25, oy + y - 4 - (t ? 0 : 1), 4, 3, B);
+    px(ctx, ox + 4, oy + y - 3 - (t ? 1 : 0), '#1a1a1a');
+    px(ctx, ox + 27, oy + y - 3 - (t ? 0 : 1), '#1a1a1a');
+    // legs
+    const l = t ? 1 : -1;
+    for (let i = 0; i < 3; i++) {
+      rect(ctx, ox + 10 + i * 2 + l, oy + y + 6, 1, 2, Bd);
+      rect(ctx, ox + 17 + i * 2 - l, oy + y + 6, 1, 2, Bd);
+    }
+  };
+  const a = s.frame((c, x, y) => draw(c, x, y, 0, false));
+  const b = s.frame((c, x, y) => draw(c, x, y, 1, false));
+  const h = s.frame((c, x, y) => draw(c, x, y, 0, true));
+  s.anim('walk', [a, b], 7);
+  s.anim('hurt', [h], 1);
+  return s.build();
+}
+
 function ratSheet() {
   const s = new Sheet(32, 32, 3, 8, { '#6a6070': 'fur', '#8a8090': 'fur' });
   const draw = (ctx, ox, oy, t, hurt) => {
@@ -631,9 +668,26 @@ function sentinelSheet() {
 }
 
 function robotSheet(kind) {
-  const s = new Sheet(32, 32, 2, 8, { '#c87a2a': 'plate', '#8a94a4': 'plate' });
+  const s = new Sheet(32, 32, 2, 8, { '#c87a2a': 'plate', '#8a94a4': 'plate', '#b8683a': 'plate', '#d8b040': 'plate' });
   const draw = (ctx, ox, oy, t) => {
-    if (kind === 'brn') {
+    if (kind === 'digby') {
+      // DIGBY: a salvage unit on one fat wheel, with a scoop arm and a single amber eye
+      rect(ctx, ox + 9, oy + 12 + t, 14, 11, '#b8683a');
+      rect(ctx, ox + 9, oy + 12 + t, 14, 2, '#d88a5a');
+      rect(ctx, ox + 10, oy + 19 + t, 12, 2, '#d8b040');
+      for (let i = 0; i < 3; i++) rect(ctx, ox + 11 + i * 4, oy + 19 + t, 2, 2, '#2a2420');
+      rect(ctx, ox + 12, oy + 4 + t, 9, 7, '#8a94a4');
+      disc(ctx, ox + 17, oy + 7 + t, 2, '#1a1410');
+      px(ctx, ox + 17, oy + 7 + t, '#ffb03a');
+      px(ctx, ox + 18, oy + 6 + t, '#fff2c0');
+      rect(ctx, ox + 14, oy + 1 + t, 1, 3, '#4a5260');
+      px(ctx, ox + 14, oy + 0 + t, '#ff5a3a');
+      rect(ctx, ox + 23, oy + 14 + t, 4, 2, '#8a94a4'); // scoop arm
+      rect(ctx, ox + 26, oy + 12 + t, 2, 6, '#5a606c');
+      rect(ctx, ox + 6, oy + 14 + t, 3, 6, '#8a94a4');
+      disc(ctx, ox + 16, oy + 26, 4, '#2a2e36');
+      disc(ctx, ox + 16, oy + 26, 2, '#5a606c');
+    } else if (kind === 'brn') {
       // stocky repair bot
       rect(ctx, ox + 9, oy + 14 + t, 14, 12, '#c87a2a');
       rect(ctx, ox + 9, oy + 14 + t, 14, 2, '#e8a050');
@@ -724,34 +778,58 @@ export const CHAR = {
   tamsin: { skin: '#9a6a48', hair: '#1e1612', hairStyle: 'braid', top: '#7a8a3a', apron: '#c9a24a', legs: '#6a5232', boots: '#4a3220', belt: '#c8642a' },
   // Oren the Mason: laying the first stones of a tower he doesn't understand
   oren: { skin: '#a8744e', hair: '#3a2a1e', hairStyle: 'short', beard: '#3a2a1e', top: '#c9b48a', apron: '#8a7a66', legs: '#7a6248', boots: '#4a3220', belt: '#c8642a', wide: true },
+  // Chapter Two: three weeks on, dressed for the shore. A navy sea-coat, a red neckerchief,
+  // sailcloth trousers and yellow sea-boots. The goggles and the amulet go wherever she does.
+  vivienneCoast: {
+    skin: '#f2c49a', hair: '#2e2236', hairStyle: 'bun', top: '#27477a', apron: '#1d3660', legs: '#d9ccaa', boots: '#e2b83a', belt: '#8a5a32', goggles: true, amulet: true,
+    chest: (P, lean, by) => {
+      for (const x of [13, 14, 15]) P(x + lean, 16 + by, '#e0483a');
+      P(14 + lean, 17 + by, '#c23a2e');
+    },
+  },
+  // ---- Chapter Two: the people of Saltwick ----
+  // Brannoch, harbormaster of a harbor with no sea in it
+  brannoch: { skin: '#c89070', hair: '#5a5a66', hairStyle: 'short', beard: '#6a6a76', top: '#27405e', apron: '#1c2e44', legs: '#3a3a44', boots: '#2a2420', belt: '#c9a44a', wide: true },
+  // Odalys keeps the light: yellow oilskin, hood up against the wind
+  odalys: { skin: '#a8704e', hair: '#e2b83a', hairStyle: 'hood', top: '#e2b83a', apron: '#c89a2a', legs: '#3a4a5a', boots: '#2a2a30', belt: '#5a3a22' },
+  // Old Fenwick, who is still fishing
+  fenwick: { skin: '#e0b090', hair: '#e8e8ee', hairStyle: 'bald', beard: '#e8e8ee', top: '#8a3a3a', apron: '#6a2a2a', legs: '#5a5a4a', boots: '#3a2a20', belt: '#3a2614' },
+  // the tide folk of the first age: sea-green cloth, shell and coral
+  isha: { skin: '#9a6a48', hair: '#1e1612', hairStyle: 'circletLong', top: '#2f9a8a', apron: '#e8dcc0', legs: '#237a70', boots: '#8a5a32', belt: '#e0786a', robe: true, sunPendant: true },
+  pim: { skin: '#a8744e', hair: '#2a1a14', hairStyle: 'short', top: '#e0786a', apron: '#e8dcc0', legs: '#2f9a8a', boots: '#8a5a32' },
+  maren: { skin: '#8a5a3c', hair: '#3a2a22', hairStyle: 'braid', top: '#e8dcc0', apron: '#2f9a8a', legs: '#8a7a5a', boots: '#5a3a22', belt: '#e0786a', wide: true },
 };
 
-let cache = null;
+// Every sheet in the game, by name. Each is drawn the first time it's asked for, so a chapter
+// only ever pays for its own cast.
+const npc = (name) => () => humanoidSheet(CHAR[name], { npcOnly: true });
+const SHEETS = {
+  // Vivienne wears what the chapter says she wears (see playerSheet in each chapter's theme.js)
+  vivienne: () => humanoidSheet(CHAR[theme.playerSheet] || CHAR.vivienne),
+  megan: () => squirrelSheet(),
+  zach: () => squirrelSheet({ B: '#86848e', L: '#cfccd6', acorn: false, spectacles: true }),
+  eugene: npc('eugene'), michelle: npc('michelle'),
+  // Chapter One: Hollowmere
+  louise: npc('louise'), samaria: npc('samaria'), aria: npc('aria'), callie: npc('callie'), sheng: npc('sheng'), lillian: npc('lillian'),
+  hobb: npc('hobb'), tamsin: npc('tamsin'), oren: npc('oren'),
+  brn: () => robotSheet('brn'),
+  tick: () => robotSheet('tick'),
+  thornback: () => thornbackSheet(),
+  // Chapter Two: Saltwick
+  brannoch: npc('brannoch'), odalys: npc('odalys'), fenwick: npc('fenwick'), isha: npc('isha'), pim: npc('pim'), maren: npc('maren'),
+  digby: () => robotSheet('digby'),
+  crab: () => crabSheet(),
+  // both
+  rat: () => ratSheet(),
+  drone: () => droneSheet(),
+  sentinel: () => sentinelSheet(),
+};
+const cache = {};
+const sheets = new Proxy(cache, {
+  get: (c, name) => (name in c ? c[name] : SHEETS[name] ? (c[name] = SHEETS[name]()) : undefined),
+});
 export function getSheets() {
-  if (cache) return cache;
-  cache = {
-    vivienne: humanoidSheet(CHAR.vivienne),
-    louise: humanoidSheet(CHAR.louise, { npcOnly: true }),
-    samaria: humanoidSheet(CHAR.samaria, { npcOnly: true }),
-    aria: humanoidSheet(CHAR.aria, { npcOnly: true }),
-    callie: humanoidSheet(CHAR.callie, { npcOnly: true }),
-    sheng: humanoidSheet(CHAR.sheng, { npcOnly: true }),
-    lillian: humanoidSheet(CHAR.lillian, { npcOnly: true }),
-    eugene: humanoidSheet(CHAR.eugene, { npcOnly: true }),
-    brn: robotSheet('brn'),
-    tick: robotSheet('tick'),
-    megan: squirrelSheet(),
-    zach: squirrelSheet({ B: '#86848e', L: '#cfccd6', acorn: false, spectacles: true }),
-    michelle: humanoidSheet(CHAR.michelle, { npcOnly: true }),
-    hobb: humanoidSheet(CHAR.hobb, { npcOnly: true }),
-    tamsin: humanoidSheet(CHAR.tamsin, { npcOnly: true }),
-    oren: humanoidSheet(CHAR.oren, { npcOnly: true }),
-    thornback: thornbackSheet(),
-    rat: ratSheet(),
-    drone: droneSheet(),
-    sentinel: sentinelSheet(),
-  };
-  return cache;
+  return sheets;
 }
 
 // ---------------------------------------------------------------------------
@@ -1069,6 +1147,108 @@ const ICONS = {
     px(c, 7, 8, '#ffffff');
     line(c, 3, 1, 8, 4, '#8a6a3a', 1);
     line(c, 13, 1, 8, 4, '#8a6a3a', 1);
+  },
+  // ---- Chapter Two: Saltwick ----
+  watch: (c) => {
+    // Donald Eugene's pocketwatch, its hands at ten to two
+    rect(c, 7, 0, 2, 2, '#c9a44a');
+    disc(c, 8, 9, 6, '#c9a44a');
+    disc(c, 8, 9, 4, '#f4ecd8');
+    line(c, 8, 9, 6, 7, '#2a2014', 1);
+    line(c, 8, 9, 10, 6, '#2a2014', 1);
+    px(c, 8, 9, '#a8362a');
+    px(c, 4, 5, '#fff2b0');
+  },
+  myWatch: (c) => {
+    // Vivienne's own: twelve lost cogs in a case the color of the sea
+    rect(c, 7, 0, 2, 2, '#8fd8cc');
+    disc(c, 8, 9, 6, '#5fbfb0');
+    disc(c, 8, 9, 4, '#f4ecd8');
+    line(c, 8, 9, 6, 7, '#2a2014', 1);
+    line(c, 8, 9, 10, 6, '#2a2014', 1);
+    px(c, 8, 9, '#c9a44a');
+    px(c, 4, 5, '#e8fff8');
+    px(c, 12, 12, '#c9a44a');
+  },
+  nets: (c) => {
+    rect(c, 2, 4, 12, 9, '#8a7a5a');
+    for (let i = 0; i < 4; i++) {
+      line(c, 2 + i * 4, 4, 2 + i * 4, 12, '#5a4a32', 1);
+      line(c, 2, 4 + i * 3, 13, 4 + i * 3, '#5a4a32', 1);
+    }
+    disc(c, 3, 3, 1, '#e0786a');
+    disc(c, 13, 3, 1, '#e0786a');
+  },
+  clapper: (c) => {
+    rect(c, 7, 1, 2, 9, '#7a7f8a');
+    rect(c, 6, 1, 4, 2, '#5a606c');
+    disc(c, 8, 12, 3, '#8a929e');
+    px(c, 7, 11, '#e8ecf4');
+    rect(c, 6, 5, 4, 1, '#a8562a');
+  },
+  pearlChip: (c) => {
+    line(c, 5, 11, 9, 5, '#e8e4f0', 3);
+    px(c, 9, 4, '#ffffff');
+    px(c, 6, 11, '#b8b0d0');
+    px(c, 10, 7, '#ffd8f0');
+  },
+  pearl: (c) => {
+    disc(c, 8, 8, 6, '#e8e4f4');
+    disc(c, 9, 9, 4, '#cfc8e6');
+    disc(c, 6, 6, 2, '#ffffff');
+    px(c, 11, 11, '#ffd8f0');
+    px(c, 10, 5, '#d8f4ff');
+  },
+  loupe: (c) => {
+    disc(c, 7, 7, 5, '#c9a44a');
+    disc(c, 7, 7, 3, '#9fe8ff');
+    px(c, 6, 6, '#ffffff');
+    line(c, 11, 11, 14, 14, '#6a4a28', 2);
+  },
+  lumen: (c) => {
+    rect(c, 5, 2, 6, 2, '#8a94a4');
+    rect(c, 4, 4, 8, 8, '#fff2a8');
+    rect(c, 6, 6, 4, 4, '#ffffff');
+    rect(c, 5, 12, 6, 2, '#8a94a4');
+    px(c, 3, 8, '#ffd070');
+    px(c, 12, 8, '#ffd070');
+  },
+  whistle: (c) => {
+    disc(c, 6, 9, 4, '#f0d8c8');
+    disc(c, 6, 9, 2, '#e0a890');
+    rect(c, 9, 7, 5, 3, '#f0d8c8');
+    px(c, 13, 8, '#8a5a4a');
+    line(c, 4, 4, 2, 1, '#e0786a', 1);
+  },
+  crank: (c) => {
+    rect(c, 2, 11, 6, 3, '#8a6a3a');
+    line(c, 7, 12, 11, 5, '#8a929e', 2);
+    rect(c, 10, 3, 4, 3, '#c9a44a');
+    px(c, 11, 4, '#fff2b0');
+  },
+  noteDawn: (c) => {
+    rect(c, 7, 1, 2, 2, '#6a4a28');
+    rect(c, 5, 3, 6, 2, '#ffb88a');
+    rect(c, 4, 5, 8, 6, '#ffb88a');
+    rect(c, 3, 11, 10, 2, '#e88a6a');
+    rect(c, 5, 4, 1, 6, '#ffffff');
+    disc(c, 8, 14, 1, '#3a2a14');
+  },
+  noteNoon: (c) => {
+    rect(c, 7, 1, 2, 2, '#6a4a28');
+    rect(c, 5, 3, 6, 2, '#ffd870');
+    rect(c, 4, 5, 8, 6, '#ffd870');
+    rect(c, 3, 11, 10, 2, '#c9a44a');
+    rect(c, 5, 4, 1, 6, '#ffffff');
+    disc(c, 8, 14, 1, '#3a2a14');
+  },
+  noteDusk: (c) => {
+    rect(c, 7, 1, 2, 2, '#6a4a28');
+    rect(c, 5, 3, 6, 2, '#b8a0ff');
+    rect(c, 4, 5, 8, 6, '#b8a0ff');
+    rect(c, 3, 11, 10, 2, '#7a68c8');
+    rect(c, 5, 4, 1, 6, '#ffffff');
+    disc(c, 8, 14, 1, '#3a2a14');
   },
 };
 

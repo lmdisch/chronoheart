@@ -27,13 +27,13 @@ const frag = `
   #include <fog_pars_fragment>
   uniform float uTime; uniform vec3 uSunDir; uniform vec3 uSunCol; uniform vec3 uSky;
   uniform vec3 uShallow; uniform vec3 uDeep; uniform sampler2D uShore; uniform vec4 uShoreRect;
-  uniform float uTop; uniform float uDepth; uniform float uToxic; uniform float uAlpha;
+  uniform float uTop; uniform float uDepth; uniform float uToxic; uniform float uAlpha; uniform float uMud;
   varying vec3 vWPos; varying vec3 vWNrm;
   float h21(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
   float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f);
     return mix(mix(h21(i), h21(i+vec2(1,0)), f.x), mix(h21(i+vec2(0,1)), h21(i+vec2(1,1)), f.x), f.y); }
   void main(){
-    float t = uTime;
+    float t = uTime * (1.0 - uMud * 0.75); // mud barely moves
     vec3 col; float a = uAlpha;
     vec3 V = normalize(cameraPosition - vWPos);
     if (vWNrm.y > 0.5) {
@@ -46,20 +46,22 @@ const frag = `
       col *= 1.0 - step(w, -1.55) * 0.18;
       // sky reflection at grazing angles
       float fres = pow(1.0 - max(V.y, 0.0), 3.0);
-      col = mix(col, uSky, fres * 0.45 * (1.0 - uToxic));
+      col = mix(col, uSky, fres * 0.45 * (1.0 - uToxic) * (1.0 - uMud * 0.7));
       // foam
       float fn = vn(pq * 5.0 + vec2(t * 0.6, -t * 0.4));
       float f = shore + (fn - 0.5) * 0.45 + sin(t * 2.0 + pq.x * 2.0) * 0.05;
       vec3 foamCol = mix(vec3(0.95, 0.98, 1.0), vec3(0.75, 1.0, 0.6), uToxic);
+      // (mud has no foam: just a paler, drying crust where it meets the bank)
+      foamCol = mix(foamCol, uShallow * 1.5, uMud);
       col = mix(col, foamCol * 0.85, step(0.34, f) * 0.45);
-      col = mix(col, foamCol, step(0.5, f));
+      col = mix(col, foamCol, step(0.5, f) * (1.0 - uMud * 0.5));
       a = mix(a, 1.0, step(0.34, f));
       // sun glint sparkles
       vec2 cell = floor(vWPos.xz * 16.0);
       float tw = h21(cell + floor(t * 4.0 + h21(cell) * 8.0));
       vec3 H = normalize(normalize(uSunDir) + V);
       float spec = pow(max(dot(vec3(0.0, 1.0, 0.0), H), 0.0), 40.0);
-      col += uSunCol * step(0.985 - spec * 0.03, tw) * (0.6 + spec) * (1.0 - uToxic * 0.5) * step(w, 0.8);
+      col += uSunCol * step(0.985 - spec * 0.03, tw) * (0.6 + spec) * (1.0 - uToxic * 0.5) * (1.0 - uMud * 0.92) * step(w, 0.8);
       if (uToxic > 0.5) {
         // rising bubbles that pop into rings
         vec2 bc = floor(vWPos.xz * 2.0);
@@ -108,9 +110,10 @@ function shoreTexture(w, isShore) {
 
 /**
  * Build one water body. w: {x0,y0,z0,x1,y1,z1,color}. isShore(x,z) -> bool marks
- * cells next to land at the surface. toxic -> bubbling glow.
+ * cells next to land at the surface. toxic -> bubbling glow; 'mud' -> thick, dull and slow.
  */
-export function makeWater(w, isShore, toxic = false) {
+export function makeWater(w, isShore, kind = false) {
+  const mud = kind === 'mud', toxic = !!kind && !mud;
   const sx = w.x1 - w.x0, sy = w.y1 - w.y0, sz = w.z1 - w.z0;
   const geo = new THREE.BoxGeometry(sx, sy, sz);
   // drop the bottom face (index group 3 = -y)
@@ -122,14 +125,14 @@ export function makeWater(w, isShore, toxic = false) {
   geo.translate(w.x0 + sx / 2, w.y0 + sy / 2, w.z0 + sz / 2);
   const base = new THREE.Color(w.color);
   const shallow = base.clone().multiplyScalar(toxic ? 0.95 : 1.12);
-  const deep = toxic ? base.clone().multiplyScalar(0.35) : new THREE.Color(w.color).lerp(new THREE.Color(0x1a2a6a), 0.55).multiplyScalar(0.6);
+  const deep = toxic ? base.clone().multiplyScalar(0.35) : mud ? base.clone().multiplyScalar(0.72) : new THREE.Color(w.color).lerp(new THREE.Color(0x1a2a6a), 0.55).multiplyScalar(0.6);
   const { tex, rect } = shoreTexture(w, isShore);
   const mat = new THREE.ShaderMaterial({
     uniforms: THREE.UniformsUtils.merge([
       THREE.UniformsLib.fog,
       {
         uShallow: { value: shallow }, uDeep: { value: deep }, uShore: { value: tex }, uShoreRect: { value: rect },
-        uTop: { value: w.y1 }, uDepth: { value: sy }, uToxic: { value: toxic ? 1 : 0 }, uAlpha: { value: toxic ? 0.9 : 0.78 },
+        uTop: { value: w.y1 }, uDepth: { value: sy }, uToxic: { value: toxic ? 1 : 0 }, uAlpha: { value: mud ? 0.98 : toxic ? 0.9 : 0.78 }, uMud: { value: mud ? 1 : 0 },
       },
     ]),
     vertexShader: vert,

@@ -2,6 +2,7 @@
 // screen-space god rays, chromatic aberration, film grain and the era color grade.
 // The scene renders into a target with a depth texture so DOF and rays can read depth.
 import * as THREE from 'three';
+import { theme } from '../chapter.js';
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
@@ -274,14 +275,8 @@ const GradeShader = {
 
 export const SHIFT_TIME = 1.3; // seconds for one age to rebuild into another
 
-export const GRADES = [
-  // Past: warm golden hour, strong god rays
-  { tint: [1.07, 0.99, 0.86], shadowTint: [0.86, 0.84, 1.0], saturation: 1.14, contrast: 1.07, vignette: 0.36, rays: 0.55, rayColor: [1.0, 0.82, 0.55] },
-  // Present: warm highlights / teal shadows
-  { tint: [1.04, 1.0, 0.92], shadowTint: [0.8, 0.94, 1.0], saturation: 1.1, contrast: 1.05, vignette: 0.34, rays: 0.4, rayColor: [1.0, 0.94, 0.78] },
-  // Future: neon, magenta shadows, no sun shafts
-  { tint: [0.96, 0.98, 1.04], shadowTint: [0.95, 0.82, 1.08], saturation: 1.08, contrast: 1.05, vignette: 0.38, rays: 0.0, rayColor: [0.6, 0.7, 1.0] },
-];
+/** Color grade for each age, from the chapter. */
+export const GRADES = theme.grades;
 
 function makePass(shader) {
   const mat = new THREE.ShaderMaterial({

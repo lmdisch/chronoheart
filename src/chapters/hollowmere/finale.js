@@ -1,10 +1,10 @@
 // The Clocktower finale: the great piston (Present) that rises while its button is held, the
 // Tower's gears that spin up as keys go in, and the "lurch" each key sets off.
 import * as THREE from 'three';
-import { ERA } from './core/util.js';
-import { audio } from './audio/audio.js';
-import { T } from './world/world.js';
-import { TOWER, L } from './levels/hollowmere.js';
+import { ERA } from '../../core/util.js';
+import { audio } from '../../audio/audio.js';
+import { T } from '../../world/world.js';
+import { TOWER, L } from './level.js';
 
 // The piston: press its button and it makes one full trip. It rises all the way (whether or not
 // the button is still held), waits at the top for as long as you stand on it and a few seconds

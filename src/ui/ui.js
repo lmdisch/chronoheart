@@ -2,9 +2,7 @@
 import { input } from '../core/input.js';
 import { audio } from '../audio/audio.js';
 import { iconURL, portraitURL } from '../render/sprites.js';
-import { ITEMS } from '../story.js';
-import { ERA_NAMES } from '../core/util.js';
-import { COG_TOTAL } from '../levels/hollowmere.js';
+import { theme, content } from '../chapter.js';
 
 const $ = (id) => document.getElementById(id);
 const ERA_CLASS = ['past', 'present', 'future'];
@@ -53,13 +51,13 @@ export class HUD {
   }
   setInventory(items) {
     this.inv.innerHTML = items
-      .map((it) => `<div class="slot ${ITEMS[it]?.key ? 'key' : ''}" title="${ITEMS[it]?.name || it}"><img src="${iconURL(it === 'hammerBroken' ? 'hammerBroken' : it)}" alt="${ITEMS[it]?.name || it}"></div>`)
+      .map((it) => `<div class="slot ${content.ITEMS[it]?.key ? 'key' : ''}" title="${content.ITEMS[it]?.name || it}"><img src="${iconURL(it)}" alt="${content.ITEMS[it]?.name || it}"></div>`)
       .join('');
   }
   setCogs(n) {
-    this.cogs.textContent = `${n}/${COG_TOTAL}`;
+    this.cogs.textContent = `${n}/${content.COG_TOTAL}`;
   }
-  /** kind: 'interact' / 'dispel' (F), 'seal' (R) or 'strike' (X); touch taps on the prompt do the same action. */
+  /** kind: 'interact' / 'dispel' / 'reach' (F), 'seal' (R), 'strike' / 'reachStrike' (X); touch taps on the prompt do the same action. */
   showPrompt(text, kind = 'interact') {
     const key = text && `${kind}|${text}`;
     if (key === this.lastPrompt) return;
@@ -69,7 +67,7 @@ export class HUD {
       return;
     }
     this.prompt.dataset.action = kind;
-    this.prompt.querySelector('kbd').textContent = kind === 'seal' ? 'R' : kind === 'strike' ? 'X' : 'F';
+    this.prompt.querySelector('kbd').textContent = kind === 'seal' ? 'R' : kind.toLowerCase().includes('strike') ? 'X' : 'F';
     this.promptText.textContent = text;
     this.prompt.classList.add('visible');
   }
@@ -87,7 +85,7 @@ export class HUD {
   }
   showBanner(name, era, subtitle) {
     this.banner.querySelector('.area-name').textContent = name;
-    this.banner.querySelector('.area-era').textContent = subtitle || ERA_NAMES[era];
+    this.banner.querySelector('.area-era').textContent = subtitle || theme.eraNames[era];
     this.banner.classList.remove('in');
     void this.banner.offsetWidth;
     this.banner.classList.add('in');
@@ -155,7 +153,7 @@ export class Dialogue {
       let i = 0;
       this.textEl.textContent = '';
       this.clicked = false;
-      const pitch = { michelle: 20, zach: 420, vivienne: 140, louise: 40, samaria: 120, aria: -80, callie: 60, sheng: -70, lillian: 160, eugene: -20, tick: 300, brn: 250, megan: 500, hobb: -60, tamsin: 80 }[line.who] ?? 0;
+      const pitch = theme.voices[line.who] ?? 0;
       let acc = 0;
       let last = performance.now();
       const tick = (now) => {
@@ -210,7 +208,7 @@ export function showInventoryPanel(items, open, favors = []) {
   }
   list.innerHTML = items
     .map(
-      (it) => `<div class="inv-item ${ITEMS[it]?.key ? 'key' : ''}"><img src="${iconURL(it)}" alt=""><div><h3>${ITEMS[it].name}${ITEMS[it].key ? ' <span class="badge">Era Key</span>' : ''}</h3><p>${ITEMS[it].desc}</p></div></div>`,
+      (it) => `<div class="inv-item ${content.ITEMS[it]?.key ? 'key' : ''}"><img src="${iconURL(it)}" alt=""><div><h3>${content.ITEMS[it].name}${content.ITEMS[it].key ? ' <span class="badge">${theme.keyBadge}</span>' : ''}</h3><p>${content.ITEMS[it].desc}</p></div></div>`,
     )
     .join('');
 }

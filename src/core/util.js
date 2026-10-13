@@ -60,5 +60,4 @@ export function mixHex(a, b, t) {
 }
 
 export const ERA = { PAST: 0, PRESENT: 1, FUTURE: 2 };
-export const ERA_NAMES = ['Ancient Age', 'Medieval Age', 'Age of Chrome'];
 export const ERA_SHORT = ['Past', 'Present', 'Future'];

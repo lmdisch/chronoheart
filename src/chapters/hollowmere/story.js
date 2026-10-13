@@ -1,8 +1,8 @@
 // Story content and all puzzle interactions.
-import { audio } from './audio/audio.js';
-import { ERA } from './core/util.js';
-import { touchActive } from './ui/touch.js';
-import { erosionCells, STATUE } from './levels/hollowmere.js';
+import { audio } from '../../audio/audio.js';
+import { ERA } from '../../core/util.js';
+import { touchActive } from '../../ui/touch.js';
+import { erosionCells, STATUE } from './level.js';
 
 export const ITEMS = {
   acorn: { name: 'Acorn', desc: "Megan's finest acorn. It just needs time to grow." },

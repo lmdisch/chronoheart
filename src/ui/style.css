@@ -625,3 +625,83 @@ body.touch .toast { font-size: 0.8rem; padding: 7px 11px; }
 @media (prefers-reduced-motion: reduce) { body.goal-new #hud-menu-key::after, body.goal-new .tc-menu::after { animation: none; } }
 /* the Steady Heart: the Chronoheart's ring holds a gold glow and never drains */
 #chrono.steady .ring-fg { stroke: var(--gold-2); filter: drop-shadow(0 0 4px var(--gold)); }
+
+/* ---------------- chapters ---------------- */
+/* text that belongs to one chapter only (see body[data-chapter], set by src/main.js) */
+body[data-chapter='hollowmere'] .only-saltwick, body[data-chapter='saltwick'] .only-hollowmere { display: none !important; }
+
+/* the title's chapter select: one card per chapter; the lit one is showing behind the title */
+.chapter-select { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin: 18px auto 0; max-width: 760px; }
+.chapter-card {
+  flex: 1 1 250px; max-width: 340px; min-width: 0; display: grid; gap: 3px; padding: 12px 18px 11px; cursor: pointer; text-align: center;
+  font-family: var(--font-ui); color: var(--ink); border-radius: 14px;
+  background: rgba(16, 12, 28, 0.5); border: 1px solid var(--glass-border); backdrop-filter: blur(8px);
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+.chapter-card .ch-label { font: 600 0.7rem var(--font-ui); letter-spacing: 0.34em; text-transform: uppercase; color: var(--muted); }
+.chapter-card .ch-title { font: 700 1.06rem var(--font-title); letter-spacing: 0.04em; color: #fff3cf; text-wrap: balance; }
+.chapter-card .ch-state { font-size: 0.78rem; color: var(--muted); }
+.chapter-card:not(.current):not(.locked):hover, .chapter-card:not(.current):not(.locked):focus-visible {
+  transform: translateY(-2px); border-color: var(--gold); box-shadow: 0 0 24px rgba(232, 194, 90, 0.3); outline: none;
+}
+.chapter-card.current { cursor: default; background: rgba(40, 28, 12, 0.6); border-color: var(--gold); box-shadow: 0 0 26px rgba(232, 194, 90, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.12); }
+.chapter-card.current .ch-label { color: var(--gold-2); }
+.chapter-card.done .ch-state { color: #a8e8b8; }
+.chapter-card.locked { cursor: not-allowed; opacity: 0.62; }
+.chapter-card.locked .ch-title { color: #cfc6d8; }
+.chapter-card.locked.nudge { animation: lockNudge 0.4s; }
+@keyframes lockNudge { 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+.chapter-select + .tagline { margin-top: 16px; margin-bottom: 22px; }
+.era-strip { flex-wrap: wrap; row-gap: 4px; }
+@media (max-height: 520px) {
+  .chapter-select { margin-top: 6px; gap: 8px; }
+  .chapter-card { padding: 6px 14px; gap: 1px; flex-basis: 220px; }
+  .chapter-card .ch-title { font-size: 0.92rem; }
+  .chapter-card .ch-state { font-size: 0.7rem; }
+  .chapter-select + .tagline { margin: 8px auto 10px; }
+}
+@media (orientation: portrait) and (max-width: 600px) {
+  .chapter-card { flex-basis: 100%; padding: 9px 14px; }
+}
+@media (prefers-reduced-motion: reduce) { .chapter-card.locked.nudge { animation: none; } }
+
+/* the credits name the chapter that was just told */
+.credits-inner h2 { margin-bottom: 6px; }
+.credits-chapter { margin: 0 0 24px; font: 700 clamp(0.85rem, 1.6vw, 1.15rem) var(--font-title); letter-spacing: 0.22em; text-wrap: balance; text-transform: uppercase; color: #f4e6c4; text-shadow: 0 2px 6px #000; }
+#credits .to-be-continued { max-width: 620px; margin-left: auto; margin-right: auto; }
+.credits-menu { margin-top: 18px; }
+
+/* ---------------- Chapter Two: Saltwick ---------------- */
+/* its ages are sea-green and rust, not gold and neon */
+body[data-chapter='saltwick'][data-era='past'] { --era: #5fe6c8; --era-glow: rgba(80, 230, 200, 0.55); }
+body[data-chapter='saltwick'][data-era='future'] { --era: #ff9a4a; --era-glow: rgba(255, 150, 70, 0.55); }
+body[data-chapter='saltwick'] .era-strip .past { color: #5fe6c8; }
+body[data-chapter='saltwick'] .era-strip .future { color: #ff9a4a; }
+body[data-chapter='saltwick'] .tc-swipe-label.era-0 { --sw: #5fe6c8; }
+body[data-chapter='saltwick'] .tc-swipe-label.era-2 { --sw: #ff9a4a; }
+
+/* abilities: Rewind & Reach */
+body:not(.has-rewind) .needs-rewind, body:not(.has-reach) .needs-reach { display: none !important; }
+body[data-chapter='saltwick'] #ability-status {
+  padding: 7px 16px; font-variant-numeric: tabular-nums; color: #ffe9b0; border-color: rgba(255, 200, 90, 0.5);
+}
+body[data-chapter='saltwick'] #ability-status::before { content: none; }
+#ability-status.rewind { color: #1c1408; background: #ffd98a; border-color: transparent; box-shadow: 0 0 18px rgba(255, 217, 138, 0.8); }
+body[data-chapter='saltwick'] .tc-abil .tc-btn { width: 60px; height: 60px; }
+body:not(.has-rewind) .tc-rewind { display: none; }
+.tc-rewind.on { color: #1c1408; background: #ffd98a; border-color: transparent; box-shadow: 0 0 22px rgba(255, 217, 138, 0.8); }
+/* the watch is running you backward: the picture goes the color of old brass, with a dark edge */
+body.rewinding #app::after {
+  opacity: 1;
+  background: repeating-linear-gradient(0deg, rgba(255, 230, 170, 0.05) 0 2px, transparent 2px 5px), radial-gradient(ellipse at center, transparent 42%, rgba(60, 36, 8, 0.6));
+}
+body.rewinding #app canvas { filter: sepia(0.55) saturate(1.25) contrast(1.05); }
+/* the amulet's ring is the watch's memory: gold once you can rewind */
+body.has-rewind #chrono .ring-fg { stroke: var(--gold-2); }
+#prompt[data-action^='reach'] { border-color: var(--era); box-shadow: 0 0 24px var(--era-glow); }
+/* portrait phones: the ability button sits just above the pad, so lift the prompt and messages over it */
+@media (orientation: portrait) and (max-width: 600px) {
+  body.touch.has-rewind #prompt { bottom: calc(260px + env(safe-area-inset-bottom, 0px)); }
+  body.touch.has-rewind:not(.in-dialogue) #toasts { bottom: calc(314px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (prefers-reduced-motion: reduce) { body.rewinding #app canvas { filter: none; } }

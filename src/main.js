@@ -1,23 +1,72 @@
 import './ui/style.css';
-import { Game } from './game.js';
+import { CHAPTERS, chapter, content, progress, switchChapter } from './chapter.js';
+import { HollowmereGame } from './chapters/hollowmere/game.js';
+import { SaltwickGame } from './chapters/saltwick/game.js';
 import { audio } from './audio/audio.js';
 import { input } from './core/input.js';
 import { iconURL } from './render/sprites.js';
 import { setFade } from './ui/ui.js';
 import { TouchControls } from './ui/touch.js';
-import { COG_TOTAL } from './levels/hollowmere.js';
 
 const $ = (id) => document.getElementById(id);
-const game = new Game($('game-root'));
+// one chapter per page load (see src/chapter.js): its colors and its own lines of help text
+document.body.dataset.chapter = chapter.id;
+const GAMES = { hollowmere: HollowmereGame, saltwick: SaltwickGame };
+const game = new GAMES[chapter.id]($('game-root'));
 window.__game = game; // handy for debugging
+window.__unlockChapters = () => {
+  progress.unlockAll();
+  location.reload();
+};
 
 const title = $('title-screen');
 const pause = $('pause-menu');
 const controls = $('controls-panel');
 const credits = $('credits');
 
+// The title: a card per chapter. The lit one is the chapter behind the title, which Continue
+// and New Game act on; picking another open one reloads the page on it.
+function chapterState(ch) {
+  if (!progress.isOpen(ch)) return `Finish ${CHAPTERS.find((c) => c.id === ch.requires).label} to unlock`;
+  const saved = progress.slot(ch.id), done = progress.isDone(ch.id);
+  if (done) return saved && ch.keepsSave ? 'Complete · keep exploring' : saved ? 'Complete · a new story in progress' : 'Complete';
+  return saved ? 'In progress' : 'Not started';
+}
 function refreshTitle() {
   $('btn-continue').hidden = !game.hasSave();
+  $('chapter-tagline').textContent = chapter.tagline;
+  document.querySelectorAll('.era-strip span:not(.dot)').forEach((el, i) => (el.textContent = chapter.eras[i]));
+  const list = $('chapter-select');
+  list.replaceChildren(
+    ...CHAPTERS.map((ch) => {
+      const open = progress.isOpen(ch), current = ch.id === chapter.id;
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = `chapter-card${current ? ' current' : ''}${open ? '' : ' locked'}${progress.isDone(ch.id) ? ' done' : ''}`;
+      card.setAttribute('aria-pressed', String(current));
+      if (!open) card.setAttribute('aria-disabled', 'true');
+      for (const [cls, text] of [['ch-label', ch.label], ['ch-title', ch.title], ['ch-state', chapterState(ch)]]) {
+        const span = document.createElement('span');
+        span.className = cls;
+        span.textContent = text;
+        card.append(span);
+      }
+      card.addEventListener('click', () => {
+        if (current) return;
+        audio.init();
+        if (!open) {
+          audio.sfx('blocked');
+          card.classList.remove('nudge');
+          requestAnimationFrame(() => card.classList.add('nudge'));
+          return;
+        }
+        audio.sfx('ui');
+        setFade(1, '#05040a');
+        setTimeout(() => switchChapter(ch.id), 350);
+      });
+      return card;
+    }),
+  );
 }
 refreshTitle();
 
@@ -169,14 +218,28 @@ $('btn-portrait-ok').addEventListener('click', () => document.body.classList.add
 game.onCredits = (state) => {
   const t = Math.floor(state.playTime);
   $('stat-time').textContent = `${Math.floor(t / 60)}m ${String(t % 60).padStart(2, '0')}s`;
-  $('stat-cogs').textContent = `${state.cogs.length} / ${COG_TOTAL}`;
-  $('stat-kind').textContent = `${state.kindness.length} / 3`;
-  $('credits-bonus').hidden = state.cogs.length < COG_TOTAL;
+  const allCogs = state.cogs.length >= content.COG_TOTAL;
+  $('stat-cogs').textContent = `${state.cogs.length} / ${content.COG_TOTAL}`;
+  $('stat-kind').textContent = `${state.kindness.length} / ${content.FAVORS.length}`;
+  $('credits-eyebrow').textContent = chapter.credits.eyebrow;
+  $('credits-chapter').textContent = `${chapter.label}: ${chapter.title}`;
+  $('credits-bonus').textContent = chapter.credits.bonus;
+  $('credits-bonus').hidden = !allCogs;
+  $('credits-more').textContent = chapter.credits.more;
+  $('credits-more').hidden = chapter.keepsSave && allCogs;
+  // straight on to the next chapter, now that it's open
+  const next = CHAPTERS.find((c) => c.requires === chapter.id);
+  $('btn-credits-next').hidden = !next;
+  if (next) $('btn-credits-next').textContent = `Begin ${next.label}`;
   credits.hidden = false;
   requestAnimationFrame(() => credits.classList.add('in'));
   setTimeout(() => setFade(0), 400);
 };
 $('btn-credits-title').addEventListener('click', () => location.reload());
+$('btn-credits-next').addEventListener('click', () => {
+  const next = CHAPTERS.find((c) => c.requires === chapter.id);
+  if (next) switchChapter(next.id);
+});
 
 document.querySelectorAll('img[data-icon]').forEach((img) => (img.src = iconURL(img.dataset.icon)));
 

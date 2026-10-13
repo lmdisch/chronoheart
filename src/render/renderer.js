@@ -1,32 +1,15 @@
 // Scene, camera, lighting and per-era atmosphere.
 import * as THREE from 'three';
 import { lerp } from '../core/util.js';
+import { theme } from '../chapter.js';
 import { voxelUniforms } from './materials.js';
 import { foliageUniforms } from './foliage.js';
 import { waterUniforms } from './water.js';
 import { prefersTouch } from '../ui/touch.js';
 import { glowMat } from '../world/world.js';
 
-export const ATMOS = [
-  {
-    // Ancient: warm golden afternoon
-    skyTop: 0x5e9fd6, skyHorizon: 0xf7cf94, fog: 0xeac590, fogNear: 34, fogFar: 150,
-    sun: 0xffd39c, sunI: 3.1, sunDir: [-0.55, 1.0, 0.75],
-    hemiSky: 0xffe8c4, hemiGround: 0x8a6a3a, hemiI: 1.05, exposure: 1.0, emissive: 1.3, glow: 2.6, bloom: 0.5,
-  },
-  {
-    // Medieval: misty green-gold morning (like the reference)
-    skyTop: 0x88b6d2, skyHorizon: 0xe2e8cf, fog: 0xc9d5bb, fogNear: 30, fogFar: 135,
-    sun: 0xfff0d2, sunI: 2.2, sunDir: [0.45, 1.0, 0.8],
-    hemiSky: 0xe4f0ff, hemiGround: 0x5a6a3a, hemiI: 0.85, exposure: 0.92, emissive: 1.6, glow: 2.6, bloom: 0.5,
-  },
-  {
-    // Future: neon dusk
-    skyTop: 0x0b0a26, skyHorizon: 0x6a2c86, fog: 0x2c2152, fogNear: 22, fogFar: 115,
-    sun: 0x9fb2ff, sunI: 0.9, sunDir: [-0.3, 1.0, 0.6],
-    hemiSky: 0x6a7cff, hemiGround: 0x3a2a4a, hemiI: 1.3, exposure: 1.02, emissive: 1.25, glow: 1.35, bloom: 0.26,
-  },
-];
+/** Sky, fog and light for each age, from the chapter (which may change them as its story goes: see setMood). */
+export const ATMOS = theme.atmos;
 
 const POOL = 12;
 
@@ -198,7 +181,7 @@ export class Renderer {
       } else if (typeof B[k] === 'number') out[k] = lerp(A[k], B[k], t);
       else if (Array.isArray(B[k])) out[k] = B[k].map((v, i) => lerp(A[k][i], v, t));
     }
-    out.stars = lerp(A.stars ?? 0, this.atmosTo === ATMOS[2] ? 1 : 0, t);
+    out.stars = lerp(A.stars ?? 0, B.stars ?? 0, t);
     this.applyAtmos(out);
   }
 
