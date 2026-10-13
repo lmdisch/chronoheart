@@ -13,7 +13,7 @@ Each chapter's guide has its controls, a full walkthrough, every Lost Cog and ev
 
 Every world, sprite, melody and sound in the game is generated from code: there are no image or audio files.
 
-**Play it:** <https://claude.ai/artifact/YWkr7LD2mZFyBrttFnLMgW>
+**Play it:** <https://claude.ai/artifact/NyZQbGZhqM59hCKBWJQgiX>
 
 ---
 
