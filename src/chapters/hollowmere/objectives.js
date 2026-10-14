@@ -122,10 +122,14 @@ export function currentGoal(game) {
         `The first green gate opens while the green button is held; the dashed one only while it is NOT. Back at the green button, record an echo that stands on it for two seconds, then steps off for two. Walk through each gate as it opens. You can keep up to 3 echoes, and the oldest fades when you record another.`,
       );
     }
-    return step(
-      'Climb the gallery wall.',
-      `Each step rises while its ring of six buttons is lit. Buttons light in order: start at the ringed button and follow the arrows (clockwise on the ground, counterclockwise on step 1, clockwise on step 2). A button you press yourself goes dark the moment you step off, but an echo leaves it glowing, so each ring needs an echo walking it (${keys.echo} to start, again to stop, within 5 seconds). Ground ring first, then step 1's, then step 2's, then climb. You can keep 3 echoes and you'll need all three: if one goes wrong, stand on it and press Interact to dispel it before recording again, or the oldest (holding up your first step) fades.`,
-    );
+    // one step at a time: which steps are up right now
+    const up = (game.abilities?.steps || []).map((s) => s.cur >= s.h);
+    const walk = `Stand on its ringed button, start an echo (${keys.echo}), follow the arrows round, and stop it (${keys.echo}).`;
+    if (!up[0])
+      return step('Raise the first step.', `A button you press yourself goes dark when you step off, but one your echo presses stays lit. The step rises while both ground buttons are lit. ${walk}`);
+    if (!up[1]) return step('Raise the second step.', `Climb onto the first step. Its ring rises the second: ${walk}`);
+    if (!up[2]) return step('Raise the third step.', `Climb onto the second step and do the same with its ring. You can keep three echoes, so this one is the last you need. (A wrong one? Stand on it and press Interact to dispel it.)`);
+    return step('Climb the gallery wall.', 'All three steps are up. Climb them onto the gallery.');
   }
   // ---- The Warden's Courtyard
   if (x < X.tower) {

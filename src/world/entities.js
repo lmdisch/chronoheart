@@ -384,12 +384,25 @@ export class NPC extends EraEntity {
     this.facing = 1;
     this.talking = false;
     this.t = Math.random() * 10;
+    // someone who comes and goes with the story keeps checking, even while out of sight
+    if (spec.needs || spec.unless) this.alwaysUpdate = true;
+    this.group.visible = this.present();
   }
   prompt() {
     return `Talk to ${this.spec.name}`;
   }
+  /** Here at all? spec.needs: only once that flag is set; spec.unless: only until it is. */
+  present() {
+    const f = this.game.state.flags;
+    return (!this.spec.needs || !!f[this.spec.needs]) && (!this.spec.unless || !f[this.spec.unless]);
+  }
+  active() {
+    return super.active() && this.present();
+  }
   update(dt) {
     const p = this.game.player.body;
+    this.group.visible = this.present();
+    if (!this.group.visible) return;
     this.t += dt;
     if (Math.abs(p.x - this.x) < 5) this.facing = p.x > this.x ? 1 : -1;
     this.actor.flip = this.facing < 0;
@@ -566,12 +579,29 @@ export class Warden extends EraEntity {
   }
   /** It knows where you are (the key has just been lifted): it comes for you, in sight or not. */
   hunt(secs = 7) {
+    if (this.dormant) return;
     // through its usual wind-up first, so there's a moment to react
     Object.assign(this, { state: 'alert', stateT: 0, lostT: 0, huntT: secs });
     audio.sfx('blocked');
   }
+  /** Its clock is mended (spec.until): it stands down at its post, cone dark, and lets you be. */
+  get dormant() {
+    return !!this.spec.until && !!this.game.state.flags[this.spec.until];
+  }
   update(dt) {
     const g = this.game, p = g.player.body;
+    this.cone.visible = !this.dormant;
+    if (this.dormant) {
+      const [x, z] = this.path[0];
+      Object.assign(this, { x, z, state: 'patrol', huntT: 0 });
+      this.actor.flip = false;
+      this.actor.play('walk');
+      this.actor.update(0);
+      this.actor.mesh.position.set(x, -0.1, z);
+      this.actor.mesh.quaternion.copy(g.renderer.billboardQ);
+      this.shadow.position.set(x, 0.02, z);
+      return;
+    }
     // it's a machine: Tempo slows it down or hurries it along when it's inside your bubble
     const tempo = g.era === this.era ? g.tempoAt(this.x, 0) : 1;
     dt *= tempo;
@@ -670,6 +700,11 @@ export class Searchlight extends EraEntity {
   }
   update(dt) {
     const g = this.game, p = g.player.body, [ax, az] = this.spec.a, [bx, bz] = this.spec.b;
+    // its Warden has stood down (spec.until): the light is out
+    const off = !!this.spec.until && !!g.state.flags[this.spec.until];
+    this.pool.visible = this.rim.visible = !off;
+    this.lamp.visible = !off;
+    if (off) return;
     const tempo = g.era === this.era ? g.tempoAt(this.x, 0) : 1;
     this.t += (dt * tempo) / this.spec.period;
     const k = 0.5 - 0.5 * Math.cos(this.t * Math.PI * 2); // there and back, easing at each end

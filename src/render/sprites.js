@@ -1148,6 +1148,16 @@ const ICONS = {
     line(c, 3, 1, 8, 4, '#8a6a3a', 1);
     line(c, 13, 1, 8, 4, '#8a6a3a', 1);
   },
+  // the Cog Finder: ten little cogs meshed round the Chronoheart's rim (Chapter One's reward, kept in Chapter Two)
+  finder: (c) => {
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2;
+      disc(c, 8 + Math.cos(a) * 5.5, 8 + Math.sin(a) * 5.5, 1.5, i % 2 ? '#c9a44a' : '#e0b85a');
+    }
+    disc(c, 8, 8, 4, '#a8843a');
+    disc(c, 8, 8, 2.6, '#36f0ff');
+    px(c, 7, 7, '#ffffff');
+  },
   // ---- Chapter Two: Saltwick ----
   watch: (c) => {
     // Donald Eugene's pocketwatch, its hands at ten to two

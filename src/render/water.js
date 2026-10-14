@@ -1,5 +1,5 @@
 // Shader water: pixel-quantised ripples, shore foam from a per-body shore mask,
-// depth tint, sun glints. Toxic variant bubbles and glows.
+// depth tint, sun glints. Toxic variant bubbles and glows; a current streaks with foam.
 import * as THREE from 'three';
 
 export const waterUniforms = {
@@ -27,7 +27,7 @@ const frag = `
   #include <fog_pars_fragment>
   uniform float uTime; uniform vec3 uSunDir; uniform vec3 uSunCol; uniform vec3 uSky;
   uniform vec3 uShallow; uniform vec3 uDeep; uniform sampler2D uShore; uniform vec4 uShoreRect;
-  uniform float uTop; uniform float uDepth; uniform float uToxic; uniform float uAlpha; uniform float uMud;
+  uniform float uTop; uniform float uDepth; uniform float uToxic; uniform float uAlpha; uniform float uMud; uniform float uFlow;
   varying vec3 vWPos; varying vec3 vWNrm;
   float h21(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
   float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f);
@@ -56,6 +56,15 @@ const frag = `
       col = mix(col, foamCol * 0.85, step(0.34, f) * 0.45);
       col = mix(col, foamCol, step(0.5, f) * (1.0 - uMud * 0.5));
       a = mix(a, 1.0, step(0.34, f));
+      if (uFlow > 0.5) {
+        // a current: broken lines of foam racing downstream (toward the camera)
+        float lane = floor(vWPos.x * 3.0);
+        float sp = 1.8 + h21(vec2(lane, 3.0)) * 1.4;
+        float s = fract(pq.y * 0.3 - uTime * sp * 0.35 + h21(vec2(lane, 9.0)) * 7.0);
+        float streak = step(0.9, s) * step(0.55, fract(vWPos.x * 3.0)) * step(0.35, h21(vec2(lane, 5.0)));
+        col = mix(col, vec3(0.93, 0.97, 1.0), streak * 0.8);
+        a = mix(a, 1.0, streak * 0.8);
+      }
       // sun glint sparkles
       vec2 cell = floor(vWPos.xz * 16.0);
       float tw = h21(cell + floor(t * 4.0 + h21(cell) * 8.0));
@@ -110,10 +119,11 @@ function shoreTexture(w, isShore) {
 
 /**
  * Build one water body. w: {x0,y0,z0,x1,y1,z1,color}. isShore(x,z) -> bool marks
- * cells next to land at the surface. toxic -> bubbling glow; 'mud' -> thick, dull and slow.
+ * cells next to land at the surface. toxic -> bubbling glow; 'mud' -> thick, dull and slow;
+ * 'current' -> foam streaking downstream.
  */
 export function makeWater(w, isShore, kind = false) {
-  const mud = kind === 'mud', toxic = !!kind && !mud;
+  const mud = kind === 'mud', flow = kind === 'current', toxic = !!kind && !mud && !flow;
   const sx = w.x1 - w.x0, sy = w.y1 - w.y0, sz = w.z1 - w.z0;
   const geo = new THREE.BoxGeometry(sx, sy, sz);
   // drop the bottom face (index group 3 = -y)
@@ -132,7 +142,7 @@ export function makeWater(w, isShore, kind = false) {
       THREE.UniformsLib.fog,
       {
         uShallow: { value: shallow }, uDeep: { value: deep }, uShore: { value: tex }, uShoreRect: { value: rect },
-        uTop: { value: w.y1 }, uDepth: { value: sy }, uToxic: { value: toxic ? 1 : 0 }, uAlpha: { value: mud ? 0.98 : toxic ? 0.9 : 0.78 }, uMud: { value: mud ? 1 : 0 },
+        uTop: { value: w.y1 }, uDepth: { value: sy }, uToxic: { value: toxic ? 1 : 0 }, uAlpha: { value: mud ? 0.98 : toxic ? 0.9 : 0.78 }, uMud: { value: mud ? 1 : 0 }, uFlow: { value: flow ? 1 : 0 },
       },
     ]),
     vertexShader: vert,

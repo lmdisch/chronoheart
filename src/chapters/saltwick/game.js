@@ -10,6 +10,7 @@ import { NPC } from '../../world/entities.js';
 import { setFade, letterbox } from '../../ui/ui.js';
 import { touchActive } from '../../ui/touch.js';
 import { Game, baseState, wait } from '../../game.js';
+import { progress } from '../../chapter.js';
 import { ATMOS_DRY, ATMOS_HEALED, GRADE_DRY, GRADE_HEALED } from './theme.js';
 import { buildLevel, SPAWNS, CHECKPOINTS, AREAS, L, COG_TOTAL } from './level.js';
 import { talk, interact, struck, ITEMS, INTRO, ENDING_A, ENDING_B, ENDING_COGS, FAVORS } from './story.js';
@@ -26,8 +27,14 @@ export class SaltwickGame extends Game {
     return {
       ...baseState(),
       flags: { hasAmulet: true }, // the Chronoheart is Vivienne's now, and mended: it never runs down
-      inventory: ['watch'],
+      // (the Cog Finder, if all of Chapter One's Lost Cogs went to Donald Eugene)
+      inventory: progress.hasReward('cogFinder') ? ['watch', 'finder'] : ['watch'],
     };
+  }
+
+  /** A save from before the Cog Finder was earned in Chapter One picks it up now. */
+  migrate() {
+    if (progress.hasReward('cogFinder') && !this.state.inventory.includes('finder')) this.state.inventory.push('finder');
   }
 
   setup() {
@@ -227,6 +234,23 @@ export class SaltwickGame extends Game {
     this.onCredits?.(this.state);
   }
 
+  /**
+   * The Cog Finder (Chapter One's ten cogs on the Chronoheart's rim): while the lens is open, any
+   * Lost Cog nearby in the age it shows sends up a column of gold motes.
+   */
+  findCogs(dt) {
+    if (!this.state.inventory.includes('finder')) return;
+    const b = this.player.body;
+    for (const p of this.pickups) {
+      if (p.spec.type !== 'cog' || p.era !== this.peekTarget || !p.available() || Math.abs(p.x - b.x) > 14) continue;
+      if (Math.random() < dt * 24) this.bursts.emit(p.x, p.y - 0.4 + Math.random() * 3.5, p.z, 1, { color: [0xffd070, 0xfff2c0], speed: 0.3, life: 1.0, gravity: -1.2, glow: 2 });
+      if (!this.state.flags.finderHint) {
+        this.state.flags.finderHint = true;
+        this.hud.toast(`The cogs on the Chronoheart's rim turn: a <b>Lost Cog</b>, through the lens.`, 5000);
+      }
+    }
+  }
+
   // ------------------------------------------------------------------ per-frame
   updatePlay(dt) {
     const s = this.state, f = s.flags;
@@ -251,6 +275,7 @@ export class SaltwickGame extends Game {
     }
     // with the Loupe, what the lens shows can be touched
     this.reachEra = peeking && f.hasReach ? this.peekTarget : null;
+    if (peeking) this.findCogs(dt);
 
     // the pocketwatch (it moves the player itself while it's running them backward), and the gates
     this.craft.update(dt, ctl);

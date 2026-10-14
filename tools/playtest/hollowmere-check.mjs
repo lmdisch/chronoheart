@@ -1,5 +1,6 @@
 // Chapter One's own systems, and the chapter plumbing around them: the draining Chronoheart,
 // pushing a block, Seal / Echo / Tempo, the Gearworks, the ending, and what finishing unlocks.
+// (The whole story, played through, is hollowmere-play.mjs.)
 // It is not a playthrough: it puts Vivienne where each thing happens and uses real key presses there.
 import { boot, newGame, sleep, settle } from './lib.mjs';
 let failed = false;
@@ -39,8 +40,8 @@ const SAVE = 'chronoheart-save-v2';
   await tap('KeyQ'); await sleep(1700);
   const m1 = await G(() => __game.meter);
   check((await era()) === 0 && m1 < 1, `Q travels to the Past, and the meter drains (${m1.toFixed(2)})`);
-  await page.waitForFunction('window.__game.era === 1', { timeout: 15000 });
-  check(true, 'out of charge: pulled back to the Present');
+  await page.waitForFunction('window.__game.era === 1', { timeout: 40000 });
+  check(true, 'out of charge (about 30 seconds): pulled back to the Present');
   await sleep(3200);
   await tap('KeyE'); await sleep(1700);
   check((await era()) === 2, 'E travels to the Future');
@@ -88,7 +89,7 @@ const SAVE = 'chronoheart-save-v2';
   await tap('KeyQ', 80); await sleep(600);
   check((await era()) === 1, 'inside the clock, the ages hold');
 
-  // the ending: credits, the chapter marked finished, its slot cleared, Chapter Two open
+  // the ending: credits, the chapter marked finished, its slot kept, Chapter Two open
   await G(() => { __game.save(); });
   check(await G((k) => !!JSON.parse(localStorage.getItem(k)).slots.hollowmere, SAVE), 'saving writes Chapter One\'s slot in the shared save');
   await G(() => { __game.runEnding(); });
@@ -99,7 +100,7 @@ const SAVE = 'chronoheart-save-v2';
     const next = document.getElementById('btn-credits-next');
     return { done: s.done.hollowmere, slot: !!s.slots.hollowmere, eyebrow: document.getElementById('credits-eyebrow').textContent, chapter: document.getElementById('credits-chapter').textContent, next: next.hidden ? null : next.textContent, cogs: document.getElementById('stat-cogs').textContent };
   }, SAVE);
-  check(end.done && !end.slot, 'the ending marks Chapter One finished and clears its slot');
+  check(end.done && end.slot, 'the ending marks Chapter One finished and keeps its slot');
   check(end.eyebrow === 'The Clocktower ticks again' && /Chapter One/.test(end.chapter) && end.next === 'Begin Chapter Two', `the credits name the chapter and offer the next ("${end.chapter}", ${end.cogs}, "${end.next}")`);
   await page.screenshot({ path: `${process.env.SHOTS || '.'}/credits-hollowmere.png` });
   await page.click('#btn-credits-next');
@@ -113,7 +114,7 @@ const SAVE = 'chronoheart-save-v2';
   await page.click('.chapter-card:not(.current)');
   await sleep(1500);
   await page.waitForFunction('window.__game && document.body.dataset.chapter');
-  check((await G(() => document.body.dataset.chapter)) === 'hollowmere' && !(await G(() => !document.getElementById('btn-continue').hidden)), 'the title switches back to Chapter One, which starts over');
+  check((await G(() => document.body.dataset.chapter)) === 'hollowmere' && (await G(() => !document.getElementById('btn-continue').hidden)), 'the title switches back to Chapter One, and Continue walks the valley after the story');
   check(errors.length === 0, `no errors ${errors.join(' | ').slice(0, 800)}`);
   await browser.close();
 }

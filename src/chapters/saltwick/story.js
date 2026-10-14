@@ -17,6 +17,8 @@ export const ITEMS = {
   noteDawn: { name: "The Dawn Bell's Note", desc: 'Rung in the first age, through the lens. The Chronoheart holds it.', key: true },
   noteNoon: { name: "The Noon Bell's Note", desc: "Rung on Bell Rock, in Saltwick's own age. The Chronoheart holds it.", key: true },
   noteDusk: { name: "The Dusk Bell's Note", desc: 'The first sound the Dusk Bell ever made. The Chronoheart holds it.', key: true },
+  // carried over from Chapter One (all ten of its Lost Cogs)
+  finder: { name: 'Cog Finder', desc: "Ten of Donald Eugene's lost cogs from Hollowmere, meshed round the Chronoheart's rim. Hold the time lens open and they turn toward any Lost Cog in the age it shows." },
 };
 
 /** Kindness side quests. `start` is the flag set when the favor is asked. */
@@ -54,7 +56,7 @@ export const ENDING_A = [
 ];
 
 export const ENDING_COGS = [
-  DE('And what is that rattling in your apron? ...Twelve cogs. Twelve of MY cogs. I wondered where those had got to.'),
+  DE('And what is that rattling in your apron? ...Twelve cogs. Twelve of MY cogs. The whole tray went the day the Tower stopped. Scattered clean across time, I suppose. I did wonder.'),
   DE('Twelve is exactly enough for a watch movement. Give me the winter, and you shall have one of your own. I cannot promise it will run backward.'),
   Wr('I can.'),
 ];
@@ -94,6 +96,7 @@ function npcLines(game, id) {
         f.metEugene = true;
         return [
           DE('Still here? Good. One more thing I should have said. The Chronoheart is whole again, since the Tower mended it: you may stay in any age as long as you please. No more racing its ring.'),
+          DE("Mind, it cost you the seal ring, the lens and the escape wheel. They went into the Tower's heart to mend yours. A fair trade, I'd say."),
           DE('The watch was my master\'s, and her master\'s before that. "Wind it, and keep it close," she told me. "It is looking for something." I thought she was being poetical.'),
           DE('The harbormaster will know about the bells. And Vivienne: be kind to these people. They have lost a whole sea.'),
         ];
@@ -204,7 +207,7 @@ function npcLines(game, id) {
         p('I had a shell whistle. The best one. It could call the gulls. And I dropped it off the rocks, and it sank in the harbor, right in the middle, and it is too deep for me.'),
         p('Sea spirits can breathe water. Everybody knows that.'),
         { favor: 'whistle' },
-        Wr('...I do still have that snorkel.'),
+        Wr('...I am a very good swimmer.'),
       ];
     }
     case 'digby': {
@@ -242,7 +245,7 @@ function npcLines(game, id) {
       return [
         m("Ah. The clockmaker's apprentice. Keeper of the Chronoheart now, I hear. You are early. Or I am late. With you it is hard to say."),
         m('You did well in Hollowmere. And you were kind while you did it, which is rarer.'),
-        m('That watch in your pocket runs backward, yes? Things that run backward want to take someone with them. Hold it tight, think of where you have just been... and let it.'),
+        m('That watch in your pocket still runs backward, yes? Things that run backward want to take someone with them. Hold it tight, think of where you have just been... and let it.'),
         N("The pocketwatch shivers in Vivienne's hand. For a heartbeat she is standing where she stood three steps ago."),
         { unlock: 'rewind' },
         m('There. It only ever takes you. The world keeps walking forward without you: gates go on closing, tides go on turning. Remember that, when you are tempted to lean on it.'),
@@ -303,7 +306,8 @@ function npcLines(game, id) {
       f.metMaren = true;
       return [
         m('You climbed the Head! In those boots! Sit, stranger, before you fall down my well.'),
-        m("I am Maren. I read the tides. And I had an idea, which was a mistake, because now I must build it: a clock for the sea. Wheels and water, to keep the tide's own time, so that it never forgets to come back."),
+        m("I am Maren. I read the tides. And I have been handed a mistake: a clock for the sea. Wheels and water, to keep the tide's own time, so that it never forgets to come back."),
+        m('Not my idea, mind. The grandmothers keep the drawings, on skins so thin the sun shines through them. Whose hand drew them, they will not say. I am only the fool who said I would build it.'),
         m("The wheels I can cut. The door is planned: it will open only to three bells' voices, so that no fool wanders in. We have hung one bell, the dawn's. The other two are a problem for people cleverer than me, a long time from now. I find most problems are."),
         m('What I do not have is a heart for it. A clock like this wants a spring that knows how to run back as well as forward: out, and in again. No one alive can make such a thing.'),
         m('The grandmothers say one will be brought. They do not say by whom.'),

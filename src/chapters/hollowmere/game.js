@@ -11,15 +11,16 @@ import { NPC } from '../../world/entities.js';
 import { setFade, letterbox } from '../../ui/ui.js';
 import { touchActive } from '../../ui/touch.js';
 import { Game, baseState, ERA_RING } from '../../game.js';
+import { progress } from '../../chapter.js';
 import { buildLevel, SPAWNS, CHECKPOINTS, AREAS, L, COG_TOTAL, STUDY } from './level.js';
-import { talk, interact, struck, ITEMS, INTRO, ENDING, TEMPO_GIFT, TEMPO_LEARN, FAVORS } from './story.js';
+import { talk, interact, struck, ITEMS, INTRO, ENDING, ENDING_COGS, TEMPO_GIFT, TEMPO_LEARN, FAVORS } from './story.js';
 import { currentGoal } from './objectives.js';
 import { Interactable, Strikeable } from './entities.js';
 import { Abilities } from './abilities.js';
 import { Finale } from './finale.js';
 import { Gearworks } from './gearworks.js';
 
-const DRAIN_TIME = 10; // seconds of charge away from the present
+const DRAIN_TIME = 30; // seconds of charge away from the present (the Everspring ends the drain)
 const TAP_TIME = 0.2; // Q / E held less than this is a tap (era travel); longer is Tempo
 
 export class HollowmereGame extends Game {
@@ -72,9 +73,8 @@ export class HollowmereGame extends Game {
     }
   }
 
-  /** A finished story can't be continued: from there it's a new game. */
-  canContinue(saved) {
-    return !saved.flags?.finished;
+  welcomeBack() {
+    return this.state.flags.finished ? 'Welcome back, Vivienne. The Tower is ticking.' : 'Welcome back, Vivienne.';
   }
 
   migrate() {
@@ -142,6 +142,17 @@ export class HollowmereGame extends Game {
 
   hazardBurst() {
     return this.era === ERA.FUTURE ? [0x7cff6a] : [0x9fe0ff, 0xffffff];
+  }
+
+  /** The first time each kind of water turns you back, say why (the Gearworks' hammers aren't water). */
+  onHazardDone() {
+    const f = this.state.flags;
+    if (this.gearworks.active || this.player.hp <= 0) return;
+    const treated = this.era === ERA.FUTURE;
+    const flag = treated ? 'treatedHint' : 'currentHint';
+    if (f[flag]) return;
+    f[flag] = true;
+    this.hud.toast(treated ? 'Treated water! It glows for a reason. It costs a heart, and puts you back on solid ground.' : "The current's too strong to swim! It costs a heart, and puts you back on solid ground.", 5000);
   }
 
   onHazardPlaced(spot) {
@@ -355,9 +366,13 @@ export class HollowmereGame extends Game {
     this.bursts.emit(os.x, 1, os.z, 60, { color: [0x9ff4ff, 0xffffff], speed: 4, life: 1 });
     audio.sfx('shift', { era: 1 });
     letterbox(true);
-    await this.dialogue.run(ENDING);
+    // all ten Lost Cogs: Donald Eugene fits them to the Chronoheart, before supper
+    const allCogs = this.state.cogs.length >= COG_TOTAL;
+    await this.dialogue.run(allCogs ? [...ENDING.slice(0, -1), ...ENDING_COGS, ENDING[ENDING.length - 1]] : ENDING);
     letterbox(false);
-    this.finishStory(); // the story is told: from here it's a new game, and Chapter Two is open
+    if (allCogs) this.grantFinder();
+    this.state.checkpoint = 0; // Continue: home, in the square
+    this.finishStory(); // the story is told, Chapter Two is open, and the valley is yours to keep walking
     // fade to white and show credits
     let f = 0;
     await new Promise((r) => {
@@ -372,6 +387,14 @@ export class HollowmereGame extends Game {
     this.mode = 'credits';
     this.hud.show(false);
     this.onCredits?.(this.state);
+  }
+
+  /** Ten cogs round the Chronoheart's rim: the lens turns toward lost cogs, in every chapter after. */
+  grantFinder() {
+    if (!this.state.inventory.includes('finder')) this.giveItem('finder');
+    this.state.flags.cogFinder = true;
+    progress.grantReward('cogFinder');
+    this.save();
   }
 
   // ------------------------------------------------------------------ per-frame

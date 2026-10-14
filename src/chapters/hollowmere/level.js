@@ -94,13 +94,13 @@ export const L = {
 const TO = L.towerX0 - 182;
 
 /**
- * The Echo Gallery: three stone steps up a 4-high wall. Each step is raised by a ring of six
- * buttons: on the ground, on top of step 1, and on top of step 2. A button only lights if the one
- * before it in the ring is lit, so the ring has to be walked in its direction (arrows on the floor:
- * clockwise, counterclockwise, clockwise). Buttons you press yourself go dark the moment you step
- * off; buttons an echo presses glow on for a few seconds. The step stands while its whole ring is
+ * The Echo Gallery: three stone steps up a 4-high wall. Each step is raised by a ring of buttons:
+ * two on the ground (the lesson: a button you press yourself goes dark the moment you step off,
+ * while one an echo presses glows on for a few seconds), then six on top of step 1 and six on top
+ * of step 2. A button only lights if the one before it in the ring is lit, so a ring is walked from
+ * its ringed button along the arrows, always clockwise. The step stands while its whole ring is
  * lit, so each ring needs an echo walking it, and the three echoes together hold up the climb.
- * (Directions as seen on screen: the back of the platform, low z, is "up".)
+ * (Clockwise as seen on screen: the back of the platform, low z, is "up".)
  */
 export const ECHO_STEPS = [
   { x0: 242, x1: 243, z0: 1, z1: 5, h: 1 },
@@ -109,10 +109,10 @@ export const ECHO_STEPS = [
 ];
 const ring = (step, y, cells) => cells.map(([x, z], order) => ({ x, z, y, step, order }));
 export const ECHO_BUTTONS = [
-  // on the ground, clockwise
-  ...ring(0, 0, [[239, 1], [241, 1], [241, 3], [241, 5], [239, 5], [239, 3]]),
-  // on top of step 1, counterclockwise
-  ...ring(1, 1, [[242, 1], [242, 3], [242, 5], [243, 5], [243, 3], [243, 1]]),
+  // on the ground: just two
+  ...ring(0, 0, [[239, 3], [241, 3]]),
+  // on top of step 1, clockwise
+  ...ring(1, 1, [[242, 1], [243, 1], [243, 3], [243, 5], [242, 5], [242, 3]]),
   // on top of step 2, clockwise
   ...ring(2, 2, [[244, 1], [245, 1], [245, 3], [245, 5], [244, 5], [244, 3]]),
 ];
@@ -1143,7 +1143,7 @@ function terrace(world) {
     if (era === F) b.glow(L.terraceX0 - 0.03, 2.8, 0, 0.05, 0.1, 7, NEON.cyan);
     if (era === M) for (let i = 0; i < 12; i++) b.deco(L.terraceX0 + hash3(i, 1, 1) * 9, 3, hash3(i, 2, 2) * 7, 0.3, 0.2, 0.3, C.leaves[i % 5]);
   }
-  // PAST: altar, totems, rewind glyph
+  // PAST: altar, totems, reset glyph
   let b = world.staticBuilder(P);
   // carved foundation: push the block onto this glowing outline
   {
@@ -1317,8 +1317,8 @@ function gatehouse(world) {
 // gully's mouth and, over the centuries, the hollow fills. Present: the millpond drains out
 // through an open sluice whose wheel is long gone. Future: the mill is a pumping station and
 // its little museum has the wheel. Close the sluice and the pond rises high enough to swim to
-// the top of the cliff.
-const MILL_WATER = [0x4a9ad8, 0x4a90c8, 0x2aa8c8];
+// the top of the cliff (or hop the log boom). In the Future it's a treated reservoir: hop it.
+const MILL_WATER = [0x4a9ad8, 0x4a90c8, 0x5aff4a];
 // The trough's three outlets, north to south. Each feeds a carved channel that the Past's scrub
 // soon hides. The Present's dry pond bed still shows where each one led: two into sinkholes, and
 // the south one all the way to the dam's sluice. That one is the old millrace.
@@ -1431,7 +1431,7 @@ function millHollow(world) {
     id: 'millWaterM', eras: [M], key: (s) => `${!!s.flags.millDammed},${!!s.flags.sluiceClosed}`,
     build: (b, era, s) => {
       const level = millLevel(s);
-      if (level >= 0) b.hazard(L.pondX0, 0, 0, L.pondX1, level, 6, MILL_WATER[1], false, level ? 0.25 : 0.45);
+      if (level >= 0) b.water(L.pondX0, 0, 0, L.pondX1, level, 6, MILL_WATER[1], level ? 0.25 : 0.45); // clean spring water: swim it
     },
   });
   world.addFeature({
@@ -1463,7 +1463,7 @@ function millHollow(world) {
     id: 'millWaterF', eras: [F], key: (s) => `${!!s.flags.millDammed},${!!s.flags.sluiceClosed}`,
     build: (b, era, s) => {
       if (millLevel(s) !== 2) return;
-      b.hazard(L.pondX0, 0, 0, L.pondX1, 2, 6, MILL_WATER[2], false, 0.25);
+      b.hazard(L.pondX0, 0, 0, L.pondX1, 2, 6, MILL_WATER[2], true, 0.25); // a treated reservoir, green like every other waterway in this age
       b.glow(L.pondX0, 2.77, 6.9, L.pondX1 - L.pondX0 + 1, 0.04, 0.08, NEON.cyan);
       b.light((L.pondX0 + L.pondX1) / 2, 3.5, 3.5, NEON.cyan, 5, 8, 0);
     },
@@ -1904,6 +1904,8 @@ export const SPAWNS = [
   { type: 'npc', id: 'hobb', era: M, x: 186.2, z: 2.6, sheet: 'hobb', name: 'Hobb the Miller' },
   { type: 'npc', id: 'tamsin', era: P, x: 210.5, z: 1.4, sheet: 'tamsin', name: 'Tamsin the Ropewright' },
   { type: 'npc', id: 'oren', era: P, x: L.towerX0 - 4.5, z: 1.7, sheet: 'oren', name: 'Oren the Mason' },
+  // home again, once the story is told
+  { type: 'npc', id: 'eugene', era: M, x: 10.9, z: 1.5, sheet: 'eugene', name: 'Donald Eugene', needs: 'finished' },
 
   // Interactables
   { type: 'interact', id: 'workbench', era: M, x: 9.0, y: 1, z: 0.5, prompt: 'Examine workbench' },
@@ -1919,7 +1921,7 @@ export const SPAWNS = [
   { type: 'interact', id: 'soil', era: P, x: 92.5, y: 0, z: 3.5, prompt: 'Fertile soil' },
   { type: 'interact', id: 'soilM', era: M, x: 92.5, y: 0, z: 3.5, prompt: 'Planter box', hideIf: 'acornPlanted' },
   { type: 'interact', id: 'vault', era: M, x: 112.5, y: 1, z: 0.5, prompt: 'Quench vault' },
-  { type: 'interact', id: 'glyphP', era: P, x: 136.5, y: 0, z: 0.5, prompt: 'Rewind glyph', resets: 'block' },
+  { type: 'interact', id: 'glyphP', era: P, x: 136.5, y: 0, z: 0.5, prompt: 'Reset glyph', resets: 'block' },
   { type: 'interact', id: 'glyphF', era: F, x: 136.5, y: 0, z: 0.5, prompt: 'Reset beacon', resets: 'crate' },
   { type: 'interact', id: 'sluice', era: M, x: L.rimX + 0.5, y: 3, z: 5.6, prompt: 'Sluice gate' },
   { type: 'interact', id: 'satchel', era: M, x: 208.5, y: 0, z: 0.6, prompt: "Donald Eugene's satchel", icon: 'satchel', goneFlag: 'hasSeal' },
@@ -1987,10 +1989,11 @@ export const SPAWNS = [
   { type: 'enemy', kind: 'drone', era: F, x: 135, z: 2, range: [132, 141] },
   { type: 'enemy', kind: 'drone', era: F, x: 186, z: 2.5, range: [183, 188] },
   { type: 'enemy', kind: 'drone', era: F, x: 210, z: 3, range: [207, 212] },
-  { type: 'warden', era: F, path: WARDEN_PATH },
+  // (once the Tower ticks again, its Warden has nothing left to guard, and stands down)
+  { type: 'warden', era: F, path: WARDEN_PATH, until: 'finished' },
   // searchlights in the Warden's yard: one across the way in, one along the far side of the key
-  { type: 'searchlight', era: F, x: 261, z: 3.5, a: [261, 0.9], b: [261, 6.1], period: 5 },
-  { type: 'searchlight', era: F, x: 274, z: 5.2, a: [268.5, 5.2], b: [278.5, 5.2], period: 7, phase: 0.3 },
+  { type: 'searchlight', era: F, x: 261, z: 3.5, a: [261, 0.9], b: [261, 6.1], period: 5, until: 'finished' },
+  { type: 'searchlight', era: F, x: 274, z: 5.2, a: [268.5, 5.2], b: [278.5, 5.2], period: 7, phase: 0.3, until: 'finished' },
   { type: 'enemy', kind: 'drone', era: F, x: 163, z: 3, range: [161, 167] },
   { type: 'enemy', kind: 'drone', era: F, x: 170, z: 3.5, range: [167, 171.5] },
 ];

@@ -18,6 +18,7 @@ export const ITEMS = {
   cable: { name: 'Steel Cable', desc: 'A spool of cable from the scrapyard. It will not fray or rot for a very, very long time.' },
   snorkel: { name: 'Snorkel', desc: 'Borrowed from the aqueduct pool, three hundred years from now. With it you can stay underwater for as long as you like.' },
   clockKey: { name: 'Escapement Key', desc: "The key to the Clocktower's great lock. Only a lock that still turns will take it.", showcase: true },
+  finder: { name: 'Cog Finder', desc: "Ten of Donald Eugene's lost cogs, meshed round the Chronoheart's rim. Hold the time lens open and they turn toward anything of his still lost in another age." },
 };
 
 /** Kindness side quests. `start` is the flag set when the favor is asked. */
@@ -31,7 +32,7 @@ const N = (text) => ({ who: null, name: '', text });
 const Wr = (text) => ({ who: 'vivienne', name: 'Vivienne', text });
 
 export const INTRO = [
-  N('Hollowmere. A valley where the river bends, and where the great Clocktower has kept time for five hundred years.'),
+  N('Hollowmere. A valley where the river bends, and where the great Clocktower has kept time for six hundred years.'),
   N('This morning, for the first time anyone can remember... it stopped.'),
   Wr('Master Donald Eugene? ...Master?'),
   Wr("Three days gone, and now the Tower's gone silent. He'd never leave his workshop this long."),
@@ -58,7 +59,7 @@ export const TEMPO_GIFT = [
 const DE = (text) => ({ who: 'eugene', name: 'Donald Eugene', text });
 export const ENDING = [
   N('Across three ages at once, the Clocktower shudders... and begins to tick.'),
-  DE("Vivienne! I knew you'd find your way. I've been stuck between the ages since the Tower stopped. You pulled me back through."),
+  DE("Vivienne! I knew you'd find your way. I've been stuck between the ages for days. You pulled me back through."),
   Wr('Master Donald Eugene! You\'re all right! And the amulet... look, the crack is gone!'),
   DE("Mended by the Tower's heart. That means it's yours now, apprentice. Time always needs someone to look after it."),
   DE("And let me tell you what all my years among the clocks have taught me. Time is the most precious thing any of us will ever have."),
@@ -69,6 +70,16 @@ export const ENDING = [
   Wr('Another clock? Where?'),
   DE("That, apprentice, is a puzzle for another day. Our work isn't finished, not by a long way. And I have a feeling you'll be the one to finish it."),
   DE('Now then... I believe we are both late for supper. Shall we go home?'),
+];
+
+// All ten Lost Cogs: in the ending, or brought to him in his workshop afterward.
+export const ENDING_COGS = [
+  DE('And what is that rattling in your apron? ...Cogs. Ten of MY cogs! My parts tray emptied itself the day the Tower stopped. I thought I was going mad.'),
+  DE('Hold the Chronoheart still a moment.'),
+  N("He fits the ten cogs round the amulet's rim, one by one, until they mesh and turn together."),
+  DE('There. Hold the time lens open, and they will turn toward anything of mine still lost in another age. I suspect there is more of it about than ten.'),
+  Wr('Cogs that find cogs.'),
+  DE('Clockmakers are very practical people, apprentice.'),
 ];
 
 // Nobody Vivienne meets knows she is traveling through time. In the Present they know her as
@@ -90,8 +101,13 @@ function npcLines(game, id) {
           Wr('...Somebody kind. I can live with that.'),
         ];
       }
-      if (game.state.kindness.includes('lilies')) return [m('Look at them, Vivienne. Sun-lilies, right here in the square, just like Grandmother said. Thank you, dear.')];
       if (inv.includes('lilySeeds')) return [m("Are those... sun-lily seeds? But they died out centuries ago! Wherever did you find them? No, don't tell me, you'll only say something clever. Plant them in my old flower bed by the road, would you?")];
+      if (f.finished) {
+        const lines = [m('Listen to it, dear. Tick, tock, and the whole valley back on time. I set my kettle by it this morning, like Grandmother used to.'), m("And Donald Eugene home for supper, I hear. You did that, didn't you? No, don't tell me. You'll only say something clever.")];
+        if (game.state.kindness.includes('lilies')) lines.push(m('And my lilies still blooming. You have had a busy week.'));
+        return lines;
+      }
+      if (game.state.kindness.includes('lilies')) return [m('Look at them, Vivienne. Sun-lilies, right here in the square, just like Grandmother said. Thank you, dear.')];
       if (game.player.body.x < 50) {
         const lines = [m("Is that Donald Eugene's amulet? He never took it off. Keep it safe for him, dear, until he's back."), m("If you're off to look for him, mind the river. The ford washed out long ago. Grandmother used to say that in the oldest days, people crossed it on stepping stones."), Wr('The oldest days... the Past!')];
         if (!f.lilyQuest) {
@@ -139,9 +155,17 @@ function npcLines(game, id) {
           t('YOU MAY BORROW IT. PLEASE RETURN IT TO ITS OWNER, "SAMARIA, SUN-KEEPER". OWNER STATUS: DECEASED, APPROXIMATELY NINE HUNDRED YEARS. ...I WILL MARK THE LOAN "OPEN-ENDED".'),
           { give: 'starChart' },
         ];
+      if (f.finished) return [t('GREETINGS AGAIN, VISITOR. ARCHIVE NOTE: THE GREAT TOWER HAS KEPT PERFECT TIME FOR THREE HUNDRED YEARS. I HAVE CHECKED. TWICE.'), t('...I ENJOY CHECKING.')];
       return [t('GREETINGS, VISITOR. WELCOME TO HOLLOWMERE MEMORIAL PLAZA.'), t('COSTUME DETECTED: "MEDIEVAL APPRENTICE". VERY AUTHENTIC. PLEASE NOTE THE HERITAGE FESTIVAL IS NOT UNTIL SPRING.'), t('ARCHIVE NOTE: AN AQUEDUCT LIES BENEATH THE SANDSTONE CLIFFS. IT WAS CARVED BY A SPRING THAT DRIPPED FOR CENTURIES.')];
     }
     case 'holo':
+      // once the Tower ticks again, the Future remembers it differently
+      if (f.finished)
+        return [
+          N('MEMORIAL: DONALD EUGENE THE CLOCKMAKER, KEEPER OF THE GREAT TOWER, AND HIS APPRENTICE, WHO RESTARTED IT. IT HAS NOT MISSED A TICK IN THREE HUNDRED YEARS.'),
+          Wr('"His apprentice." Not even a name.'),
+          Wr('...Good. He would hate a fuss, and so would I.'),
+        ];
       // (the Tower hasn't been restarted in the Present yet, so no Future knows of it)
       return [
         N('MEMORIAL: DONALD EUGENE THE CLOCKMAKER, LAST KEEPER OF THE GREAT TOWER. HE VANISHED THE WEEK THE TOWER STOPPED, AND WAS NEVER FOUND. THE TOWER HAS NOT TICKED SINCE.'),
@@ -150,6 +174,7 @@ function npcLines(game, id) {
       ];
     case 'michelle': {
       const m = S('michelle', 'Michelle the Wise');
+      if (f.finished) return [m('I heard it from here: the first tick. I had almost forgotten the sound.'), m('Spend your time well, Vivienne. There is a great deal more of it about than there was yesterday.')];
       if (f.metMichelle && game.state.kindness.length >= FAVORS.length)
         return [m("You have the look of someone who has been busy being kind, Vivienne. I can always tell."), m('People remember a kindness far longer than you would think. And so do I.')];
       if (f.metMichelle)
@@ -221,6 +246,12 @@ function npcLines(game, id) {
           k("All we ever had were stories. Now I've got something she actually held. Thank you. Really."),
           { kind: 'keepsake' },
         ];
+      if (f.finished) {
+        const lines = [k("Hear that? Three hundred years, and it has never once missed. Family legend says that's Aria's hammer doing the ringing.")];
+        if (game.state.kindness.includes('keepsake')) lines.push(k("(Lillian taps Aria's medallion, pinned proudly to her apron.)"));
+        else if (f.keepsakeQuest) lines.push(...wish);
+        return lines;
+      }
       if (game.state.kindness.includes('keepsake')) return [k('Ring that bell loud enough for all of us.'), k("(Lillian taps Aria's medallion, pinned proudly to her apron.)")];
       if (game.state.taken.includes('hammerGift')) {
         if (f.keepsakeQuest) return [k('Ring that bell loud enough for all of us.')];
@@ -248,7 +279,8 @@ function npcLines(game, id) {
     }
     case 'hobb': {
       const h = S('hobb', 'Hobb the Miller');
-      if (f.sluiceClosed) return [h('A full millpond! The wheel turns again, and the old log boom floats like it did in Grandsire\'s day.'), h("You're a marvel, girl. Mind you keep to the logs. That water's deep enough to drown a horse.")];
+      if (f.finished) return [h("Wheel's turning, Tower's ticking, and the whole valley on time for once. I hardly know myself.")];
+      if (f.sluiceClosed) return [h('A full millpond! The wheel turns again, and the old log boom floats like it did in Grandsire\'s day.'), h("You're a marvel, girl. Swim it if you like: it's clean spring water, top to bottom. Or hop the logs and keep your boots dry.")];
       if (f.millDammed) {
         return [
           h("The pond came back, just like Grandsire said it once was! But look at it. It runs straight out through the sluice."),
@@ -306,6 +338,14 @@ function npcLines(game, id) {
         Wr('Rope that never rots... there must be something like that in the Future.'),
       ];
     }
+    case 'eugene': {
+      // home, after the story: the Lost Cogs
+      const home = DE('Home, and the Tower ticking over my head. I could get used to this.');
+      if (f.cogFinder) return [home, DE('How is the finder turning? If it ever points somewhere I have never been, do tell me.')];
+      const n = game.state.cogs.length;
+      if (n >= game.ch.COG_TOTAL) return [...ENDING_COGS, { finder: true }];
+      return [home, DE(`My parts tray emptied itself the day the Tower stopped: ten cogs, all over the valley, and into every age of it. You have found ${n}. Bring me the lot, and I will make the Chronoheart something useful.`)];
+    }
     default:
       return [N('...')];
   }
@@ -322,6 +362,7 @@ export async function talk(game, npc) {
     if (cmd.favor) game.startFavor(cmd.favor);
     if (cmd.kind) game.completeKindness(cmd.kind);
     if (cmd.sfx) audio.sfx(cmd.sfx);
+    if (cmd.finder) game.grantFinder();
     if (cmd.refresh) {
       game.refreshWorld();
       game.save();
@@ -393,7 +434,7 @@ export async function interact(game, ent) {
       await say([
         Wr("Donald Eugene's amulet, the Chronoheart! He never let me touch it."),
         N("There's a note folded underneath it:"),
-        N('"Vivienne. The Tower\'s heart has stopped and the ages are coming loose. The Chronoheart is cracked, but it will carry you for a little while."'),
+        N('"Vivienne. The Tower\'s heart is failing and the ages are coming loose. The Chronoheart is cracked, but it will carry you for a little while."'),
         N('"Find the three Era Keys: the Sun Disc of the first age, the Bell Hammer of ours, and the Fusion Core of the last. Restart the Tower. ~D.E."'),
         Wr('The first age... and the last? He means the PAST and the FUTURE?!'),
       ]);
@@ -536,7 +577,7 @@ export async function interact(game, ent) {
       // the pond you're standing over fills first; then, three centuries on, the reservoir it becomes
       await game.timelapse({ to: ERA.PRESENT, focus: [195.5, 1.5, 3], years: 1, caption: 'With the sluice shut, the millpond fills to the brim...', grow: ['millWaterM'], growFrom: 0.2, float: { ids: ['millBoomM'], by: 2 } });
       await game.timelapse({ to: ERA.FUTURE, focus: [195.5, 1.5, 3], years: 300, caption: '...and in time it becomes a reservoir.', grow: ['millWaterF'], float: { ids: ['millBoomF'], by: 2 } });
-      game.hud.toast('The log boom floats level with the banks. Hop across!', 4000);
+      game.hud.toast('The pond is brim-full: swim across, or hop the log boom.', 4000);
       game.save();
       return;
     case 'satchel':
@@ -566,8 +607,8 @@ export async function interact(game, ent) {
       if (f.hasEcho) return say(N("Donald Eugene's lectern. A scrawled diagram of three stone steps, and the words: \"Be in three places at once.\""));
       await say([
         N("A lectern stands by the gallery wall, and on it, Donald Eugene's handwriting:"),
-        N('"Vivienne. The Gallery steps rise only while their rings of buttons glow, and a button forgets you the moment you step off it. I could never be in three places at once... but you can. This lens lets the Chronoheart remember you: where you stood, how you moved. ~D.E."'),
-        Wr('A lens that remembers me... so I can leave a copy of myself standing on a button?'),
+        N('"Vivienne. These buttons forget you the moment you step off them. This lens lets the Chronoheart remember you, so something of you can stay behind. ~D.E."'),
+        Wr('A copy of me that stays behind... standing on the buttons for me?'),
         N('The lens clicks neatly into the Chronoheart.'),
       ]);
       game.abilities.unlock('echo');
@@ -638,6 +679,7 @@ export async function interact(game, ent) {
     case 'gearworksExit':
       return game.leaveGearworks();
     case 'mainspring':
+      if (f.finished) return say(N('The great mainspring turns, slow and steady. Tick. Tock. Tick.'));
       await say([
         N("The great mainspring thrashes on its post, unwinding far too fast. The whole clock shakes with every beat."),
         Wr("Easy... easy. Slow down."),

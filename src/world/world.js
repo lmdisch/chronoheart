@@ -103,10 +103,13 @@ export class Builder {
     this.waters.push({ x0, y0, z0, x1: x1 + 1, y1: y1 + 1 - surfaceDrop, z1: z1 + 1, color });
   }
 
-  /** Deadly liquid / current. */
+  /**
+   * Water you can't swim in, and looks it: a glowing toxic pool (glow), or else a current too
+   * strong to swim, with foam streaking downstream. (Clean, still water is water().)
+   */
   hazard(x0, y0, z0, x1, y1, z1, color, glow = false, surfaceDrop = 0.3) {
     for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) for (let z = z0; z <= z1; z++) this.setCell(x, y, z, T.HAZARD);
-    (glow ? this.hazards : this.waters).push({ x0, y0, z0, x1: x1 + 1, y1: y1 + 1 - surfaceDrop, z1: z1 + 1, color });
+    (glow ? this.hazards : this.waters).push({ x0, y0, z0, x1: x1 + 1, y1: y1 + 1 - surfaceDrop, z1: z1 + 1, color, current: !glow });
   }
 
   /** Sinking mud: deadly like any hazard, but it looks like what it is. */
@@ -190,7 +193,7 @@ function addSharedVisuals(world, era, b, group) {
     meshes.push(m);
   };
   meshes.push(makeInstanced(glowMat, b.glows, group, false, false));
-  for (const w of b.waters) add(makeWater(w, world.shoreFn(era, w), false));
+  for (const w of b.waters) add(makeWater(w, world.shoreFn(era, w), w.current ? 'current' : false));
   for (const w of b.muds) add(makeWater(w, world.shoreFn(era, w), 'mud'));
   for (const w of b.hazards) add(makeWater(w, world.shoreFn(era, w), true));
   for (const w of b.streams) add(makeWater(w, world.shoreFn(era, w), false));

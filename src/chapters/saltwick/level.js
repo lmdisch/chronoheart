@@ -1270,8 +1270,9 @@ export const SPAWNS = [
   { type: 'enemy', kind: 'drone', era: F, x: 138, z: 3, range: [135, 146] },
   { type: 'enemy', kind: 'drone', era: F, x: 164, z: 4, range: [156, 167] },
   { type: 'enemy', kind: 'drone', era: F, x: 195, z: 3, range: [195, 199] },
-  { type: 'warden', era: F, path: WARDEN_PATH },
-  { type: 'searchlight', era: F, x: 208.5, z: 3.5, a: [208.5, 0.9], b: [208.5, 6.1], period: 5 },
+  // (once the tide is home, the Warden has nothing left to guard, and stands down)
+  { type: 'warden', era: F, path: WARDEN_PATH, until: 'tideRestored' },
+  { type: 'searchlight', era: F, x: 208.5, z: 3.5, a: [208.5, 0.9], b: [208.5, 6.1], period: 5, until: 'tideRestored' },
 ];
 
 // ---------------------------------------------------------------------------

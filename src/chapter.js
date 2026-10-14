@@ -19,12 +19,13 @@ export const CHAPTERS = [
     eras: ['Ancient', 'Medieval', 'Chrome'],
     credits: {
       eyebrow: 'The Clocktower ticks again',
-      bonus: "You found every Lost Cog! Donald Eugene's old pocketwatch starts ticking again... but that's a story for the next chapter.",
-      more: 'Somewhere, another clock is ticking. Chapter Two is open.',
+      bonus: 'You found every Lost Cog! Donald Eugene has fitted them to the Chronoheart: in Chapter Two, Lost Cogs glint through the time lens.',
+      // (not shown once every cog is found)
+      more: 'Your save is kept: choose Continue to walk the valley with the Tower ticking. Bring Donald Eugene all ten Lost Cogs, in his workshop, and he has something for the Chronoheart.',
     },
     theme: hollowmere,
     requires: null,
-    keepsSave: false, // once the story is told, this chapter starts over
+    keepsSave: true, // the Tower keeps ticking: you can keep walking the valley after the credits
   },
   {
     id: 'saltwick',
@@ -66,12 +67,15 @@ const PICK_KEY = 'chronoheart-chapter';
 // the two games' own saves, from before they were chapters of one
 const OLD_KEYS = { hollowmere: 'chronoheart-save-v1', saltwick: 'chronoheart2-save-v1' };
 
-/** { v, slots: { [chapter id]: saved state }, done: { [chapter id]: true }, unlocked, last } */
+/**
+ * { v, slots: { [chapter id]: saved state }, done: { [chapter id]: true }, rewards: { [id]: true },
+ *   unlocked, last }. Rewards are earned in one chapter and carried into the others.
+ */
 function loadSave() {
   const cur = parse(store.get(SAVE_KEY));
-  if (cur?.v === 2) return { slots: {}, done: {}, ...cur };
+  if (cur?.v === 2) return { slots: {}, done: {}, rewards: {}, ...cur };
   // first run of the combined game: bring over whatever the separate games had saved
-  const save = { v: 2, slots: {}, done: {}, unlocked: false, last: null };
+  const save = { v: 2, slots: {}, done: {}, rewards: {}, unlocked: false, last: null };
   for (const id of Object.keys(OLD_KEYS)) {
     const old = parse(store.get(OLD_KEYS[id]));
     if (!old?.flags) continue;
@@ -112,6 +116,12 @@ export const progress = {
   isDone: (id) => !!save.done[id],
   markDone(id) {
     save.done[id] = true;
+    write();
+  },
+  /** Something earned in one chapter that the others carry: 'cogFinder' (all of Chapter One's cogs). */
+  hasReward: (id) => !!save.rewards[id],
+  grantReward(id) {
+    save.rewards[id] = true;
     write();
   },
   /** Open to play? The first chapter always is; each later one once the one before it is finished. */

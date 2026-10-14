@@ -2,7 +2,7 @@
 
 **A time-travel puzzle adventure in one valley, three ages.** The first chapter of [Chronoheart](../README.md).
 
-Master Donald Eugene, the clockmaker of Hollowmere, has vanished, and the great Clocktower has stopped for the first time in five hundred years. His apprentice, Vivienne, finds his amulet, the **Chronoheart**, and with it the power to step between three versions of the valley:
+Master Donald Eugene, the clockmaker of Hollowmere, has vanished, and the great Clocktower has stopped for the first time in six hundred years. His apprentice, Vivienne, finds his amulet, the **Chronoheart**, and with it the power to step between three versions of the valley:
 
 | Age | What it looks like | Its color |
 | --- | --- | --- |
@@ -21,21 +21,23 @@ The valley is one long road, built three times. What you do in one age carries f
 - [Walkthrough](#walkthrough) *(spoilers)*
 - [All 10 Lost Cogs](#all-10-lost-cogs) *(spoilers)*
 - [Favors](#favors) *(spoilers)*
+- [After the story](#after-the-story) *(spoilers)*
 - [Secrets](#secrets) *(big spoilers)*
 
 ---
 
 ## How to play
 
-- **Travel through time.** Once you have the Chronoheart, you can switch to the era before or after the one you're in. The amulet's ring **drains while you're in the Past or Future** (about 10 seconds) and recharges in the Present. If it runs out, you're pulled back to the Present.
+- **Travel through time.** Once you have the Chronoheart, you can switch to the era before or after the one you're in. The amulet's ring **drains while you're in the Past or Future** (about 30 seconds) and recharges in the Present. If it runs out, you're pulled back to the Present.
 - **You can't switch into something solid**, or over a drop with nothing to stand on: the amulet shakes and refuses. Move a little and try again.
 - **The time lens:** hold `Tab` (or hold the amulet dial on touch) to open a round window onto another era around you, without traveling. It shows that era live, and you can walk about with it: line up a jump, or see what's waiting before you switch.
 - **After a switch you get a moment's grace**: for 1.5 seconds nothing can hurt or spot you.
-- **Hearts:** you start with 5. Each finished favor adds one. Water and hazards cost a heart and put you straight back on solid ground.
+- **Water:** clean, still water is safe to swim in (hold Jump to rise, let go to sink). Water that hurts looks it: a river **current** streaked with foam, or the Future's glowing green **treated** water. Either costs a heart and puts you straight back on solid ground.
+- **Hearts:** you start with 5. Each finished favor adds one.
 - **Clock shrines** are checkpoints. Walking past one saves your progress and heals you. The game also saves after every important step (in your browser's local storage).
 - **The Menu** (`I`, or the ☰ button) shows your current goal, a **Hint** if you're stuck, your items and your favors. The game pauses while it's open. A short message pops up whenever your goal changes.
-- **Lost Cogs** are optional collectibles: 10 in all. Find them all for a bonus line in the ending.
-- **Finishing the chapter opens Chapter Two.** This chapter's own save is cleared when the credits roll: choosing it again starts a new story.
+- **Lost Cogs** are optional collectibles: 10 in all, and they are Donald Eugene's. Bring him all ten and he fits them to the Chronoheart as a **Cog Finder**, which you keep in Chapter Two.
+- **Finishing the chapter opens Chapter Two.** Your save is kept: choose Continue to walk the valley with the Tower ticking.
 
 ### Abilities you pick up along the way
 
@@ -121,7 +123,7 @@ The road runs west to east. Each area below lists what you need and how to get i
 ### 6. The Sun Terrace: the Sun Disc (Era Key of the Past)
 
 - The terrace is too high to climb in any age.
-- In the **Past**, push the **carved block** onto the **glowing foundation outline** beside the terrace. (Use the rewind glyph nearby if you push it into a corner.) A time-lapse shows a **pillar** built on that foundation.
+- In the **Past**, push the **carved block** onto the **glowing foundation outline** beside the terrace. (Use the reset glyph nearby if you push it into a corner.) A time-lapse shows a **pillar** built on that foundation.
 - In the **Present**, climb **bench → pillar → terrace**.
 - Go to the **Past** on top of the terrace: the **Sun Disc** sits on the dark stone dais.
 
@@ -137,7 +139,7 @@ The road runs west to east. Each area below lists what you need and how to get i
 - **Past:** a spring falls off the cliff into a stone trough and drains away down a gully. The trough has **three stone plugs**, each opening a carved channel that the scrub soon hides. Only one is the old millrace. Stand by the trough and hold the **time lens** open on the **Present**: the dry pond bed still shows all three channels. The north and middle ones end in sinkholes; the **south** one, stone-lined, runs all the way to the dam's sluice. Knock the south plug out with your wrench (three hits). A wrong plug just drains away, and you wedge it back. A time-lapse shows the hollow filling into a millpond.
 - **Present:** the pond is shallow, because it drains out through the mill's open **sluice**. Its wheel was sold off generations ago (Hobb the Miller will tell you).
 - **Future:** the mill is a pumping station. The old **brass sluice wheel** is in its little museum by the road, with a drone guarding it.
-- **Present:** fit the wheel to the sluice on top of the dam. The pond fills to the brim, and the mill's **log boom** floats up level with the banks. Hop across the logs (don't fall in: the water is deep).
+- **Present:** fit the wheel to the sluice on top of the dam. The pond fills to the brim, and the mill's **log boom** floats up level with the banks. Hop across the logs, or swim: it's clean spring water. (In the Future the pond is a treated reservoir: hop that one.)
 
 ### 9. Tamsin's Crossing
 
@@ -155,10 +157,10 @@ Everything here happens in the **Present**: the gates, the steps and your echoes
 - **Donald Eugene's lectern** by the entrance gives you the **Echo**.
 - **The gold gate** stands open only while the **gold button** is held. Stand on the gold button and record an echo standing still: it holds the gate open for you.
 - **The green airlock** is two gates worked by one **green button**. The first (solid green band) is open while the button is held; the second (dashed band) only while it's **not**. Record an echo that stands on the green button for about two seconds and then steps off for two. Walk through the first gate while the echo is on the button, wait in the gap, and go through the second when it steps off.
-- **The wall:** three stone steps rise out of the floor up a 4-high wall. Each step is raised by a **ring of six buttons**: one on the ground, one on top of step 1, one on top of step 2. A bright ring marks where each ring starts, and arrows on the floor show its direction: **clockwise** on the ground, **counterclockwise** on step 1, **clockwise** on step 2 (as you see it on screen). A button only lights if the one before it is lit.
-- **Buttons you press yourself go dark the moment you step off.** Buttons an echo presses stay glowing for a few seconds. The step stands while its **whole ring** is lit, so every ring needs an echo walking it.
-- So: stand on the ringed button, start recording (`V`), walk the ring following the arrows, and stop recording (all within 5 seconds). Your echo keeps walking the ring, and the step stays up.
-- Do this for the ground ring (step 1), then the ring **on** step 1 (step 2), then the ring **on** step 2 (step 3). Then climb up the steps onto the gallery.
+- **The wall:** three stone steps rise out of the floor up a 4-high wall, one at a time. Each is raised by a **ring of buttons**, and the step stands while its whole ring is lit.
+- **The first ring is just two buttons on the ground**, and it teaches the one rule: **a button you press yourself goes dark the moment you step off**, but one your **echo** presses stays lit. So stand on the ringed button, start recording (`V`), walk to the other button, and stop recording. Your echo keeps walking it, and step 1 rises.
+- The next two rings have six buttons each: one **on top of** step 1 (it raises step 2) and one on top of step 2 (it raises step 3). Same again: start on the ringed button and follow the arrows round, always **clockwise** as you see it on screen, all within 5 seconds. A button only lights if the one before it is lit.
+- Then climb the steps onto the gallery.
 - You can keep 3 echoes, and the climb needs all three at once. If a recording goes wrong, stand on that echo and press **Interact** to dispel it before you try again. Otherwise the oldest echo (the one holding up your first step) fades. Your gate echoes fading is fine: the gates stay open once you're past them.
 - At the top you kick down a rope ladder, and the gates stay open for good, so the way back never needs echoes again.
 
@@ -198,13 +200,13 @@ The third key opens the great clock face. You're carried up into the clock itsel
 4. **The lift.** Every few seconds the Tower stutters and throws the lift back down; at normal speed it never reaches the top in time. Ride it holding **E**, and at the top switch to **Q**, so it waits while you step onto the summit.
 5. **The great mainspring.** Steady it, and the Clocktower ticks again. Then enjoy the ending.
 
-Once you've finished the story, your save is cleared: the next time you play, it's a new game.
+Once you've finished the story, your save is kept: see [After the story](#after-the-story).
 
 ---
 
 ## All 10 Lost Cogs
 
-> **Spoilers.** The counter in the top-left shows how many you've found.
+> **Spoilers.** The counter in the top-left shows how many you've found. Bring all ten to Donald Eugene for the Cog Finder (see [After the story](#after-the-story)).
 
 | # | Area | Age | Where | Needs |
 | --- | --- | --- | --- | --- |
@@ -232,6 +234,15 @@ Nobody you meet knows you're traveling through time: in the Past and the Future 
 | **Samaria's star chart** | Samaria the Sun-Keeper (Past, Hollowmere Square) | A storm carried off her star chart. In the **Future**, **TICK** the archivist robot has it in the archive: ask about it and borrow it. Bring it back to Samaria in the Past. |
 | **Karen Louise's sun-lilies** | Elder Karen Louise (Present, Hollowmere Square) | Golden sun-lilies grew in the square in the oldest days. In the **Past**, gather seeds from the wild flowers at the front of the square, then plant them in Karen Louise's empty **flower bed** in the Present. |
 | **Lillian's keepsake** | Lillian (Future, Smithy Lane) | Lillian has nothing her ancestor Aria ever held. After you've left the hammer in Aria's vault, tell **Aria** (Present) about Lillian: she gives you her **medallion**. Bring it to Lillian. |
+
+---
+
+## After the story
+
+- **Your save is kept.** Choose Continue and you're home in the square, with the Clocktower ticking in every age.
+- **Donald Eugene is back in his workshop.** The Lost Cogs are his: his parts tray emptied itself the day the Tower stopped. Bring him all ten (or have them on you at the ending) and he fits them round the Chronoheart's rim as a **Cog Finder**. You keep it in Chapter Two, where Lost Cogs glint through the time lens.
+- **The Future remembers.** The memorial in the plaza tells a different story now, and the courtyard's Warden has stood down: there is nothing left for it to guard.
+- Talk to everyone again.
 
 ---
 

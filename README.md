@@ -34,7 +34,8 @@ Every world, sprite, melody and sound in the game is generated from code: there 
 - **The title screen has a card for each chapter.** The lit card is the chapter showing behind the title; Continue and New Game act on it. Pick another card to switch.
 - **Chapter Two is locked until Chapter One is finished.** Finishing a chapter opens the next, and the credits offer to take you straight there.
 - **One save holds everything**: a slot for each chapter, plus which chapters are finished. It lives in your browser's local storage, so it stays on that browser and that address. Saves from before the two games were combined are brought over the first time the combined game runs.
-- **Chapter One starts over once it's told.** Its slot is cleared at the credits (it stays marked as finished). **Chapter Two keeps its slot**: you can go on walking the shore with the tide back in.
+- **Every chapter keeps its save after the story.** Choose Continue to walk the valley with the Clocktower ticking, or the shore with the tide back in.
+- **Some rewards carry over.** Bring all ten of Chapter One's Lost Cogs to Donald Eugene and you start Chapter Two with the **Cog Finder**: Lost Cogs glint through the time lens. (The save records it under `rewards`.)
 - **Vivienne dresses for the place.** In Hollowmere she wears her teal workshop tunic and leather apron. In Saltwick she has a navy sea-coat, a red neckerchief, sailcloth trousers and yellow sea-boots. The goggles and the amulet go wherever she does.
 
 To open every chapter without finishing the one before (for testing, or if you finished Chapter One before the game kept a record of it), add `#unlock` to the address once, or run `__unlockChapters()` in the browser console.
@@ -149,7 +150,7 @@ const r = await import('/tools/reachability/saltwick.js'); console.table(r.check
 
 Every stage should say `stuck: []`, and in Chapter Two that its gate holds. Start a new game afterward, since it changes the save state.
 
-**Scripted playtests.** `tools/playtest/` drives the real game in headless Chrome with real key presses: a smoke test of both chapters, and a full playthrough and a side-content run of Chapter Two. See [tools/playtest/README.md](tools/playtest/README.md).
+**Scripted playtests.** `tools/playtest/` drives the real game in headless Chrome with real key presses: a smoke test of both chapters, a full playthrough of each chapter, and checks of Chapter One's systems and Chapter Two's side content. See [tools/playtest/README.md](tools/playtest/README.md).
 
 ---
 

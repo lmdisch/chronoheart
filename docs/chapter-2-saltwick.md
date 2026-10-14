@@ -37,7 +37,7 @@ The Future you walk through is the one that happens **if you fail**. Mend the Ti
 - **Hearts:** you start with 5. Each finished favor adds one.
 - **Clock shrines** are checkpoints. Walking past one saves and heals you. The game also saves after every important step.
 - **The Menu** (`I`, or the ☰ button) shows your current goal, a **Hint** if you're stuck (`G` opens it directly), your items and your favors.
-- **Lost Cogs** are optional collectibles: 12 in all, and this time they are worth something.
+- **Lost Cogs** are optional collectibles: 12 in all, and they are worth something. If you brought all ten of Chapter One's to Donald Eugene, you start with the **Cog Finder**: hold the time lens open and any Lost Cog nearby in the age it shows sends up a column of gold.
 
 ### What the Chronoheart learns in Saltwick
 
@@ -192,13 +192,14 @@ Three optional side quests. Each gives you **+1 heart**. Nobody you meet knows y
 
 - **Your save is kept.** Choose Continue and walk the shore with the tide back in. The Present's mud is sea again (swim it), the boats are afloat, and the Future is not the Dry Age any more.
 - **The Lost Cogs matter.** Finish with all twelve and Donald Eugene has exactly enough for a watch movement: you keep **Rewind** for good. Find the rest afterward and bring them to him on the quay, and he'll build it then.
+- **The Warden stands down.** With the tide home, it has nothing left to guard.
 - Talk to everyone again. Maren, in the Past, has something to show you.
 
 ---
 
 ## What changed since Chapter One
 
-The design critique of the first chapter, and what this one does about each point:
+The design critique of the first chapter, and what this one does about each point. (Chapter One has since been brought closer to this one: its drain lasts 30 seconds, its Echo Gallery wall teaches one rule at a time, water follows the same rule in both chapters, and its save is kept after the credits, with the Lost Cogs earning the Cog Finder.)
 
 | Chapter One | Chapter Two |
 | --- | --- |

@@ -25,9 +25,9 @@ export const STAGES = [
 // the other way through Rampart Row
 export const ALT = [['acorn (Present) only', { hasAmulet: true, springOpen: true, acornPlantedM: true }]];
 
-// Steps you can take in the Past or Future before the Chronoheart runs out (about 10 seconds of
+// Steps you can take in the Past or Future before the Chronoheart runs out (about 30 seconds of
 // walking at 4.6 cells a second, less a margin for climbing and fumbling).
-export const BUDGET = 36;
+export const BUDGET = 110;
 
 export function check(game, { maxX = W - 1, budget = BUDGET, maxGap = 3 } = {}) {
   const w = game.world;
