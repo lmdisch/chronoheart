@@ -18,13 +18,14 @@ export async function boot({ width = 1280, height = 720, url = process.env.GAME_
   page.on('pageerror', (e) => errors.push('PAGEERROR ' + e.message + '\n' + (e.stack || '').split('\n').slice(0, 4).join('\n')));
   page.on('console', (m) => { if (m.type() === 'error') errors.push('CONSOLE ' + m.text()); });
   await page.goto(url);
-  await page.evaluate((id, slot, unlocked, storage) => {
+  await page.evaluate((id, slot, unlocked, storage, look) => {
     localStorage.clear();
     sessionStorage.clear();
+    if (look) localStorage.setItem('chronoheart-look', look);
     if (storage) return Object.entries(storage).forEach(([k, v]) => localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v)));
     localStorage.setItem('chronoheart-save-v2', JSON.stringify({ v: 2, slots: slot ? { [id]: slot } : {}, done: {}, unlocked, last: id }));
     localStorage.setItem('chronoheart-chapter', id);
-  }, chapter, save, unlocked, storage);
+  }, chapter, save, unlocked, storage, process.env.LOOK || null);
   await page.reload();
   await autoplay(page);
   return { browser, page, errors };

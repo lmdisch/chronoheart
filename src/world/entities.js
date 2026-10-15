@@ -6,7 +6,8 @@ import { clamp, damp, ERA } from '../core/util.js';
 import { audio } from '../audio/audio.js';
 import { moveBody, overlapsType, hits } from './physics.js';
 import { T } from './world.js';
-import { getSheets, SpriteActor, iconTexture } from '../render/sprites.js';
+import { iconTexture } from '../render/sprites.js';
+import { Actor } from '../render/actors.js';
 import { theme, content } from '../chapter.js';
 
 const GRAV = 28;
@@ -40,7 +41,7 @@ export class Player {
   constructor(game) {
     this.game = game;
     this.body = { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, hw: 0.28, hd: 0.22, h: 1.45, onGround: false };
-    this.actor = new SpriteActor(getSheets().vivienne, 2.1);
+    this.actor = new Actor('vivienne', 2.1);
     this.mesh = this.actor.mesh;
     this.shadow = makeShadow(1.0);
     game.scene.add(this.mesh, this.shadow);
@@ -365,9 +366,8 @@ export class EraEntity {
 export class NPC extends EraEntity {
   constructor(game, spec) {
     super(game, spec);
-    const sheet = getSheets()[spec.sheet];
     const size = spec.small ? 1.6 : 2.1;
-    this.actor = new SpriteActor(sheet, size);
+    this.actor = new Actor(spec.sheet, size);
     this.group.add(this.actor.mesh);
     if (spec.holo) {
       this.actor.mat.transparent = true;
@@ -434,7 +434,7 @@ export class Enemy extends EraEntity {
     this.cfg = ENEMY[spec.kind];
     this.hp = this.cfg.hp;
     this.body = { x: spec.x, y: spec.y ?? 0, z: spec.z, vx: 0, vy: 0, vz: 0, hw: this.cfg.hw, hd: this.cfg.hd, h: this.cfg.h };
-    this.actor = new SpriteActor(getSheets()[spec.kind], this.cfg.size);
+    this.actor = new Actor(spec.kind, this.cfg.size);
     this.shadow = makeShadow(this.cfg.hw * 2.4);
     this.group.add(this.actor.mesh, this.shadow);
     this.dir = 1;
@@ -531,7 +531,7 @@ export class Warden extends EraEntity {
     this.hostile = true; // holds still during conversations
     this.alwaysUpdate = true; // keeps patrolling while you're in another era
     this.path = spec.path;
-    this.actor = new SpriteActor(getSheets().sentinel, 2.6);
+    this.actor = new Actor('sentinel', 2.6);
     this.shadow = makeShadow(1.8);
     this.coneMat = new THREE.MeshBasicMaterial({ color: 0xffd040, transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide });
     this.cone = new THREE.Mesh(new THREE.CircleGeometry(WARDEN.range, 28, -WARDEN.halfAngle, WARDEN.halfAngle * 2).rotateX(-Math.PI / 2), this.coneMat);

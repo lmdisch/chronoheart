@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { input } from '../../core/input.js';
 import { ERA } from '../../core/util.js';
 import { audio } from '../../audio/audio.js';
-import { getSheets, SpriteActor } from '../../render/sprites.js';
+import { Actor } from '../../render/actors.js';
 import { ECHO_BUTTONS, ECHO_STEPS, ECHO_GATES, GATE_BUTTONS, SEALABLES, L } from './level.js';
 import { T } from '../../world/world.js';
 import { touchActive } from '../../ui/touch.js';
@@ -24,7 +24,7 @@ class Echo {
     this.dur = Math.max(0.1, frames[frames.length - 1].t);
     this.t = 0;
     this.i = 0;
-    this.actor = new SpriteActor(getSheets().vivienne, 2.1);
+    this.actor = new Actor('vivienne', 2.1);
     const m = this.actor.mat;
     m.transparent = true;
     m.depthWrite = false;

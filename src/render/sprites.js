@@ -253,7 +253,7 @@ function shadeCss(col, f) {
 // Sprites are authored at base resolution, then upscaled with Scale2x (keeps hard pixel
 // edges but rounds diagonals), then get 1px hue-shifted rim light / core shadow and a
 // selective (color-aware) outline at the doubled resolution: twice the pixels per unit.
-const SCALE = 2;
+export const SCALE = 2;
 
 /** EPX / Scale2x of an RGBA image (w x h) -> (2w x 2h). */
 function scale2x(src, w, h) {
@@ -782,6 +782,7 @@ export const CHAR = {
   // sailcloth trousers and yellow sea-boots. The goggles and the amulet go wherever she does.
   vivienneCoast: {
     skin: '#f2c49a', hair: '#2e2236', hairStyle: 'bun', top: '#27477a', apron: '#1d3660', legs: '#d9ccaa', boots: '#e2b83a', belt: '#8a5a32', goggles: true, amulet: true,
+    coat: true, scarf: '#e0483a', // (for the Storybook model: see actors.js)
     chest: (P, lean, by) => {
       for (const x of [13, 14, 15]) P(x + lean, 16 + by, '#e0483a');
       P(14 + lean, 17 + by, '#c23a2e');
@@ -832,155 +833,16 @@ export function getSheets() {
   return sheets;
 }
 
+/** The palette a person's sheet is drawn from (null for creatures and machines). */
+export function charFor(name) {
+  if (name === 'vivienne') return CHAR[theme.playerSheet] || CHAR.vivienne;
+  return SHEETS[name] && CHAR[name] ? CHAR[name] : null;
+}
+
 // ---------------------------------------------------------------------------
-// Sprite mesh (billboard) helpers
-// ---------------------------------------------------------------------------
-// Upright billboards are stretched a little to undo the diorama camera's pitch foreshortening.
+// Characters are drawn from these sheets in 3D (see actors.js). Their cards were stretched a little
+// upright to undo the diorama camera's pitch foreshortening, and the 3D looks keep those proportions.
 export const SPRITE_STRETCH = 1.1;
-
-const planeCache = new Map();
-function plane(w, h) {
-  const k = w + 'x' + h;
-  if (!planeCache.has(k)) {
-    const g = new THREE.PlaneGeometry(w, h * SPRITE_STRETCH);
-    g.translate(0, (h * SPRITE_STRETCH) / 2, 0);
-    planeCache.set(k, g);
-  }
-  return planeCache.get(k);
-}
-
-// Lit sprite shader: wrap-lit by sun + hemisphere, point lights (lanterns) add both fill and a
-// pixel rim light on the silhouette edge that faces them.
-const spriteVert = `
-  #include <common>
-  #include <fog_pars_vertex>
-  varying vec2 vUv; varying vec3 vViewPos; varying vec3 vN;
-  void main(){
-    vUv = uv;
-    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-    vViewPos = mvPosition.xyz;
-    // upright card: treat it as facing the camera and tilted toward the sky
-    vN = normalize(normalMatrix * normalize(vec3(0.0, 0.6, 1.0)));
-    gl_Position = projectionMatrix * mvPosition;
-    #include <fog_vertex>
-  }`;
-const spriteFrag = `
-  #include <common>
-  #include <lights_pars_begin>
-  #include <fog_pars_fragment>
-  uniform sampler2D map; uniform vec2 uvOffset; uniform vec2 uvRepeat; uniform vec2 texel;
-  uniform vec3 diffuse; uniform vec3 emissive; uniform float emissiveIntensity; uniform float uOpacity; uniform float rim;
-  varying vec2 vUv; varying vec3 vViewPos; varying vec3 vN;
-  float alphaAt(vec2 uv){ return texture2D(map, uv).a; }
-  void main(){
-    vec2 uv = uvOffset + vUv * uvRepeat;
-    vec4 tex = texture2D(map, uv);
-    if (tex.a < 0.5) discard;
-    vec3 N = normalize(vN);
-    vec2 sx = vec2(sign(uvRepeat.x) * texel.x, 0.0), sy = vec2(0.0, texel.y);
-    vec3 irr = ambientLightColor;
-    vec3 rimAcc = vec3(0.0);
-    #if NUM_HEMI_LIGHTS > 0
-      for (int i = 0; i < NUM_HEMI_LIGHTS; i++) irr += getHemisphereLightIrradiance(hemisphereLights[i], N);
-    #endif
-    #if NUM_DIR_LIGHTS > 0
-      for (int i = 0; i < NUM_DIR_LIGHTS; i++) {
-        vec3 L = directionalLights[i].direction;
-        irr += directionalLights[i].color * max((dot(N, L) + 0.6) / 1.6, 0.0);
-        vec2 d = normalize(L.xy + 1e-4);
-        float edge = 1.0 - alphaAt(uv + sx * d.x * 2.0 + sy * d.y * 2.0);
-        rimAcc += directionalLights[i].color * edge * 0.12;
-      }
-    #endif
-    #if NUM_POINT_LIGHTS > 0
-      for (int i = 0; i < NUM_POINT_LIGHTS; i++) {
-        vec3 lv = pointLights[i].position - vViewPos;
-        float dist = length(lv);
-        float att = getDistanceAttenuation(dist, pointLights[i].distance, pointLights[i].decay);
-        if (att <= 0.0) continue;
-        vec3 L = lv / dist;
-        irr += pointLights[i].color * att * max((dot(N, L) + 0.8) / 1.8, 0.0);
-        vec2 d = normalize(L.xy + 1e-4);
-        float edge = 1.0 - alphaAt(uv + sx * d.x * 2.0 + sy * d.y * 2.0);
-        rimAcc += pointLights[i].color * att * edge;
-      }
-    #endif
-    vec3 albedo = tex.rgb * diffuse;
-    vec3 col = albedo * irr * RECIPROCAL_PI + albedo * rimAcc * rim + emissive * emissiveIntensity * tex.rgb;
-    gl_FragColor = vec4(col, uOpacity);
-    #include <fog_fragment>
-  }`;
-
-export class SpriteLitMaterial extends THREE.ShaderMaterial {
-  constructor(map, sheet) {
-    super({
-      uniforms: THREE.UniformsUtils.merge([
-        THREE.UniformsLib.lights,
-        THREE.UniformsLib.fog,
-        {
-          map: { value: null }, uvOffset: { value: new THREE.Vector2() }, uvRepeat: { value: new THREE.Vector2(1, 1) },
-          texel: { value: new THREE.Vector2() }, diffuse: { value: new THREE.Color(1, 1, 1) }, emissive: { value: new THREE.Color(1, 1, 1) },
-          emissiveIntensity: { value: 0.18 }, uOpacity: { value: 1 }, rim: { value: 1.6 },
-        },
-      ]),
-      vertexShader: spriteVert,
-      fragmentShader: spriteFrag,
-      lights: true,
-      fog: true,
-      side: THREE.DoubleSide,
-    });
-    this.uniforms.map.value = map;
-    this.uniforms.texel.value.set(1 / sheet.canvas.width, 1 / sheet.canvas.height);
-  }
-  get color() { return this.uniforms.diffuse.value; }
-  get emissive() { return this.uniforms.emissive.value; }
-  get emissiveIntensity() { return this.uniforms.emissiveIntensity.value; }
-  set emissiveIntensity(v) { this.uniforms.emissiveIntensity.value = v; }
-  get opacity() { return this.uniforms ? this.uniforms.uOpacity.value : 1; }
-  set opacity(v) { if (this.uniforms) this.uniforms.uOpacity.value = v; }
-}
-
-export class SpriteActor {
-  constructor(sheet, worldW, worldH = worldW) {
-    this.sheet = sheet;
-    this.tex = sheet.texture;
-    this.mat = new SpriteLitMaterial(sheet.texture, sheet);
-    this.mesh = new THREE.Mesh(plane(worldW, worldH), this.mat);
-    this.mesh.renderOrder = 2;
-    this.anim = null;
-    this.t = 0;
-    this.flip = false;
-    this.frameIdx = 0;
-    this.done = false;
-    this.play(Object.keys(sheet.anims)[0]);
-  }
-  play(name, restart = false) {
-    if (!this.sheet.anims[name]) return;
-    if (this.anim === name && !restart) return;
-    this.anim = name;
-    this.t = 0;
-    this.done = false;
-  }
-  update(dt) {
-    const a = this.sheet.anims[this.anim];
-    this.t += dt;
-    let f = Math.floor(this.t * a.fps);
-    if (a.loop) f %= a.frames.length;
-    else if (f >= a.frames.length) {
-      f = a.frames.length - 1;
-      this.done = true;
-    }
-    this.setFrame(a.frames[f]);
-  }
-  setFrame(i) {
-    const s = this.sheet;
-    const col = i % s.cols, row = Math.floor(i / s.cols);
-    const u0 = col / s.cols, u1 = (col + 1) / s.cols;
-    const u = this.mat.uniforms;
-    u.uvRepeat.value.set((this.flip ? -1 : 1) / s.cols, 1 / s.rows);
-    u.uvOffset.value.set(this.flip ? u1 : u0, 1 - (row + 1) / s.rows);
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Item icons & portraits (for HTML UI)
