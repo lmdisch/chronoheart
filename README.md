@@ -36,7 +36,6 @@ Every world, sprite, melody and sound in the game is generated from code: there 
 - **One save holds everything**: a slot for each chapter, plus which chapters are finished. It lives in your browser's local storage, so it stays on that browser and that address. Saves from before the two games were combined are brought over the first time the combined game runs.
 - **Every chapter keeps its save after the story.** Choose Continue to walk the valley with the Clocktower ticking, or the shore with the tide back in.
 - **Some rewards carry over.** Bring all ten of Chapter One's Lost Cogs to Donald Eugene and you start Chapter Two with the **Cog Finder**: Lost Cogs glint through the time lens. (The save records it under `rewards`.)
-- **Two ways to draw the characters**, under **Characters** in the pause menu: **Pixel Relief** (the default: the pixel-art sprites, given depth and real light and shadow) or **Storybook** (small toon-shaded 3D models with an ink outline, that turn to face the way they're going). Every character, creature and machine has both. The choice is remembered in your browser and isn't part of a save.
 - **Vivienne dresses for the place.** In Hollowmere she wears her teal workshop tunic and leather apron. In Saltwick she has a navy sea-coat, a red neckerchief, sailcloth trousers and yellow sea-boots. The goggles and the amulet go wherever she does.
 
 To open every chapter without finishing the one before (for testing, or if you finished Chapter One before the game kept a record of it), add `#unlock` to the address once, or run `__unlockChapters()` in the browser console.
@@ -132,7 +131,7 @@ IDEAS.md                  ideas for a third chapter
 
 **A chapter's rules are a subclass of `Game`.** `src/game.js` has everything the chapters share. Each chapter's `game.js` extends it and fills in the hooks listed at the top of the class (`setup`, `canShift`, `updatePlay`, `runEnding`...), which is where its powers and set pieces live.
 
-**Characters are drawn from their sprite sheets** (`src/render/sprites.js`: the palettes in `CHAR`, and a sheet per character). `src/render/actors.js` turns a sheet into either look: Pixel Relief extrudes each frame into cubes; Storybook builds a model from the same palette (people) or by hand (creatures and machines), and poses it in code. A new character needs a sheet; a new person also gets a Storybook model for free from their `CHAR` entry, while a new creature needs one added to `CREATURES` there.
+**Characters are drawn from their sprite sheets** (`src/render/sprites.js`: the palettes in `CHAR`, and a sheet per character). `src/render/actors.js` gives them depth (Pixel Relief): each frame is pushed out into cubes, thickest in the middle, so characters take real light and cast real shadows. A new character only needs a sheet.
 
 **A level is a voxel grid, built once for each age** by the chapter's `level.js`. Things that change with your actions (an eroded cliff, an oak, a dune, the sea itself) are **features**: small builders keyed on save flags, rebuilt whenever those flags change. Time-lapses grow, drop or float those features into place.
 

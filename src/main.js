@@ -5,7 +5,6 @@ import { SaltwickGame } from './chapters/saltwick/game.js';
 import { audio } from './audio/audio.js';
 import { input } from './core/input.js';
 import { iconURL } from './render/sprites.js';
-import { LOOKS, LOOK_NAMES, getLook, setLook } from './render/actors.js';
 import { setFade } from './ui/ui.js';
 import { TouchControls } from './ui/touch.js';
 
@@ -148,13 +147,6 @@ $('btn-restart-cp').addEventListener('click', () => {
 $('btn-music').addEventListener('click', () => {
   audio.musicOn = !audio.musicOn;
   $('btn-music').textContent = `Music: ${audio.musicOn ? 'On' : 'Off'}`;
-});
-// how characters are drawn (see src/render/actors.js): every one changes on its next update
-const lookLabel = () => ($('btn-look').textContent = `Characters: ${LOOK_NAMES[getLook()]}`);
-lookLabel();
-$('btn-look').addEventListener('click', () => {
-  setLook(LOOKS[(LOOKS.indexOf(getLook()) + 1) % LOOKS.length]);
-  lookLabel();
 });
 $('btn-quit').addEventListener('click', () => location.reload());
 

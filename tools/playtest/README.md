@@ -16,7 +16,7 @@ node tools/playtest/reach.mjs hollowmere   # tools/reachability/hollowmere.js: n
 node tools/playtest/reach.mjs saltwick     # tools/reachability/saltwick.js: every gate holds, nothing traps you
 ```
 
-Set `LOOK=toon` to run with the Storybook characters instead of Pixel Relief (the pause menu's Characters setting). Set `CHROME` to a Chrome binary if the default path in `lib.mjs` isn't on your machine. Every line should say `PASS`. Each run starts from a clean save with every chapter unlocked.
+Set `CHROME` to a Chrome binary if the default path in `lib.mjs` isn't on your machine. Every line should say `PASS`. Each run starts from a clean save with every chapter unlocked.
 
 Don't edit source files while one is running: the dev server's reload restarts the game under it. Anything else that touches the files (a cloud-synced folder, say) does the same. If that happens, serve the game without watching instead, and restart it after each edit: a Vite config with `server: { watch: null, hmr: false }`.
 

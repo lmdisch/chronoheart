@@ -782,7 +782,6 @@ export const CHAR = {
   // sailcloth trousers and yellow sea-boots. The goggles and the amulet go wherever she does.
   vivienneCoast: {
     skin: '#f2c49a', hair: '#2e2236', hairStyle: 'bun', top: '#27477a', apron: '#1d3660', legs: '#d9ccaa', boots: '#e2b83a', belt: '#8a5a32', goggles: true, amulet: true,
-    coat: true, scarf: '#e0483a', // (for the Storybook model: see actors.js)
     chest: (P, lean, by) => {
       for (const x of [13, 14, 15]) P(x + lean, 16 + by, '#e0483a');
       P(14 + lean, 17 + by, '#c23a2e');
@@ -831,12 +830,6 @@ const sheets = new Proxy(cache, {
 });
 export function getSheets() {
   return sheets;
-}
-
-/** The palette a person's sheet is drawn from (null for creatures and machines). */
-export function charFor(name) {
-  if (name === 'vivienne') return CHAR[theme.playerSheet] || CHAR.vivienne;
-  return SHEETS[name] && CHAR[name] ? CHAR[name] : null;
 }
 
 // ---------------------------------------------------------------------------
