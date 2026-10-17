@@ -12,7 +12,7 @@ import { setFade, letterbox } from '../../ui/ui.js';
 import { touchActive } from '../../ui/touch.js';
 import { Game, baseState, ERA_RING } from '../../game.js';
 import { progress } from '../../chapter.js';
-import { buildLevel, SPAWNS, CHECKPOINTS, AREAS, L, COG_TOTAL, STUDY, GARDEN } from './level.js';
+import { buildLevel, SPAWNS, CHECKPOINTS, AREAS, L, COG_TOTAL, STUDY, GARDEN, LASER_FENCE, POSTERN_SAG } from './level.js';
 import { talk, interact, struck, ITEMS, INTRO, ENDING, ENDING_COGS, TEMPO_GIFT, TEMPO_LEARN, FAVORS } from './story.js';
 import { currentGoal } from './objectives.js';
 import { Interactable, Strikeable } from './entities.js';
@@ -490,14 +490,6 @@ export class HollowmereGame extends Game {
     } else if (!this.gearworks.mode) this.meter = Math.min(1, this.meter + dt / 2.5); // (Tempo is drawing on it)
     this.hud.setMeter(this.meter, this.era, !!f.steadyHeart);
 
-    // once you reach Millrace Hollow, the old postern passage opens: a way back west in the Present
-    if (!f.posternOpen && this.player.body.x > L.millX0 + 1.5 && this.mode === 'play') {
-      f.posternOpen = true;
-      this.refreshWorld();
-      this.save();
-      this.hud.toast('<b>A way back:</b> the old postern passage behind you is open, in the Present.', 5000);
-    }
-
     // walking out of Donald Eugene's hideaway or the Starlit Garden
     if (this.world.pocket && ctl && this.player.body.z > -0.7) {
       if (this.world.pocket.id === 'garden') this.leaveGarden();
@@ -508,6 +500,7 @@ export class HollowmereGame extends Game {
     this.player.update(dt);
     if (this.era === ERA.PRESENT && this.player.body.onGround) this.lastSafePresent = { x: this.player.body.x, y: this.player.body.y, z: this.player.body.z };
     this.updateEntities(dt);
+    this.updateRollSpots(f);
 
     // interaction
     const near = ctl ? this.nearestInteractive() : null;
@@ -563,6 +556,32 @@ export class HollowmereGame extends Game {
    * slices of the tower show another era. Bursts come faster as you get close, and faster
    * still once Era Keys are placed. It stops for good once the Tower is restarted.
    */
+  /** The places only a roll gets through: the Future corridor's laser fence, and the postern's crawlspace. */
+  updateRollSpots(f) {
+    const p = this.player, b = p.body, roll = touchActive() ? 'tap <b>Roll</b>' : 'press <kbd>C</kbd>';
+    const lf = LASER_FENCE, mid = (lf.x0 + lf.x1) / 2;
+    if (this.era === ERA.FUTURE && b.z > lf.z0 - 0.5 && b.z < lf.z1 + 0.5) {
+      if (!f.laserHint && Math.abs(b.x - mid) < 3.5) {
+        f.laserHint = true;
+        this.hud.toast(`A laser fence, with a gap along the floor. Too low to walk under, too high to jump: ${roll} to roll beneath it.`, 6000);
+      }
+      const inside = b.x + b.hw > lf.x0 && b.x - b.hw < lf.x1;
+      if (!inside) this.laserSide = Math.sign(b.x - mid);
+      else if (p.state !== 'roll' && lf.beams.some((y) => y + 0.05 > b.y && y < b.y + b.h)) {
+        // it burns, and (even while you're still smarting from the last time) it won't let you by
+        if (p.invuln <= 0) this.bursts.emit(b.x, b.y + 1, b.z, 14, { color: [0xff2030, 0xffa0a0], speed: 3, life: 0.4 });
+        p.hurt(1, mid);
+        const side = this.laserSide || -1;
+        b.x = side < 0 ? lf.x0 - b.hw - 0.01 : lf.x1 + b.hw + 0.01;
+        if (Math.sign(b.vx) === -side) b.vx = 0;
+      }
+    }
+    if (!f.crawlHint && this.era === ERA.PRESENT && f.posternOpen && b.onGround && b.z > 2 && b.x > POSTERN_SAG.x0 - 2 && b.x < POSTERN_SAG.x1 + 3) {
+      f.crawlHint = true;
+      this.hud.toast(`The roof has caved in to a crawlspace. ${roll[0].toUpperCase() + roll.slice(1)} to roll through.`, 5000);
+    }
+  }
+
   updateTowerGlitch(dt) {
     const tu = this.post.time.uniforms;
     const g = (this.glitch ||= { t: 1, on: 0, era: 0, seedT: 0, era2: 0 });

@@ -2,10 +2,11 @@
 // in the Clocktower, the shutter's lock, the trough's plugs. (The shared engine's versions, in
 // src/world/entities.js, are driven by their spawn data instead.)
 import * as THREE from 'three';
-import { damp } from '../../core/util.js';
+import { damp, ERA } from '../../core/util.js';
 import { audio } from '../../audio/audio.js';
 import { iconTexture } from '../../render/sprites.js';
-import { EraEntity } from '../../world/entities.js';
+import { EraEntity, ENEMY } from '../../world/entities.js';
+import { Actor } from '../../render/actors.js';
 
 // ---------------------------------------------------------------------------
 export class Interactable extends EraEntity {
@@ -189,5 +190,76 @@ export class Strikeable extends EraEntity {
       this.box.rotation.z = -this.hits * 0.09;
       if (this.lamp) this.lamp.visible = this.hits === 0 || Math.sin(t * (14 + this.hits * 12)) > -0.2 * this.hits;
     }
+  }
+}
+
+// ---------------------------------------------------------------------------
+/** What the Stasis Seal calls each creature (and the prompt over it). */
+export const CREATURES = { thornback: 'thornback', rat: 'rat', drone: 'drone' };
+
+/**
+ * A creature the Stasis Seal has held in its moment (a record in state.frozen): it stands where
+ * it was sealed, harmless and pale, in that age and in every age after. By the Future someone
+ * has put a placard up beside it (see interact 'frozen' for what everyone makes of it).
+ */
+export class Frozen extends EraEntity {
+  constructor(game, rec, era) {
+    super(game, { id: 'frozen', era, x: rec.x, y: rec.y, z: rec.z, kind: rec.kind, sealedIn: rec.era, reach: 1.9 });
+    this.actor = new Actor(rec.kind, ENEMY[rec.kind].size);
+    this.actor.flip = rec.flip;
+    this.actor.play('walk');
+    const m = this.actor.mat;
+    m.color.setHex(0x9cc8ff);
+    m.emissive.setHex(0x5fb0ff);
+    m.emissiveIntensity = 0.85;
+    this.actor.update(0);
+    this.actor.mesh.position.set(rec.x, rec.y - 0.08, rec.z);
+    this.group.add(this.actor.mesh);
+    // the moment it's held in: a pale shell of crystal around it
+    const cfg = ENEMY[rec.kind];
+    const shell = new THREE.Mesh(
+      new THREE.BoxGeometry(Math.max(cfg.size * 0.85, cfg.hw * 2 + 0.5), cfg.h + 0.45, cfg.hd * 2 + 0.4),
+      new THREE.MeshBasicMaterial({ color: new THREE.Color(0x9fe0ff).multiplyScalar(1.2), transparent: true, opacity: 0.22, depthWrite: false }),
+    );
+    shell.position.set(rec.x, rec.y + (cfg.h + 0.45) / 2 - 0.1, rec.z);
+    shell.renderOrder = 2;
+    this.group.add(shell);
+    this.exhibit = era === ERA.FUTURE && rec.era !== era;
+    if (this.exhibit) {
+      // a museum placard on a little brass post, and a velvet rope to keep the visitors back
+      // (lit from within, so it reads in the dim neon of the Future)
+      const brass = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xd8b050).multiplyScalar(1.3) });
+      const base = rec.y - (ENEMY[rec.kind].fly ? 1.1 : 0);
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.9, 0.08), brass);
+      post.position.set(rec.x + 1.0, base + 0.45, rec.z + 0.55);
+      const plate = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.42, 0.05), brass);
+      const face = new THREE.Mesh(new THREE.PlaneGeometry(0.52, 0.32), new THREE.MeshBasicMaterial({ color: 0x2a2238 }));
+      face.position.z = 0.03;
+      for (let i = 0; i < 3; i++) {
+        const line = new THREE.Mesh(new THREE.PlaneGeometry(i ? 0.4 : 0.3, 0.035), new THREE.MeshBasicMaterial({ color: 0xf0e2b0 }));
+        line.position.set(0, 0.08 - i * 0.08, 0.035);
+        plate.add(line);
+      }
+      plate.add(face);
+      plate.position.set(rec.x + 1.0, base + 1.0, rec.z + 0.58);
+      plate.rotation.x = -0.35;
+      // the velvet rope between two little stanchions
+      const red = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xd02840).multiplyScalar(1.2) });
+      const rope = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.06, 0.06), red);
+      rope.position.set(rec.x - 0.1, base + 0.5, rec.z + 0.8);
+      this.group.add(post, plate, rope);
+      for (const dx of [-0.8, 0.6]) {
+        const st = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.6, 0.07), brass);
+        st.position.set(rec.x + dx, base + 0.3, rec.z + 0.8);
+        this.group.add(st);
+      }
+    }
+  }
+  prompt() {
+    return this.exhibit ? 'Read the placard' : `Frozen ${CREATURES[this.spec.kind]}`;
+  }
+  update(dt) {
+    this.actor.mesh.quaternion.copy(this.game.renderer.billboardQ);
+    if (Math.random() < dt * 2) this.game.bursts.emit(this.x, this.y + 0.4, this.z, 1, { color: [0xbff6ff, 0xffffff], speed: 0.3, life: 1, gravity: -0.6, glow: 1.4, jitter: 0.4 });
   }
 }

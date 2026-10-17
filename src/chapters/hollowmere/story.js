@@ -432,7 +432,7 @@ export async function struck(game, ent) {
       audio.sfx('socket');
       game.renderer.shake = 0.5;
       game.bursts.emit(ent.x, ent.y + 0.5, ent.z, 35, { color: [0xffd070, 0x9ff4ff], speed: 3.5, life: 0.8 });
-      if (game.player.hp < game.player.maxHp) game.spawnHeart(ent.x, ent.z);
+      if (game.player.hp < game.player.maxHp) game.spawnHeart(ERA.PRESENT, ent.x, ent.y, ent.z);
       const done = GEAR.pins.filter((p) => f[p.flag]).length;
       if (done >= GEAR.pins.length) {
         f.mainspringCalmed = true;
@@ -449,6 +449,28 @@ export async function struck(game, ent) {
       return;
     }
   }
+}
+
+/** A creature the Stasis Seal holds (see Frozen): what it looks like, and what each age makes of it. */
+function frozenLines(kind, sealedIn, era) {
+  const { PAST: P, PRESENT: M, FUTURE: F } = ERA;
+  if (kind === 'thornback') {
+    if (era === P) return [N("The thornback stands frozen mid-stride, wrapped in a faint shimmer. It doesn't even blink."), Wr('Sorry, little one. You can thank me in six hundred years.')];
+    if (era === M) return [N('A thornback, frozen mid-stride and not a day older. Someone has hung their hat on its spines.'), Wr("Three hundred years, and nobody's moved it. That's Hollowmere for you.")];
+    return [
+      N('A brass placard beside it reads: "THE HOLLOWMERE THORNBACK. This lizard has stood here for six hundred years, frozen by some unknown magic. Our top scientists cannot even figure it out. PLEASE DO NOT LICK THE EXHIBIT."'),
+      Wr("...I'm never telling anyone about this."),
+    ];
+  }
+  if (kind === 'rat') {
+    if (era === M) return [N('The rat is frozen mid-scurry, whiskers and all.'), Wr("There. Now you can't nibble anyone's boots.")];
+    return [
+      N('A placard: "RATTUS HOLLOWMERENSIS. Discovered frozen mid-scurry three centuries ago, and unchanged since. Scientists remain baffled. Visitors remain fond of it. It is the city\'s official mascot."'),
+      Wr("A mascot! I've made a rat famous."),
+    ];
+  }
+  if (sealedIn !== era) return [N('A placard: "EXHIBIT: SURVEILLANCE DRONE. Still on duty."')];
+  return [N('The drone hangs in the air, held in its moment. Its warning lamp is stuck halfway through a blink.'), Wr('Not so nosy now, are you?')];
 }
 
 export async function interact(game, ent) {
@@ -534,6 +556,8 @@ export async function interact(game, ent) {
         return;
       }
       return say(N('An empty planter box full of good soil. Something could grow here, given enough time.'));
+    case 'frozen':
+      return say(frozenLines(ent.spec.kind, ent.spec.sealedIn, ent.era));
     case 'postern':
       if (f.posternOpen) return say(N('The postern passage runs west through the rubble, back toward the gatehouse.'));
       f.posternOpen = true;
@@ -599,11 +623,9 @@ export async function interact(game, ent) {
       audio.sfx('gate');
       game.renderer.shake = 0.4;
       game.refreshWorld();
-      await say([N('You fit the brass wheel onto the spindle and wind. With a long groan, the sluice gate drops shut.'), Wr('Now the pond can fill all the way up!')]);
-      // the pond you're standing over fills first; then, three centuries on, the reservoir it becomes
-      await game.timelapse({ to: ERA.PRESENT, focus: [195.5, 1.5, 3], years: 1, caption: 'With the sluice shut, the millpond fills to the brim...', grow: ['millWaterM'], growFrom: 0.2, float: { ids: ['millBoomM'], by: 2 } });
-      await game.timelapse({ to: ERA.FUTURE, focus: [195.5, 1.5, 3], years: 300, caption: '...and in time it becomes a reservoir.', grow: ['millWaterF'], float: { ids: ['millBoomF'], by: 2 } });
-      game.hud.toast('The pond is brim-full: swim across, or hop the log boom.', 4000);
+      game.bursts.emit(195.5, 2.2, 3, 40, { color: [0x4a9ad8, 0x9fe0ff], speed: 3, life: 0.8, gravity: 6 });
+      audio.sfx('splash');
+      await say([N('You fit the brass wheel onto the spindle and wind. With a long groan, the sluice gate drops shut, and the millpond swells to the brim.'), Wr('Brim-full! I can swim across now, or hop the log boom.')]);
       game.save();
       return;
     case 'satchel':

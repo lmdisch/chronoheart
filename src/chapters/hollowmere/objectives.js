@@ -143,7 +143,7 @@ export function currentGoal(game) {
       );
     }
     if (eraMissing.length) {
-      const back = f.posternOpen ? 'The postern passage past the gatehouse vault leads back west.' : 'The old postern passage (<b>Present</b>) opens once you reach Millrace Hollow, so you can always walk back west.';
+      const back = f.posternOpen ? 'The postern passage past the gatehouse vault leads back west.' : 'In the <b>Present</b>, pull the old postern lever at the west edge of Millrace Hollow to open a passage back west.';
       return step('The lock needs all three Era Keys too.', `The great lock has four keyholes. You still need ${eraMissing.join(' and ')}. ${back}`);
     }
     if (!f.regulatorsSynced) {
@@ -183,7 +183,7 @@ export function currentGoal(game) {
   if (!hasHammer) missing.push('the Bell Hammer (Smithy Lane)');
   if (!hasCore) missing.push('the Fusion Core (Gatehouse vault, in the Future)');
   if (missing.length) {
-    const back = f.posternOpen ? 'The postern passage leads back west through the rubble.' : 'The old postern passage (<b>Present</b>) opens once you reach Millrace Hollow, so you can always walk back west.';
+    const back = f.posternOpen ? 'The postern passage leads back west through the rubble.' : 'In the <b>Present</b>, pull the old postern lever at the west edge of Millrace Hollow to open a passage back west.';
     return step('The Tower needs all three Era Keys.', `You still need ${missing.join(' and ')}. ${back}`);
   }
   // the finale climb: one key at a time, each higher up and in a different age

@@ -8,6 +8,10 @@ import { Actor } from '../../render/actors.js';
 import { ECHO_BUTTONS, ECHO_STEPS, ECHO_GATES, GATE_BUTTONS, SEALABLES, L } from './level.js';
 import { T } from '../../world/world.js';
 import { touchActive } from '../../ui/touch.js';
+import { Frozen, CREATURES } from './entities.js';
+
+// which spawn a frozen creature was (so it isn't spawned live again)
+const frozenKey = (spec) => `${spec.kind}@${spec.x},${spec.z}`;
 
 const ECHO_MAX = 5; // seconds of movement an echo can hold
 const ECHO_LIMIT = 3; // echoes at once; a new one replaces the oldest
@@ -73,6 +77,13 @@ export class Abilities {
 
   /** Called after the world is (re)built: echoes, buttons and steps live in its Present group. */
   attach() {
+    // creatures held by the Stasis Seal stay held, in their age and every one after
+    const g0 = this.game;
+    for (const rec of g0.state.frozen || []) {
+      for (const e of g0.enemies) if (e.alive && frozenKey(e.spec) === rec.key) e.remove();
+      this.placeFrozen(rec);
+    }
+    g0.enemies = g0.enemies.filter((e) => e.alive);
     this.echoes = [];
     this.rec = null;
     this.setStatus(null);
@@ -180,8 +191,8 @@ export class Abilities {
     if (which === 'seal') {
       f.hasSeal = true;
       this.game.hud.toast(
-        `<b>Stasis Seal!</b> Stand by something that shimmers and ${touch ? 'tap <b>Seal</b>' : 'press <kbd>R</kbd>'}.`,
-        5000,
+        `<b>Stasis Seal!</b> Stand by something that shimmers (or right up close to a creature) and ${touch ? 'tap <b>Seal</b>' : 'press <kbd>R</kbd>'}.`,
+        6000,
       );
     } else {
       f.hasEcho = true;
@@ -217,7 +228,55 @@ export class Abilities {
   /** The sealable the player is standing at, if any: drives the "R Seal ..." prompt and the touch button. */
   sealTarget() {
     const b = this.game.player.body;
-    return this.readySealables().find((s) => b.x >= s.x0 && b.x <= s.x1 + 1 && b.y >= (s.yMin ?? -Infinity)) || null;
+    return this.readySealables().find((s) => b.x >= s.x0 && b.x <= s.x1 + 1 && b.y >= (s.yMin ?? -Infinity)) || this.creatureTarget();
+  }
+
+  /** A creature close enough to touch the ring to: it works on living things too. */
+  creatureTarget() {
+    const g = this.game, b = g.player.body;
+    if (!g.state.flags.hasSeal) return null;
+    let best = null, bd = 1.8;
+    for (const e of g.enemies) {
+      if (!e.alive || !e.active() || !CREATURES[e.spec.kind]) continue;
+      const d = Math.hypot(e.body.x - b.x, (e.body.z - b.z) * 0.8);
+      if (d < bd && Math.abs(e.body.y - b.y) < 1.8) {
+        bd = d;
+        best = e;
+      }
+    }
+    return best && { creature: best, name: `the ${CREATURES[best.spec.kind]}` };
+  }
+
+  /** A frozen creature's statues: where it was sealed, and the same spot in each later age (unless something has been built right through it). */
+  placeFrozen(rec) {
+    const g = this.game;
+    for (let era = rec.era; era <= ERA.FUTURE; era++) {
+      if (era !== rec.era && g.world.cell(era, Math.floor(rec.x), Math.floor(rec.y + 0.3), Math.floor(rec.z)) === T.SOLID) continue;
+      const e = new Frozen(g, rec, era);
+      g.entities.push(e);
+      g.interactables.push(e);
+    }
+  }
+
+  sealCreature(e) {
+    const g = this.game, s = g.state, f = s.flags, eb = e.body, name = CREATURES[e.spec.kind];
+    const rec = { key: frozenKey(e.spec), kind: e.spec.kind, era: e.era, x: eb.x, y: eb.y, z: eb.z, flip: e.actor.flip };
+    (s.frozen ||= []).push(rec);
+    e.remove();
+    g.enemies = g.enemies.filter((x) => x.alive);
+    this.placeFrozen(rec);
+    audio.sfx('socket');
+    audio.sfx('shift', { era: g.era });
+    g.bursts.emit(eb.x, eb.y + 0.5, eb.z, 40, { color: [0xbff6ff, 0xffffff], speed: 4, life: 1 });
+    g.save();
+    // the first time in each age, see what the centuries make of it; after that, you know
+    const seen = 'frozenLapse' + e.era;
+    if (e.era < ERA.FUTURE && !f[seen]) {
+      f[seen] = true;
+      const years = e.era === ERA.PAST ? 600 : 300;
+      g.timelapse({ to: ERA.FUTURE, focus: [eb.x, eb.y + 0.6, eb.z], years, caption: `Held in its moment, the ${name} waits out the centuries...`, effect: 'shine' })
+        .then(() => g.hud.toast(`The ${name} is still there in the <b>Future</b>, and somebody has put up a placard.`, 6000));
+    } else g.hud.toast(`The ${name} is held in its moment.`, 3000);
   }
 
   /** Pale motes rise off anything that can be sealed, so it reads as special before you get there. */
@@ -239,6 +298,7 @@ export class Abilities {
       if (here && f[here.flag]) return g.hud.toast(`${here.name} is already sealed in its moment.`);
       return g.hud.toast('Nothing here shimmers to seal.', 2500);
     }
+    if (t.creature) return this.sealCreature(t.creature);
     f[t.flag] = true;
     audio.sfx('socket');
     audio.sfx('shift', { era: g.era });

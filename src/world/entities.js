@@ -164,8 +164,12 @@ export class Player {
     } else if (this.state === 'roll') {
       b.vy -= GRAV * dt;
       if (this.stateT > 0.42) {
-        this.state = 'normal';
-        b.h = 1.45;
+        // stay low (and keep rolling) while there's a ceiling too low to stand under
+        if (hits(world, era, { ...b, h: 1.45 })) this.stateT = 0.3;
+        else {
+          this.state = 'normal';
+          b.h = 1.45;
+        }
       }
     } else if (this.state === 'climb') {
       if (!onLadder) {
@@ -259,7 +263,6 @@ export class Player {
 
     const prevVy = b.vy;
     moveBody(world, era, b, dt);
-    if (this.state === 'roll' && this.stateT > 0.42 && hits(world, era, { ...b, h: 1.45 })) this.stateT = 0.3; // stay low under ceilings
 
     // landing
     if (b.onGround && !this.wasGround && prevVy < -6) {
@@ -461,7 +464,7 @@ export class NPC extends EraEntity {
 }
 
 // ---------------------------------------------------------------------------
-const ENEMY = {
+export const ENEMY = {
   thornback: { hp: 2, speed: 1.5, chase: 3.1, hw: 0.5, hd: 0.3, h: 0.7, size: 2.0, sight: 5 },
   crab: { hp: 2, speed: 1.4, chase: 3.0, hw: 0.5, hd: 0.3, h: 0.6, size: 2.0, sight: 5 },
   rat: { hp: 1, speed: 2.0, chase: 3.8, hw: 0.35, hd: 0.25, h: 0.4, size: 1.6, sight: 5 },

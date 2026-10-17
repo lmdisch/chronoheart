@@ -134,6 +134,13 @@ export const ECHO_GATES = [
 ];
 
 /** Things the Stasis Seal can hold in their moment. */
+// the low stretch of the postern passage (Present), a cell high: roll through it
+export const POSTERN_SAG = { x0: 176, x1: 178 };
+
+// the laser fence across the Future security corridor: a cell-wide gate of beams from just off
+// the floor to above a jump, with a gap underneath that only a roll fits through
+export const LASER_FENCE = { x0: 168, x1: 169, z0: 2, z1: 5, beams: [0.95, 1.75, 2.55, 3.35] };
+
 export const SEALABLES = [
   {
     id: 'bridge', era: P, x0: L.gorgeX0 - 1, x1: L.gorgeX1 + 1, needs: 'bridgeBuilt', flag: 'bridgeSealed', name: "Tamsin's bridge",
@@ -1286,6 +1293,15 @@ function gatehouse(world) {
   }
   b.light(163, 3, 3.5, 0xff3040, 6, 8, 0.1);
   b.light(170, 3, 3.5, 0xff3040, 6, 8, 0.1);
+  // the laser fence: an emitter post at each corner of the gate, and sheets of beams between them
+  const lf = LASER_FENCE;
+  for (const x of [lf.x0, lf.x1 - 0.12])
+    for (const z of [lf.z0, lf.z1 - 0.12]) {
+      b.deco(x, 0, z, 0.12, 3.7, 0.12, 0x2a2f3a);
+      b.glow(x - 0.02, 3.7, z - 0.02, 0.16, 0.12, 0.16, 0xff3040);
+    }
+  for (const y of lf.beams) for (const z of [lf.z0 + 0.03, lf.z1 - 0.09]) b.glow(lf.x0 + 0.12, y, z, lf.x1 - lf.x0 - 0.12, 0.05, 0.05, 0xff3040);
+  b.light((lf.x0 + lf.x1) / 2, 1.6, 3.5, 0xff2030, 5, 5, 0.25);
   b.solid(174, 0, 0, 181, 5, 0, jitter(C.metalL));
   b.solid(174, 0, 6, 181, 1, 6, jitter(C.metalL));
   b.solid(174, 0, ZMIN, 181, 10, -1, jitter(C.metalL));
@@ -1320,17 +1336,19 @@ function gatehouse(world) {
   });
 
   // Present: rubble and the rock behind it. The Clocktower's old postern lever opens a passage
-  // back to the gatehouse, so you can always return west for anything you missed.
+  // back to the gatehouse, so you can always return west for anything you missed. Partway along,
+  // the roof has sagged to a crawlspace a cell high (POSTERN_SAG): too low to walk, so roll.
   world.addFeature({
     id: 'postern', eras: [M], key: (s) => String(!!s.flags.posternOpen),
     build: (b, era, s) => {
       const open = !!s.flags.posternOpen;
-      const cut = (y, z) => open && z >= 2 && y <= 3;
+      const sag = (x) => x >= POSTERN_SAG.x0 && x <= POSTERN_SAG.x1;
+      const cut = (x, y, z) => open && z >= 2 && y <= (sag(x) ? 0 : 3);
       for (let x = L.rubbleX0; x <= 181; x++) {
         const top = x <= 173 ? 3 : 12;
         for (let y = 0; y <= top; y++)
           for (let z = 0; z <= 6; z++) {
-            if (cut(y, z)) continue;
+            if (cut(x, y, z)) continue;
             const pal = x <= 173 ? (hash3(x, y, z) < 0.3 ? C.stoneMoss : C.stone) : C.stone;
             b.setCell(x, y, z, T.SOLID, jitter(pal)(x, y, z));
           }
@@ -1340,13 +1358,15 @@ function gatehouse(world) {
         if (!open || z < 2) b.deco(L.rubbleX0 + hash3(i, 5, 5) * 5, 4, z, 0.6, 0.5, 0.6, C.stone[i % 5]);
       }
       if (open) {
-        // timber props hold the old passage up
-        for (let x = 174; x <= 181; x += 3) {
+        // timber props hold the old passage up, apart from the stretch where the roof gave way
+        for (const x of [174, 180]) {
           b.deco(x + 0.1, 0, 2.05, 0.2, 4, 0.2, C.wood[1]);
           b.deco(x + 0.1, 3.8, 2.05, 0.2, 0.2, 4.9, C.wood[0]);
         }
+        // the props that failed: a split beam slumped across the crawlspace's mouth, both ends
+        for (const x of [POSTERN_SAG.x0 - 0.15, POSTERN_SAG.x1 + 0.95]) b.deco(x, 0.75, 2.05, 0.2, 0.25, 4.9, C.wood[0]);
         for (let i = 0; i < 6; i++) b.deco(L.rubbleX0 + hash3(i, 2, 9) * 5, 0, 2.2 + hash3(i, 4, 1) * 4.5, 0.4, 0.3, 0.4, C.stone[i % 5]);
-        b.light(177.5, 2.5, 4, 0xffb060, 4, 8, 0.1);
+        b.light(179.5, 2.5, 4, 0xffb060, 4, 8, 0.1);
       } else {
         // the barred door, seen from the Clocktower side
         b.deco(181.92, 0, 2.2, 0.1, 3.4, 2.6, C.wood[0]);

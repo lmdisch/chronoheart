@@ -409,7 +409,8 @@ export class Game {
   /** A Strikeable has taken its last hit: the story says what happens. */
   strikeDone(s) {
     this.mode = 'dialogue';
-    Promise.resolve(this.ch.struck(this, s)).then(() => {
+    // (finally: a story bug must never leave the player stuck in 'dialogue')
+    Promise.resolve(this.ch.struck(this, s)).finally(() => {
       if (this.mode === 'dialogue') this.mode = 'play';
       this.lockT = 0.2;
     });
@@ -425,7 +426,7 @@ export class Game {
   use(target) {
     this.mode = 'dialogue';
     const p = target instanceof NPC ? this.ch.talk(this, target) : this.ch.interact(this, target);
-    Promise.resolve(p).then(() => {
+    Promise.resolve(p).finally(() => {
       if (this.mode === 'dialogue') this.mode = 'play';
       this.lockT = 0.2;
     });
