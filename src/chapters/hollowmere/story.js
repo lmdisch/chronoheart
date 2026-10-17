@@ -2,7 +2,8 @@
 import { audio } from '../../audio/audio.js';
 import { ERA } from '../../core/util.js';
 import { touchActive } from '../../ui/touch.js';
-import { erosionCells, STATUE } from './level.js';
+import { progress } from '../../chapter.js';
+import { erosionCells, STATUE, GEAR } from './level.js';
 
 export const ITEMS = {
   acorn: { name: 'Acorn', desc: "Megan's finest acorn. It just needs time to grow." },
@@ -16,7 +17,7 @@ export const ITEMS = {
   medallion: { name: "Aria's Medallion", desc: "A smith's medallion stamped with the family mark. For Lillian." },
   wheel: { name: 'Brass Sluice Wheel', desc: "The old mill's sluice wheel, kept in a museum for three hundred years. It winds the sluice gate shut." },
   cable: { name: 'Steel Cable', desc: 'A spool of cable from the scrapyard. It will not fray or rot for a very, very long time.' },
-  snorkel: { name: 'Snorkel', desc: 'Borrowed from the aqueduct pool, three hundred years from now. With it you can stay underwater for as long as you like.' },
+  snorkel: { name: 'Snorkel', desc: 'Borrowed from the aqueduct pool, three hundred years from now. With it you can stay under for as long as you like.' },
   clockKey: { name: 'Escapement Key', desc: "The key to the Clocktower's great lock. Only a lock that still turns will take it.", showcase: true },
   finder: { name: 'Cog Finder', desc: "Ten of Donald Eugene's lost cogs, meshed round the Chronoheart's rim. Hold the time lens open and they turn toward anything of his still lost in another age." },
 };
@@ -65,10 +66,11 @@ export const ENDING = [
   DE("And let me tell you what all my years among the clocks have taught me. Time is the most precious thing any of us will ever have."),
   DE("Not the hours on a clock face. The hours you spend with the people you love. Those are the ones you can never wind back, not even with a Chronoheart."),
   DE('So spend your time well, Vivienne. Spend it on them.'),
-  Wr('I will. I promise.'),
-  DE("Good. Though... while I was lost between the ages, I saw something I can't explain. Another clock, far older than ours, ticking somewhere no clock should be."),
-  Wr('Another clock? Where?'),
-  DE("That, apprentice, is a puzzle for another day. Our work isn't finished, not by a long way. And I have a feeling you'll be the one to finish it."),
+  Wr('I will. I promise. ...Master, why did the mainspring snap? Something was pulling on it from outside.'),
+  DE("...You felt it too. For fifty years, someone up on the mountain has been borrowing little slivers of our hours, hoping the valley wouldn't notice."),
+  DE("And now that we've locked Hollowmere's heart forward again, I can already feel the pull shifting toward the sea—and a pocketwatch I hid away a very long time ago."),
+  Wr('A pocketwatch? And another clock by the sea?'),
+  DE("That, apprentice, is a confession for tomorrow. Our work isn't finished, not by a long way. And I have a feeling you'll be the one to finish it."),
   DE('Now then... I believe we are both late for supper. Shall we go home?'),
 ];
 
@@ -173,8 +175,8 @@ function npcLines(game, id) {
         Wr("Not if I can help it. That's not how this is going to go, Master."),
       ];
     case 'michelle': {
-      const m = S('michelle', 'Michelle the Wise');
-      if (f.finished) return [m('I heard it from here: the first tick. I had almost forgotten the sound.'), m('Spend your time well, Vivienne. There is a great deal more of it about than there was yesterday.')];
+      const m = S('michelle', 'Lyra the Wise');
+      if (f.finished) return [m('I heard it from here: the first tick. Like an old friend breathing easy again.'), m('Spend your time well, Vivienne. The valley has its heartbeat back, though the mountain above us is still holding its breath.')];
       if (f.metMichelle && game.state.kindness.length >= FAVORS.length)
         return [m("You have the look of someone who has been busy being kind, Vivienne. I can always tell."), m('People remember a kindness far longer than you would think. And so do I.')];
       if (f.metMichelle)
@@ -182,10 +184,10 @@ function npcLines(game, id) {
       f.metMichelle = true;
       return [
         m('Ah. The clockmaker\'s apprentice, right on time. The river has been expecting you.'),
-        m('A little advice before you cross. Time is the one thing none of us gets back, and it is very easy to waste. Spend it wisely.'),
-        m('Your master used to vanish for days at a time, you know. He once told me he kept a room "in the oldest age, behind a door no one would ever think to knock on". I never did work out what he meant.'),
-        m('And wherever you find yourself, always remember to help others. A kindness is remembered longer than you would think.'),
-        Wr("I'll remember. Thank you, Michelle."),
+        m('A little advice before you cross. Time is the one thing none of us gets back, and it is very easy to waste—or to cling to until it turns to stone. Spend it wisely.'),
+        m('Your master used to vanish for days at a time, you know. When we were young, he told me he kept a room "in the oldest age, behind a door with a brass gear where no one would ever think to knock."'),
+        m('And wherever you find yourself, always remember to help others. A kindness echoes across the years far longer than you would think.'),
+        Wr("I'll remember. Thank you, Lyra."),
       ];
     }
     case 'zach': {
@@ -297,18 +299,18 @@ function npcLines(game, id) {
     }
     case 'oren': {
       // He has met Donald Eugene, without knowing who (or when) he is: the old man came back to
-      // the first age to have the Clocktower built.
+      // the first age to fit the iron gears into the tower first laid out by the First Clockmaker.
       const o = S('oren', 'Oren the Mason');
-      if (f.metOren) return [o('Still dressing stone for the old man\'s "clock" tower. If you see him, tell him the walls are up. And ask him again what a clock is.')];
+      if (f.metOren) return [o('Still dressing stone for the "clock" tower. If you see the old man, tell him the walls are up. And ask him again what a clock is.')];
       f.metOren = true;
       return [
-        o("Ho, stranger. More odd clothes! You're the second this season."),
-        o('The first was an old man. Bald as a river stone on top, with white hair all round the sides. He walked out of the trees with a cart of iron wheels, and drawings on skins so thin the sun shone through them.'),
-        o('He wanted a tower. Here, on this very spot. A "clock tower", he called it. He was very excited. He would not stop talking, and he would not hear no.'),
+        o("Ho, stranger. More odd clothes! And round glass over your eyes, just like the First Clockmaker our elders speak of."),
+        o('She left the mountain stonecutters the first drawings on skins so thin the sun shone through them. And this season, an old man—bald as a river stone on top, with white hair all round the sides—walked out of the trees with a cart of iron wheels.'),
+        o('He wanted a tower raised here, on this very spot, to match the mountain clock. A "clock tower", he called it. He was very excited. He would not stop talking, and he would not hear no.'),
         Wr('A clock tower... did he say what a clock was?'),
         o('Something that counts the day, he said. I told him we have the sun for that. He laughed, and said the sun was a fine start.'),
         o('So we are building it. The walls are up already. He says the part that matters goes inside, later. He paid in iron, and iron is iron. But between us, stranger: not one of us knows what it is for.'),
-        Wr('Bald, white hair, would not hear no... Master Donald Eugene. He didn\'t just look after the Clocktower. He had it built.'),
+        Wr('Bald, white hair, would not hear no... Master Donald Eugene. He came back here to make sure Hollowmere\'s Tower was built.'),
       ];
     }
     case 'tamsin': {
@@ -422,6 +424,30 @@ export async function struck(game, ent) {
       await say([N('The rusted lock housing bursts apart, and the shutter drops into the floor.'), Wr('Three hundred years of rust, and one good wrench.')]);
       game.save();
       return;
+    case 'escapePin0':
+    case 'escapePin1':
+    case 'escapePin2': {
+      const pin = GEAR.pins.find((p) => p.id === ent.id);
+      if (pin) f[pin.flag] = true;
+      audio.sfx('socket');
+      game.renderer.shake = 0.5;
+      game.bursts.emit(ent.x, ent.y + 0.5, ent.z, 35, { color: [0xffd070, 0x9ff4ff], speed: 3.5, life: 0.8 });
+      if (game.player.hp < game.player.maxHp) game.spawnHeart(ent.x, ent.z);
+      const done = GEAR.pins.filter((p) => f[p.flag]).length;
+      if (done >= GEAR.pins.length) {
+        f.mainspringCalmed = true;
+        audio.sfx('checkpoint');
+        game.save();
+        await say([
+          N('The third escapement pin locks home with a deep, ringing clunk. The whipping arms fall still, and the great mainspring settles onto its winding post.'),
+          Wr('All three pins locked! Now I can wind the mainspring and steady the Tower\'s heart.'),
+        ]);
+      } else {
+        game.save();
+        game.hud.toast(`<b>Escapement pin locked (${done}/${GEAR.pins.length})!</b> ${GEAR.pins.length - done} more to steady the mainspring.`, 4000);
+      }
+      return;
+    }
   }
 }
 
@@ -607,7 +633,7 @@ export async function interact(game, ent) {
       if (f.hasEcho) return say(N("Donald Eugene's lectern. A scrawled diagram of three stone steps, and the words: \"Be in three places at once.\""));
       await say([
         N("A lectern stands by the gallery wall, and on it, Donald Eugene's handwriting:"),
-        N('"Vivienne. These buttons forget you the moment you step off them. This lens lets the Chronoheart remember you, so something of you can stay behind. ~D.E."'),
+        N('"Vivienne. These buttons forget you the moment you step off them. This lens lets the Chronoheart remember you, so something of you can stay behind. Lyra ground the glass for it fifty years ago. ~D.E."'),
         Wr('A copy of me that stays behind... standing on the buttons for me?'),
         N('The lens clicks neatly into the Chronoheart.'),
       ]);
@@ -680,8 +706,15 @@ export async function interact(game, ent) {
       return game.leaveGearworks();
     case 'mainspring':
       if (f.finished) return say(N('The great mainspring turns, slow and steady. Tick. Tock. Tick.'));
+      if (!f.mainspringCalmed) {
+        const left = GEAR.pins.filter((p) => !f[p.flag]).length;
+        return say([
+          N('The great mainspring thrashes wildly on its post, sending shockwaves across the deck while three brass escapement pins spin out of control around it.'),
+          Wr(`It's running far too wild to touch! I need to slow the whipping arms with Tempo and knock ${left === 3 ? 'all three escapement pins' : `the last ${left === 1 ? 'escapement pin' : 'two escapement pins'}`} back into place with my wrench first.`),
+        ]);
+      }
       await say([
-        N("The great mainspring thrashes on its post, unwinding far too fast. The whole clock shakes with every beat."),
+        N("With all three escapement pins locked down, the great mainspring shudders on its post, waiting to be wound back into step."),
         Wr("Easy... easy. Slow down."),
         N('You press the Chronoheart against the spring. Its two rings turn, one against the other, until the spring\'s wild beat settles into one steady rhythm...'),
       ]);
@@ -698,13 +731,14 @@ export async function interact(game, ent) {
       }
       return game.enterStudy();
     case 'everspring':
-      if (f.steadyHeart) return say(N('The workbench is tidy now. Above it, the chalk Clocktower is covered in notes, most of them crossed out.'));
+      if (f.steadyHeart) return say(N('The workbench is tidy now. Above it, the chalk Clocktower is covered in notes, most of them crossed out, beside a faded sketch signed "D., O., & L."'));
       await say([
         N('A hidden room: a cot, a lantern, maps of the valley in three different ages, and the Clocktower chalked on the wall, covered in notes.'),
-        N('On the workbench lies a letter, held down by a coil of bright star-iron.'),
-        N('"Vivienne. If you found this room, you\'ve been paying attention. I\'ve been hopping between the ages trying to work out why the Tower is failing, and I needed somewhere to rest where no one would ever think to knock."'),
-        N('"This is the Everspring: a mainspring of star-iron that never runs down. Fit it to the Chronoheart and it will never need to recharge again. I\'d hoped to finish the job myself. ~D.E."'),
-        Wr('A secret workshop in the oldest age... Of course he had one.'),
+        N('On the workbench lies a letter, held down by a coil of bright star-iron, beside a faded charcoal sketch of three young clockmakers marked "D., O., & L."'),
+        N('"Vivienne. If you found this room, you\'ve been paying attention—or Lyra pointed you here. Fifty years ago, there were three of us who kept the valley\'s clocks: Orin, Lyra, and I."'),
+        N('"On the night Lyra fell ill, Orin locked the mountain observatory in a single borrowed hour so she would never slip away from him. That fifty-year pull is what finally snapped our Tower\'s mainspring."'),
+        N('"This is the Everspring: a mainspring of star-iron that never runs down. Fit it to the Chronoheart and it will never need to recharge again. ~D.E."'),
+        Wr('Three clockmakers... Donald Eugene, Orin, and Lyra. And someone up on the mountain has been holding onto a single hour for fifty years...'),
         N("You fit the Everspring into the Chronoheart. A slow warmth spreads from your chest, and the amulet's ring settles into a steady gold glow."),
       ]);
       f.steadyHeart = true;
@@ -714,6 +748,31 @@ export async function interact(game, ent) {
       game.hud.toast('<b>The Everspring!</b> The Chronoheart never runs down now.', 5000);
       game.save();
       return;
+    case 'astralDoor':
+      if (!progress.hasReward('masterKey')) {
+        return say([
+          N('A narrow door of star-iron set into the east wall of Donald Eugene\'s workshop. Above the latch, four overlapping brass rings surround a keyhole shaped like a four-winged key.'),
+          Wr('Four rings... one more than the Chronoheart has. Whatever key opens this, it isn\'t in Hollowmere.'),
+        ]);
+      }
+      if (!f.astralDoorOpened) {
+        f.astralDoorOpened = true;
+        game.save();
+        await say([
+          N('The Master\'s Key hums in your hand. You slide it into the four-ringed lock on the star-iron door.'),
+          N('With a chime like a distant bell, the door opens—not into the workshop, but ten thousand years down the road, where the fourth ring of time turns.'),
+          Wr('Ten thousand years on...'),
+        ]);
+      }
+      return game.enterGarden();
+    case 'gardenPlinth':
+      return say([
+        N('A quiet sanctuary where moss and starlight have reclaimed the old chrome plaza. Above you, four brass astrolabe rings turn gently around the branches of a living tree-observatory.'),
+        N('On the stone plinth at its roots, four names are carved side by side beneath a star-chart and a wrench:'),
+        N('"IN MEMORY OF THE FOUR CLOCKMAKERS OF HOLLOWMERE, SALTWICK, AND HIGHCREST: DONALD EUGENE, SIR ORIN, LYRA THE WISE, AND VIVIENNE."'),
+        N('"THEY MENDED THE HOURS, AND LET THE MORNING COME."'),
+        Wr('All four of us. Ten thousand years on, the valley still remembers... and the sun-lilies are still in bloom.'),
+      ]);
     case 'socketSun':
     case 'socketBell':
     case 'socketCore': {

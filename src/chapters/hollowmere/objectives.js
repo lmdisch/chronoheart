@@ -170,7 +170,12 @@ export function currentGoal(game) {
         'Reach the great mainspring.',
         `Every few seconds the Tower stutters and throws the lift back down. At normal speed it never reaches the top in time. Stand on it and hold ${fast} to hurry it up, then hold ${slow} at the top so it waits while you step onto the summit.`,
       );
-    return step('Reach the great mainspring.', 'The mainspring thrashes at the top of the clock. Steady it.');
+    if (!f.mainspringCalmed)
+      return step(
+        'Calm the runaway mainspring.',
+        `Three brass escapement pins around the summit have popped loose, and their whipping arms spin too fast to approach. Jump or roll over the golden floor pulses, hold ${slow} to slow each escapement arm, and strike each pin three times with your wrench.`,
+      );
+    return step('Wind the great mainspring.', 'All three escapement pins are locked. Examine the great mainspring to steady the Tower\'s heart.');
   }
   // ---- Clocktower
   const missing = [];

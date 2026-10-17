@@ -310,6 +310,15 @@ await up('KeyE'); await down('KeyQ');
 await walkTo(337.5, 3.0, { t: 2000 });
 await up('KeyQ');
 await check('up the lift, onto the summit', (s) => s.y >= 13.9 && s.x > 336);
+// the Runaway Mainspring: three escapement pins, each struck three times with its arm slowed (hold Q)
+for (const [px, pz, sx, sz] of [[337.5, 1.8, 337.5, 3.7], [339.6, 5.1, 339.6, 3.2], [343.2, 2.0, 343.2, 3.9]]) {
+  await walkTo(sx, sz, { t: 4000 });
+  await down('KeyQ');
+  for (let i = 0; i < 3; i++) { await tap('KeyX'); await sleep(450); }
+  await up('KeyQ');
+  await settle();
+}
+await check('all three escapement pins locked: the mainspring calmed', (s) => s.f.mainspringCalmed && s.hp > 0);
 await walkTo(340.5, 3.5, { t: 3000 });
 await check('prompt at the mainspring', (s) => /mainspring/i.test(s.prompt || ''));
 await tap('KeyF');

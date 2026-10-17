@@ -63,7 +63,13 @@ export function currentGoal(game) {
     if (f.duskRung) return step('Keep heading east.', "Gull's Head, and the Tide Well, are just along the shore.");
     if (!hasClapper) return step('The Dusk Bell has no clapper.', 'The Dusk Bell stands on the <b>Future</b> wharf, and has never rung. Its clapper is in Salvage Pit 3, back west in the Saltings, in the <b>Future</b>: a pit with no way out. Jump in anyway, take it, and let the pocketwatch run you back out.');
     if (!f.clapperFitted) return step('Fit the clapper to the Dusk Bell.', "The bell hangs in the middle of the <b>Future</b> wharf, and a Warden walks a loop around it. Stay out of its sight cone and the searchlight. In the Present that spot is inside the boathouse, so walk most of the way in the <b>Present</b>, along the back or the front of the road, then step into the Future beside the bell.");
-    return step('Ring the Dusk Bell.', `Three strokes of your wrench (${k.attack}). Every stroke brings the Warden running: ring, then ${k.rewind} to run back the way you came, right out of its age. It soon gives up. Then go back for the next stroke.`);
+    if (f.duskStroke1 && !f.wardenKeyStruck) {
+      return step("Stun the Harbor Warden through the lens.", `The Warden's shield blocks the Dusk Bell! Slip into the <b>Present</b> and walk along the front of the boathouse road (near the Warden's spot), ${k.lens} on the <b>Future</b>, and swing your wrench (${k.attack}) to strike its wind-up key.`);
+    }
+    if (f.duskStroke2 && !f.wardenCrashed) {
+      return step("Bait the Harbor Warden's charge.", `The shield is back up! In the <b>Future</b>, let the Warden charge toward you near a stone bollard, then ${k.rewind} so it crashes and drops its shield.`);
+    }
+    return step('Ring the Dusk Bell.', `Three strokes of your wrench (${k.attack}). After the first stroke, strike the Warden's wind-up key from the <b>Present</b> through the lens; after the second, bait its charge in the <b>Future</b> and ${k.rewind} so it crashes into a bollard.`);
   }
 
   // ---- The Dry Lock
@@ -105,7 +111,7 @@ export function currentGoal(game) {
       if (!f.noonRung) return step('Ring the Noon Bell.', `It hangs in its frame on top of Bell Rock. Three good swings of your wrench (${k.attack}).`);
       return step('Keep heading east.', 'Steps lead down the far side of Bell Rock.');
     }
-    if (!f.hasRewind) return step('Find a way out to Bell Rock.', 'Michelle the Wise is waiting at the head of the pier. She has something to say about that watch.');
+    if (!f.hasRewind) return step('Find a way out to Bell Rock.', 'Lyra the Wise is waiting at the head of the pier. She has something to say about that watch.');
     if (!f.tideGatePassed) {
       return step(
         'Get through the tide gate.',

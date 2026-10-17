@@ -43,7 +43,7 @@ The Future you walk through is the one that happens **if you fail**. Mend the Ti
 
 | Power | From | The rule, in one sentence |
 | --- | --- | --- |
-| **Rewind** | Michelle the Wise, at the head of the Long Pier | Hold `R` and the pocketwatch runs **you** backward along the path you just took (up drops, across gaps, back through era shifts), while the rest of the world keeps going. |
+| **Rewind** | Lyra the Wise, at the head of the Long Pier | Hold `R` and the pocketwatch runs **you** backward along the path you just took (up drops, across gaps, back through era shifts), while the rest of the world keeps going. |
 | **Reach** | The Keeper's Loupe, from Odalys the Lightkeeper | While the time lens is open, **Interact** and **Attack** go *through* it: use, take or strike something in the other age from where you stand in this one. |
 
 The amulet's ring shows how much path the watch remembers (about 8 seconds of your own movement; standing still costs nothing), and a faint gold trail shows it on the ground.
@@ -104,7 +104,7 @@ The road runs west to east along the shore. The harbor rhyme sets the goal: *"Da
 
 ### 3. The Long Pier: the Noon Bell
 
-- **Michelle the Wise** is waiting at the head of the pier. She teaches the pocketwatch to **Rewind**.
+- **Lyra the Wise** is waiting at the head of the pier. She teaches the pocketwatch to **Rewind**.
 - A raised quay deck runs out to **Bell Rock**, through the **tide gate**. The gate opens for 3.5 seconds when its lever is pulled, but the lever is down on the shore, and the only way back up is the ladder at the far west end.
 - So: climb the ladder and walk along the deck **to the gate first**. Step off the front of the deck beside it, pull the lever below, and **hold `R`**. The watch runs you straight back up to the gate. Walk through. (It locks open behind you.)
 - On top of Bell Rock, hit the **Noon Bell** three times with your wrench.
@@ -131,11 +131,14 @@ A channel no age can ford: a tide-rip in the Past, mud in the Present, a dry can
 3. Open the lens on the **Future** (`Tab`, then `E`): the panel hangs right in front of you. Press `F` to reach through and press it.
 4. **Hold `R`.** The watch runs you back along the jetty, back into the Future, and up to the door while it's still open.
 
-### 7. The Warden's Wharf: the Dusk Bell
+### 7. The Warden's Wharf: the Dusk Bell & The Harbor Warden
 
-- The Dusk Bell stands in the middle of the **Future** wharf, with a **Warden** walking a loop around it. (Saltwick has one too.) Stay out of its sight cone and the searchlight; bollards block its view.
+- The Dusk Bell stands in the middle of the **Future** wharf, with a **Harbor Warden** walking a loop around it. Stay out of its sight cone and the searchlight; bollards block its view.
 - In the Present, that spot is inside the boathouse, so walk most of the way in the **Present**, along the back or the front of the road, then step into the Future beside the bell.
-- Fit the **clapper**, then ring it: three strokes. **Every stroke brings the Warden running.** Ring, then rewind back the way you came, right out of its age. It soon gives up. (Or be quick, and land all three before it reaches you.)
+- Fit the **clapper**, then face the **3-stroke showdown** to ring the Dusk Bell:
+  1. **Stroke 1:** Strike the Dusk Bell (`X`). The Harbor Warden wakes and raises a shield around the bell.
+  2. **Stun via Reach:** Slip into the **Present** along the front road outside the boathouse, hold the **Time Lens** (`Tab`) on the Future, and swing your wrench (`X`) through the lens to strike the **Warden's wind-up key**, stunning it and dropping the shield.
+  3. **Stroke 2 & Bollard Crash:** Strike the Dusk Bell a second time (`X`). When the Warden charges toward you in the **Future**, bait its lunge near a stone bollard and hold **Rewind** (`R`) so it crashes into the bollard, dropping its shield for the **final stroke**!
 
 ### 8. Gull's Head
 

@@ -77,7 +77,7 @@ await down('ShiftLeft'); await down(K.right); await sleep(120); await tap('Space
 await walkTo(45.5, 2.5, { t: 3000 });
 await check('nets taken', (s) => s.inv.includes('nets'));
 
-// --- Michelle teaches Rewind
+// --- Lyra teaches Rewind
 await tp(66.6, 0, 1.8, 1); await sleep(200);
 await interactNow();
 await check('has Rewind', (s) => s.f.hasRewind);
@@ -202,7 +202,30 @@ await check('bell prompt', (s) => /Dusk Bell/.test(s.prompt || ''));
 await interactNow();
 await check('clapper fitted', (s) => s.f.clapperFitted);
 await tap(K.right, 60);
-for (let i = 0; i < 3; i++) { await tap('KeyX'); await sleep(450); }
+await tap('KeyX'); await sleep(450);
+await check('first stroke: the Harbor Warden shields the bell', (s) => s.f.duskStroke1 && !s.f.duskRung);
+await tap('KeyX'); await sleep(450);
+await check('the shield blocks a second stroke', () => page.evaluate(() => window.__game.strikeables.find((x) => x.id === 'duskBell').hits === 1));
+// into the Present, and through the lens to the Warden's wind-up key
+await tap('KeyQ'); await page.waitForFunction(() => window.__game.era === 1 && window.__game.post.trans > 0.95, { timeout: 4000 }).catch(() => {});
+await walkTo(216.5, 6.6, { t: 4000 });
+await down('Tab'); await sleep(150); await tap('KeyE'); await sleep(300);
+await tap('KeyX'); await sleep(300); await up('Tab');
+await settle(page);
+await check("the Warden's wind-up key, struck through the lens from the Present", (s) => s.f.wardenKeyStruck);
+await tap('KeyE'); await page.waitForFunction(() => window.__game.era === 2 && window.__game.post.trans > 0.95, { timeout: 4000 }).catch(() => {});
+await tp(215.4, 0, 3.0); await sleep(300);
+await walkTo(214.2, 3.0, { t: 2000 }); await walkTo(215.4, 3.0, { t: 2000 });
+await tap(K.right, 60);
+await tap('KeyX'); await sleep(450);
+await check('second stroke', (s) => s.f.duskStroke2 && !s.f.duskRung);
+// bait its charge, and rewind out of the lunge
+await page.waitForFunction(() => window.__game.warden.state === 'chase', { timeout: 10000 }).catch(() => {});
+await down('KeyR'); await sleep(700); await up('KeyR'); await sleep(300);
+await check('the Warden crashes, and drops its shield', (s) => s.f.wardenCrashed);
+await tp(215.4, 0, 3.0); await sleep(300);
+await tap(K.right, 60);
+await tap('KeyX'); await sleep(450);
 await settle(page); await sleep(300);
 await check('Dusk Bell rung', (s) => s.f.duskRung);
 

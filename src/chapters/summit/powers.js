@@ -19,7 +19,6 @@ import theme from './theme.js';
 
 export const BUBBLE_R = 3.4;
 const ECHO_TONE = 0xbff6ff;
-const ECHO_LIMIT = 3;
 const PLATE_HOLD = 0.6; // seconds a plate stays down after a foot leaves it
 const GATE_H = 4;
 const key = (k, touch) => (touchActive() ? `<b>${touch}</b>` : `<kbd>${k}</kbd>`);
@@ -66,9 +65,19 @@ export class Powers {
       const mat = new THREE.MeshBasicMaterial({ color: p.color });
       const top = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.08, 0.64), mat);
       top.position.set(p.x + 0.5, p.y + 0.07, p.z + 0.5);
+      let rim = null;
+      if (p.requiresAge !== undefined) {
+        rim = new THREE.Mesh(
+          new THREE.BoxGeometry(0.84, 0.1, 0.84),
+          new THREE.MeshBasicMaterial({ color: 0x9ce2ff, transparent: true, opacity: 0.55 }),
+        );
+        rim.position.set(p.x + 0.5, p.y + 0.06, p.z + 0.5);
+        g.scene.add(rim);
+        this.extras.push(rim);
+      }
       g.scene.add(base, top);
       this.extras.push(base, top);
-      return { ...p, mat, top, pressed: false, held: 0 };
+      return { ...p, mat, top, rim, pressed: false, held: 0 };
     });
     this.gates = GATES.map((spec) => this.makeGate(spec));
     this.syncBody();
@@ -193,6 +202,9 @@ export class Powers {
   get echoMax() {
     return this.game.state.inventory.includes('myWatch') ? 8 : 5; // your own watch remembers longer
   }
+  get echoLimit() {
+    return this.game.state.inventory.includes('myWatch') ? 4 : 3; // and holds four echoes instead of three
+  }
 
   updateEcho(dt, ctl) {
     const g = this.game, b = g.player.body;
@@ -203,7 +215,15 @@ export class Powers {
     }
     if (this.rec) {
       this.rec.t += dt;
-      this.rec.frames.push({ t: this.rec.t, x: b.x, y: b.y, z: b.z, flip: g.player.actor.flip, anim: g.player.actor.anim });
+      this.rec.frames.push({
+        t: this.rec.t,
+        x: b.x,
+        y: b.y,
+        z: b.z,
+        flip: g.player.actor.flip,
+        anim: g.player.actor.anim,
+        lanternAge: this.lit ? this.age : null,
+      });
       if (this.rec.t >= this.echoMax) this.stopRecording();
     }
     for (const e of this.echoes) e.update(dt);
@@ -225,12 +245,12 @@ export class Powers {
     this.rec = null;
     this.syncBody();
     if (!rec || rec.frames.length < 4) return;
-    if (this.echoes.length >= ECHO_LIMIT) this.echoes.shift().remove();
+    if (this.echoes.length >= this.echoLimit) this.echoes.shift().remove();
     this.echoes.push(new Echo(g, rec.frames));
     audio.sfx('checkpoint');
     if (!g.state.flags.echoHint) {
       g.state.flags.echoHint = true;
-      g.hud.toast(`Your echo walks it again, over and over. Up to ${ECHO_LIMIT} at once: a new one replaces the oldest.`, 6000);
+      g.hud.toast(`Your echo walks it again, over and over (including your Lantern's light!). Up to ${this.echoLimit} at once.`, 6000);
     }
   }
 
@@ -260,6 +280,7 @@ export class Powers {
 
   gateHeld(gt) {
     const f = this.game.state.flags, s = gt.spec;
+    if (s.id === 'gateD' && (this.game.chimeHoldT || 0) > 0) return true;
     return !!(f[s.openFlag] || f[s.passFlag]);
   }
 
@@ -267,13 +288,29 @@ export class Powers {
     const g = this.game, b = g.player.body, f = g.state.flags;
     const on = (p, q) => q && Math.abs(q.x - (p.x + 0.5)) < 0.7 && Math.abs(q.z - (p.z + 0.5)) < 0.7 && Math.abs(q.y - p.y) < 0.5;
     for (const p of this.plates) {
-      const now = on(p, b) || this.echoes.some((e) => on(p, e.pos));
+      if (p.needs && !f[p.needs]) {
+        p.top.visible = false;
+        if (p.rim) p.rim.visible = false;
+        continue;
+      }
+      p.top.visible = true;
+      const ageOkPlayer = p.requiresAge === undefined || g.era === p.requiresAge || (this.lit && this.age === p.requiresAge);
+      const ageOkEcho = (e) =>
+        p.requiresAge === undefined ||
+        e.pos.lanternAge === p.requiresAge ||
+        (this.lit && this.age === p.requiresAge && Math.hypot(b.x - (p.x + 0.5), b.z - (p.z + 0.5)) < BUBBLE_R);
+      if (on(p, b) && !ageOkPlayer && !f.plateFrostHint) {
+        f.plateFrostHint = true;
+        g.hud.toast(`This plate is frozen stiff! Light the <b>Lantern</b> (${key('R', 'Lantern')}) on <b>${g.eraLabel(p.requiresAge)}</b> while you or an Echo stand on it.`, 6000);
+      }
+      const now = (on(p, b) && ageOkPlayer) || this.echoes.some((e) => on(p, e.pos) && ageOkEcho(e));
       p.held = now ? PLATE_HOLD : Math.max(0, p.held - dt);
       const was = p.pressed;
       p.pressed = p.held > 0;
       if (p.pressed !== was && Math.abs(b.y - p.y) < 6) audio.sfx(p.pressed ? 'lever' : 'push');
       p.top.position.y = p.y + (p.pressed ? 0.04 : 0.07);
       p.mat.color.setHex(p.color).multiplyScalar(p.pressed ? 2.6 : 1);
+      if (p.rim) p.rim.visible = !p.pressed;
     }
     for (const gt of this.gates) {
       const s = gt.spec, mine = this.plates.filter((p) => p.gate === s.id);
@@ -282,13 +319,16 @@ export class Powers {
         f[s.openFlag] = true;
         audio.sfx('gate');
         g.renderer.shake = 0.4;
-        g.hud.toast('All three plates at once: the clockworks door grinds open, for good.', 4500);
+        if (s.id === 'clockworks') g.hud.toast('All three plates at once: the clockworks door grinds open, for good.', 4500);
+        else if (s.id === 'orinShield') g.onOrinPhase2Done?.();
         g.save();
       }
       const open = this.gateHeld(gt) || held;
       if (open !== gt.open) {
         gt.open = open;
-        for (const era of s.eras) for (let y = s.y; y < s.y + GATE_H; y++) for (let z = s.z0; z <= s.z1; z++) open ? g.world.clearDyn(era, s.x, y, z) : g.world.setDyn(era, s.x, y, z, T.SOLID);
+        if (!s.noWall) {
+          for (const era of s.eras) for (let y = s.y; y < s.y + GATE_H; y++) for (let z = s.z0; z <= s.z1; z++) open ? g.world.clearDyn(era, s.x, y, z) : g.world.setDyn(era, s.x, y, z, T.SOLID);
+        }
         if (gt.shown > 0.01 && gt.shown < 0.99) audio.sfx(open ? 'gate' : 'push');
       }
       if (open && s.passFlag && !f[s.passFlag] && (b.x - (s.x + 0.5)) * s.dir > 1.2 && Math.abs(b.y - s.y) < 3) {
@@ -299,7 +339,7 @@ export class Powers {
       }
       gt.shown += ((open ? 1 : 0) - gt.shown) * Math.min(1, dt * 9);
       gt.group.position.y = -(GATE_H + 0.05) * gt.shown;
-      gt.group.visible = gt.shown < 0.99;
+      gt.group.visible = !s.noWall && gt.shown < 0.99;
       gt.bandMat.color.setHex(s.color).multiplyScalar(held ? 2.6 : 1.2);
     }
   }
@@ -315,7 +355,13 @@ export class Powers {
     this.updateEcho(dt, ctl && g.mode === 'play');
     this.updateLantern();
     this.updatePlates(dt);
-    this.setStatus(this.rec ? `● Recording ${Math.max(0, this.echoMax - this.rec.t).toFixed(1)}s` : this.lit ? `Lantern: ${g.eraLabel(this.age)}` : null);
+    this.setStatus(
+      this.rec
+        ? `● Recording ${Math.max(0, this.echoMax - this.rec.t).toFixed(1)}s${this.lit ? ` (🕯️ ${g.eraLabel(this.age)})` : ''}`
+        : this.lit
+          ? `🕯️ Lantern: ${g.eraLabel(this.age)} (Q/E age · R off)`
+          : null,
+    );
   }
 
   setStatus(text) {
@@ -326,7 +372,7 @@ export class Powers {
   }
 }
 
-/** An echo: it walks what you recorded, over and over, in every age at once. */
+/** An echo: it walks what you recorded, over and over, in every age at once (and remembers your Lantern's light). */
 class Echo {
   constructor(game, frames) {
     this.game = game;
@@ -342,7 +388,9 @@ class Echo {
     m.color.setHex(0xa8d8ff);
     m.emissive.setHex(ECHO_TONE);
     m.emissiveIntensity = 0.9;
-    game.scene.add(this.actor.mesh);
+    this.lantern = lanternMesh();
+    this.lantern.visible = false;
+    game.scene.add(this.actor.mesh, this.lantern);
     this.pos = { ...frames[0] };
   }
   update(dt) {
@@ -359,9 +407,19 @@ class Echo {
     this.actor.play(f.anim);
     this.actor.update(dt);
     this.actor.mesh.position.set(f.x, f.y - 0.1, f.z);
-    if (Math.random() < dt * 4) this.game.bursts.emit(f.x, f.y + 0.6 + Math.random(), f.z, 1, { color: [ECHO_TONE, 0xffffff], speed: 0.4, life: 0.7, gravity: -0.4, glow: 1.6 });
+    if (f.lanternAge !== null && f.lanternAge !== undefined) {
+      this.lantern.visible = true;
+      this.lantern.position.set(f.x + (f.flip ? -0.42 : 0.42), f.y + 0.72, f.z + 0.15);
+      const col = new THREE.Color(theme.eraRing[f.lanternAge]);
+      this.lantern.userData.glass.material.color.copy(col).multiplyScalar(2.2);
+    } else {
+      this.lantern.visible = false;
+    }
+    const burstCol = f.lanternAge !== null && f.lanternAge !== undefined ? theme.eraRing[f.lanternAge] : ECHO_TONE;
+    if (Math.random() < dt * 4) this.game.bursts.emit(f.x, f.y + 0.6 + Math.random(), f.z, 1, { color: [burstCol, 0xffffff], speed: 0.4, life: 0.7, gravity: -0.4, glow: 1.6 });
   }
   remove() {
     this.actor.mesh.parent?.remove(this.actor.mesh);
+    this.lantern.parent?.remove(this.lantern);
   }
 }

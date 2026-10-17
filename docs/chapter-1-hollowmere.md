@@ -45,7 +45,7 @@ The valley is one long road, built three times. What you do in one age carries f
 | --- | --- | --- |
 | **Stasis Seal** | Donald Eugene's satchel at Tamsin's Crossing (Present) | Hold something in its moment, so it stays exactly the same in every later age. Things that can be sealed shimmer with pale light; stand beside one and a **Seal** prompt appears. |
 | **Echo** | Donald Eugene's lectern at the Echo Gallery (Present) | Record up to 5 seconds of your own movement. Your echo replays it on a loop, forever. Present only, up to 3 echoes at once (a 4th replaces the oldest). Stand on an echo and press **Interact** to dispel it. |
-| **Tempo** | Donald Eugene's toolbox at the gate of the Warden's Courtyard (Present) | Slow time around you, or speed it up. On touch, hold **Slow** or **Fast**. On a keyboard, **hold Q** to slow and **hold E** to speed up; a quick tap of either still travels an era. Only the machines within a few blocks feel it; you move as usual. It runs on the Chronoheart's ring, which refills when you let go. |
+| **Tempo** | Donald Eugene's toolbox at the gate of the Warden's Courtyard (Present) | Slow time around you, or speed it up. On touch, hold **Slow** or **Fast**. On a keyboard, **hold Q** (or `1`/`Z`) to slow and **hold E** (or `2`) to speed up; a quick tap of `Q`/`E` still travels an era. Only the machines within a few blocks feel it; you move as usual. It runs on the Chronoheart's ring, which refills when you let go. |
 
 ---
 
@@ -62,7 +62,7 @@ The valley is one long road, built three times. What you do in one age carries f
 | `C` | Dodge-roll |
 | `X` | Swing your wrench: at enemies, and at anything stuck fast |
 | `F` | Interact: talk to people, use things |
-| `Q` / `E` | Tap: travel one era back / forward. Hold *(once Tempo is learned)*: slow down / speed up time |
+| `Q` / `E` | Tap: travel one era back / forward. Hold *(once Tempo is learned)*: slow down / speed up time (`1`/`Z` and `2` also trigger Slow / Fast directly) |
 | `Tab` | Time lens: hold to open a window onto another era around you (`Q`/`E` choose which) |
 | `R` | Stasis Seal *(once learned)* |
 | `V` | Echo: start / stop recording *(once learned)* |
@@ -173,7 +173,7 @@ Everything here happens in the **Present**: the gates, the steps and your echoes
   - If it catches you, you lose a heart and it throws you out to the courtyard gate.
   - In the Present, the key's spot is **inside a fountain**, so you can't just pop into the Future on top of it. You have to cover the last stretch in the Future, and walk clear of the fountain's footprint before switching back.
   - **Tip:** walk most of the way in the **Present** (there's no Warden there). Wait beside the fountain until the Warden's cone points away from you, then pop into the Future, take the key, step back clear of the fountain and switch back.
-- In the **Past**, **Oren the Mason** is working at the foot of the tower. He'll tell you about the strange old man who turned up with a cart of iron wheels and insisted a "clock tower" be built here.
+- In the **Past**, **Oren the Mason** is working at the foot of the tower. He'll tell you about the First Clockmaker's ancient drawings and the old man with a cart of iron wheels who helped him raise the tower.
 - **Tempo first.** Donald Eugene's toolbox sits just inside the courtyard gate, in the **Present**: it teaches the Chronoheart Tempo. Out in the Future yard it works on everything: slow the Warden to slip across behind its cone, or speed it up to hurry it off a corner.
 - **Searchlights.** Two pools of light sweep the Future yard, one across the way in and one along the far side of the key. Step into one and the Warden comes for you. Slow a light down and walk round it.
 - **Lifting the key** brings the Warden straight for you, in sight or not. Hold **Slow** (keyboard: hold **Q**) and it drops to a crawl while it's near you. Walk clear, then switch ages.
@@ -190,15 +190,15 @@ The finale is a climb. Each Era Key goes in higher up, in a different age, using
 
 Every key you place makes the Tower lurch, its gears turn faster, and its time-stutter flare.
 
-### 13. The Gearworks
+### 13. The Gearworks & The Runaway Mainspring
 
-The third key opens the great clock face. You're carried up into the clock itself, where the ages are wound too tightly to pull apart: here **Q** and **E** are Tempo from the instant you press them, slowing down and speeding up the machines around you (see [Abilities](#abilities-you-pick-up-along-the-way)). A clock shrine saves at the entrance, and a glowing doorway on each side links the Gearworks and the Tower floor.
+The third key opens the great clock face. You're carried up into the clock itself, where the ages are wound too tightly to pull apart: here **Q** (or `1`/`Z`) and **E** (or `2`) are Tempo from the instant you press them, slowing down and speeding up the machines around you (see [Abilities](#abilities-you-pick-up-along-the-way)). A clock shrine saves at the entrance, and a glowing doorway on each side links the Gearworks and the Tower floor.
 
 1. **The hammers.** Two hammers slam far too fast to slip under. Hold **Q** to slow them, wait for one to lift, and run.
 2. **The spring plate.** It kicks every beat, but only hard enough to reach the ledge when it runs fast. Stand on it, hold **E**, and steer onto the ledge.
 3. **Both.** Two more hammers (slow), then another spring plate (fast) to the level above.
 4. **The lift.** Every few seconds the Tower stutters and throws the lift back down; at normal speed it never reaches the top in time. Ride it holding **E**, and at the top switch to **Q**, so it waits while you step onto the summit.
-5. **The great mainspring.** Steady it, and the Clocktower ticks again. Then enjoy the ending.
+5. **The Runaway Mainspring.** Three brass escapement pins have popped loose around the mainspring, each guarded by a whipping arm, and every few seconds a golden pulse ripples across the floor: jump or roll over it. Hold **Slow** (`Q`, `1` or `Z`) to calm an arm, step in, and strike its pin three times with your wrench (`X`). Lock all three, then steady the mainspring (`F`), and the Clocktower ticks again.
 
 Once you've finished the story, your save is kept: see [After the story](#after-the-story).
 
@@ -248,12 +248,14 @@ Nobody you meet knows you're traveling through time: in the Past and the Future 
 
 ## Secrets
 
-> **Big spoilers.** Michelle the Wise drops the only hint, in her very first conversation.
+> **Big spoilers.** Lyra the Wise drops the only hint, in her very first conversation.
 
 ### Donald Eugene's hideaway (Rampart Row)
 
-Michelle the Wise mentions that your master "kept a room in the oldest age, behind a door no one would ever think to knock on." While he hopped between the ages trying to fix the Tower, Donald Eugene needed somewhere to rest.
+Lyra the Wise mentions that your master "kept a room in the oldest age, behind a door no one would ever think to knock on." While he hopped between the ages trying to fix the Tower, Donald Eugene needed somewhere to rest.
 
-In the **Past**, look closely at the houses along the back of **Rampart Row**. One door looks just like the others, except for a tiny **brass gear** pressed into the wood above the latch. Stand right in front of it and **knock**. Inside is his secret workshop, and on the workbench, the **Everspring**: a mainspring that never runs down. Fit it to the Chronoheart and its ring turns gold and **never drains again**, so you can stay in any age for as long as you like.
+In the **Past**, look closely at the houses along the back of **Rampart Row**. One door looks just like the others, except for a tiny **brass gear** pressed into the wood above the latch. Stand right in front of it and **knock**. Inside is his secret workshop, a letter from fifty years ago about **Donald, Orin, and Lyra**, and on the workbench, the **Everspring**: a mainspring that never runs down. Fit it to the Chronoheart and its ring turns gold and **never drains again**, so you can stay in any age for as long as you like.
 
-Michelle's hint, at the Old Ford: *"Before Hollowmere had any walls, they say the smiths drew their water from a spring that never once ran dry."*
+### The Starlit Garden (10,000 Years On)
+
+Once you have collected every Lost Cog in **Chapter Three** to forge **The Master's Key**, return to Hollowmere Square in the **Present** and examine the **Astral Clock-Door**, just right of Donald Eugene's workshop door. It opens a passage into **The Starlit Garden (10,000 Years On)**, a quiet sanctuary with a memorial to the four clockmakers.

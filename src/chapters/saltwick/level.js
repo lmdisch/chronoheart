@@ -1194,7 +1194,7 @@ export const SPAWNS = [
   { type: 'npc', id: 'isha', era: P, x: 18.5, z: 2.0, sheet: 'isha', name: 'Isha the Shell-Singer' },
   { type: 'npc', id: 'pim', era: P, x: 33.5, z: 4.6, sheet: 'pim', name: 'Pim', small: true },
   { type: 'npc', id: 'digby', era: F, x: 12.5, z: 2.0, sheet: 'digby', name: 'DIGBY (Salvage Unit)' },
-  { type: 'npc', id: 'michelle', era: M, x: 67.5, z: 1.6, sheet: 'michelle', name: 'Michelle the Wise' },
+  { type: 'npc', id: 'michelle', era: M, x: 67.5, z: 1.6, sheet: 'michelle', name: 'Lyra the Wise' },
   { type: 'npc', id: 'odalys', era: M, x: 145.5, z: 4.4, sheet: 'odalys', name: 'Odalys the Lightkeeper' },
   { type: 'npc', id: 'fenwick', era: M, x: 176.5, z: 1.6, sheet: 'fenwick', name: 'Old Fenwick' },
   { type: 'npc', id: 'maren', era: P, x: 252.5, y: HT, z: 1.8, sheet: 'maren', name: 'Maren the Tide-Reader' },
@@ -1228,6 +1228,7 @@ export const SPAWNS = [
   // The Warden's Wharf
   { type: 'interact', id: 'duskBellFit', era: F, x: L.duskBell.x, y: 0, z: L.duskBell.z, prompt: 'The Dusk Bell', hideIf: 'clapperFitted', reach: 1.5 },
   { type: 'strike', id: 'duskBell', era: F, x: L.duskBell.x, y: 0, z: L.duskBell.z, flag: 'duskRung', needs: 'clapperFitted', prompt: 'Ring the Dusk Bell', visual: 'bell', color: 0xb8a0ff, freq: 196, hang: 2.9, hx: 1.2, hz: 1.4 },
+  { type: 'strike', id: 'wardenKey', era: F, x: 216.5, y: 0, z: 5.3, hits: 1, flag: 'wardenKeyStruck', needs: 'duskStroke1', prompt: "Strike the Warden's wind-up key", visual: 'key', color: 0xffd070, hx: 1.4, hz: 1.5, lens: true, lensOnly: true },
   { type: 'interact', id: 'boathouse', era: M, x: 216.8, y: 0, z: 5.4, prompt: 'Boathouse door' },
   // Gull's Head
   { type: 'interact', id: 'wellDoorM', era: M, x: L.wellX0 - 0.6, y: HT, z: 3.5, prompt: 'The Well door', hideIf: 'wellOpen' },

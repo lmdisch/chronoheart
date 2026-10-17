@@ -279,12 +279,23 @@ export const CHECKPOINTS = [
  * open only while its plate is held, and for good once you're through it.
  */
 export const PLATES = [
-  ...L.plates3.map((p, i) => ({ id: 'plate' + i, x: p.x, y: gy(3, p.x), z: Z3 + p.z, gate: 'clockworks', color: 0x7affc8 })),
+  ...L.plates3.map((p, i) => ({
+    id: 'plate' + i,
+    x: p.x,
+    y: gy(3, p.x),
+    z: Z3 + p.z,
+    gate: 'clockworks',
+    color: 0x7affc8,
+    ...(i === 2 ? { requiresAge: P } : {}),
+  })),
   { id: 'plateD', x: L.plateDX, y: gy(3, L.plateDX), z: Z3 + 1, gate: 'gateD', color: 0xffd08a },
+  { id: 'orinPlate0', x: U(25), y: gy(5, U(25)), z: ZS + 1, gate: 'orinShield', color: 0x6ce2ff, needs: 'orinPhase1' },
+  { id: 'orinPlate1', x: U(25), y: gy(5, U(25)), z: ZS + 5, gate: 'orinShield', color: 0x6ce2ff, needs: 'orinPhase1' },
 ];
 export const GATES = [
   { id: 'clockworks', x: L.doorX, y: gy(3, L.doorX), z0: Z3, z1: Z3 + 6, eras: [P, M, F], openFlag: 'clockworksOpen', color: 0x7affc8, dir: -1 },
   { id: 'gateD', x: L.gateDX, y: gy(3, L.gateDX), z0: Z3, z1: Z3 + 6, eras: [P, M, F], passFlag: 'gateDPassed', color: 0xffd08a, dir: -1 },
+  { id: 'orinShield', x: U(21), y: gy(5, U(21)), z0: ZS + 1, z1: ZS + 5, eras: [M], openFlag: 'orinPhase2', color: 0x6ce2ff, dir: -1, noWall: true },
 ];
 
 /** Things that turn: the orrery's rings, the lighthouse beam far below. Spun each frame by the game. */
@@ -708,6 +719,37 @@ function summit(b, era) {
   }
 }
 
+/** Sela's 600-year stone bridge across the first crevasse, built once she has the Master Drawings. */
+function selaSteps(world) {
+  world.addFeature({
+    id: 'selaSteps', eras: [P, M, F], key: (s) => String(!!s.flags.selaBuilt),
+    build: (b, era, s) => {
+      if (!s.flags.selaBuilt) return;
+      const y = gy(4, L.crev1X0) - 1, z0 = Z4;
+      for (let x = L.crev1X0; x <= L.crev1X1; x++) {
+        b.solid(x, y, z0, x, y, z0 + 6, jitter(C.marble));
+        b.deco(x, y + 1, z0 + 0.2, 1, 0.45, 0.25, C.brass[0]);
+        b.deco(x, y + 1, z0 + 6.55, 1, 0.45, 0.25, C.brass[0]);
+      }
+    },
+  });
+}
+
+/** Warm thermal spring terraces carved over 600 years across the rockfall once the First Age sluice is shattered. */
+function springSteps(world) {
+  world.addFeature({
+    id: 'springSteps', eras: [P, M], key: (s) => String(!!s.flags.springOpened),
+    build: (b, era, s) => {
+      if (!s.flags.springOpened) return;
+      const y = gy(4, L.iceStairX0), z0 = Z4;
+      for (let i = 0; i <= L.iceStairX1 - L.iceStairX0; i++) {
+        b.solid(L.iceStairX0 + i, y, z0, L.iceStairX0 + i, y + i, z0 + 6, jitter(C.marble));
+        b.glow(L.iceStairX0 + i + 0.1, y + i + 0.98, z0 + 1, 0.8, 0.08, 4.5, 0x6cf0ff);
+      }
+    },
+  });
+}
+
 /** Zach's flag, planted at the top for good (the favor). */
 function zachFlag(world) {
   world.addFeature({
@@ -781,21 +823,23 @@ export const SPAWNS = [
   { type: 'npc', id: 'ingridF', era: F, ...on(1, L.ingridX, 5.2), sheet: 'ingrid', name: 'Ingrid the Lamplighter', frozen: true, tint: FROZEN, unless: 'hoursReturned' },
   { type: 'npc', id: 'ingridW', era: F, ...on(1, L.ingridX, 5.2), sheet: 'ingrid', name: 'Ingrid the Lamplighter', needs: 'hoursReturned' },
   { type: 'npc', id: 'sela', era: P, ...on(1, L.campPastX + 2.5, 5.6), sheet: 'sela', name: 'Sela the Stonecutter' },
-  { type: 'npc', id: 'michelle', era: M, ...on(1, L.michelleX, 1.4), sheet: 'michelleWinter', name: 'Michelle the Wise', unless: 'christopherMet' },
+  { type: 'npc', id: 'michelle', era: M, ...on(1, L.michelleX, 1.4), sheet: 'michelleWinter', name: 'Lyra the Wise', unless: 'christopherMet' },
   { type: 'npc', id: 'porterRest', era: M, ...on(1, U(44.5), 1.4), sheet: 'porterKit', name: 'Kit the Porter' },
   // the Sundial Terrace
   { type: 'npc', id: 'zach', era: M, ...on(2, U(70.5), 5.6), sheet: 'zachWinter', name: 'Zach Tiberious', small: true, unless: 'christopherMet' },
   { type: 'npc', id: 'megan', era: M, ...on(2, U(71.6), 5.9), sheet: 'meganWinter', name: 'Megan the Squirrel', small: true, unless: 'christopherMet' },
   // the Clockworks
-  { type: 'npc', id: 'michelleDome', era: M, ...on(3, L.michelle2X, 1.6), sheet: 'michelleWinter', name: 'Michelle the Wise' },
+  { type: 'npc', id: 'michelleDome', era: M, ...on(3, L.michelle2X, 1.6), sheet: 'michelleWinter', name: 'Lyra the Wise' },
   { type: 'npc', id: 'porterHigh', era: M, ...on(4, U(8.5), 1.6), sheet: 'porterBram', name: 'Bram the Porter' },
-  // the Summit: Tobin, the memory under the orrery, Sir Christopher at the Needle
+  { type: 'npc', id: 'selaHigh', era: P, ...on(4, U(12.5), 1.6), sheet: 'sela', name: 'Sela the Stonecutter' },
+  // the Summit: Tobin, the memory under the orrery, Sir Orin at the Needle
   { type: 'npc', id: 'tobin', era: M, ...on(5, L.tobinX, 5.4), sheet: 'tobin', name: 'Tobin the Stargazer' },
   { type: 'npc', id: 'tobinF', era: F, ...on(5, L.tobinX, 5.4), sheet: 'tobin', name: 'Tobin the Stargazer', frozen: true, tint: FROZEN, unless: 'hoursReturned' },
   { type: 'npc', id: 'tobinW', era: F, ...on(5, L.tobinX, 5.4), sheet: 'tobin', name: 'Tobin the Stargazer', needs: 'hoursReturned' },
-  { type: 'npc', id: 'youngEugene', era: M, ...on(5, U(68.2), 2.4), sheet: 'eugeneYoung', name: 'A young apprentice', needs: 'christopherMet', unless: 'hoursReturned', memory: true },
-  { type: 'npc', id: 'youngChristopher', era: M, ...on(5, U(69.6), 2.4), sheet: 'christopherYoung', name: 'Another young apprentice', needs: 'christopherMet', unless: 'hoursReturned', memory: true },
-  { type: 'npc', id: 'christopher', era: M, ...on(5, L.christopherX, 2.2), sheet: 'christopher', name: 'Sir Christopher', needs: 'christopherMet', reach: 2.4 },
+  { type: 'npc', id: 'youngLyra', era: M, ...on(5, U(68.2), 2.4), sheet: 'lyraYoung', name: 'Lyra (Memory)', needs: 'christopherMet', unless: 'hoursReturned', memory: true },
+  { type: 'npc', id: 'youngChristopher', era: M, ...on(5, U(69.6), 2.4), sheet: 'christopherYoung', name: 'Sir Orin (Memory)', needs: 'christopherMet', unless: 'hoursReturned', memory: true },
+  { type: 'npc', id: 'christopher', era: M, ...on(5, L.christopherX, 2.2), sheet: 'christopher', name: 'Sir Orin', needs: 'christopherMet', reach: 2.4 },
+  { type: 'npc', id: 'lyraEnd', era: M, ...on(5, U(23.2), 2.4), sheet: 'michelleWinter', name: 'Lyra the Wise', needs: 'hoursReturned' },
   { type: 'npc', id: 'eugene', era: M, ...on(5, U(28.5), 4.4), sheet: 'eugeneWinter', name: 'Donald Eugene', needs: 'hoursReturned' },
   { type: 'npc', id: 'zachEnd', era: M, ...on(5, U(30.2), 5.6), sheet: 'zachWinter', name: 'Zach Tiberious', small: true, needs: 'hoursReturned' },
   { type: 'npc', id: 'meganEnd', era: M, ...on(5, U(31.4), 6), sheet: 'meganWinter', name: 'Megan the Squirrel', small: true, needs: 'hoursReturned' },
@@ -803,6 +847,12 @@ export const SPAWNS = [
   // things to pick up
   { type: 'pickup', id: 'ember', era: P, ...on(1, L.campPastX - 0.2, 4.3), item: 'ember', needs: 'emberQuest', lift: 0.6 },
   { type: 'pickup', id: 'page', era: M, ...on(1, L.pageX, 5.6), item: 'page', lift: 0.5 },
+  { type: 'pickup', id: 'masterDrawings', era: M, ...on(3, U(56.5), 3.5), item: 'masterDrawings', lift: 0.6 },
+  // things to strike with the wrench (X)
+  { type: 'strike', id: 'cwChime', era: M, ...on(3, U(44.5), 4.8), hits: 3, flag: 'cwChimeRung', prompt: 'Strike the Clockworks resonance chime', visual: 'chime', color: 0xffd070, freq: 392, hx: 1.2, hz: 1.4 },
+  { type: 'strike', id: 'thermalLever', era: P, ...on(4, U(50.5), 1.6), hits: 3, flag: 'springOpened', prompt: 'Shatter the frozen thermal sluice', visual: 'ice', color: 0x7be0ff, hx: 1.3, hz: 1.4 },
+  { type: 'strike', id: 'orreryChime', era: M, ...on(5, U(73.5), 2.2), hits: 3, flag: 'orreryChimeRung', prompt: 'Ring the Orrery alignment chime', visual: 'chime', color: 0xffe08a, freq: 523, hx: 1.2, hz: 1.4 },
+  { type: 'strike', id: 'orinAnchor', era: M, ...on(5, U(28.5), 2.5), hits: 3, flag: 'orinPhase1', needs: 'summitTalk', prompt: "Shatter the Needle's Frost-Anchor", visual: 'ice', color: 0x6ce2ff, hx: 1.4, hz: 1.5 },
   // things to look at, and use
   { type: 'interact', id: 'lookoutLamp', era: M, ...on(1, L.lampX + 0.5, 5.4), prompt: 'The lookout lamp' },
   { type: 'interact', id: 'statue', era: M, ...on(2, L.statueX + 0.5, 0.5), prompt: 'The statue' },
@@ -810,6 +860,7 @@ export const SPAWNS = [
   { type: 'interact', id: 'frostWall', era: M, ...on(5, L.frostWallX + 1.5, 3.5), prompt: 'The frozen doors', unless: 'hoursReturned' },
   { type: 'interact', id: 'starBooks', era: M, ...on(5, U(80.5), 0.6), prompt: "Tobin's star-books" },
   { type: 'interact', id: 'needle', era: M, x: L.needle.x + 0.5, y: gy(5, L.needle.x), z: L.needle.z + 1.6, prompt: 'The Needle' },
+  { type: 'interact', id: 'telescope', era: M, x: U(24), y: gy(5, U(24)), z: ZS - 8.8, prompt: 'Look through the brass telescope' },
   { type: 'interact', id: 'flagSpot', era: M, x: L.flagSpot.x + 0.5, y: gy(5, L.flagSpot.x), z: L.flagSpot.z, prompt: 'Plant the flag', needs: 'zachQuest', unless: 'flagPlanted' },
   // the last of Donald Eugene's spilled cogs
   { type: 'cog', id: 'cogP1', era: P, ...on(0, L.pineX + 0.5, 6), lift: 0.7 },
@@ -1101,6 +1152,8 @@ export function buildLevel(world) {
   }
   frost(world);
   lookoutLamp(world);
+  selaSteps(world);
+  springSteps(world);
   zachFlag(world);
   world.finalizeStatic();
 }

@@ -1,0 +1,44 @@
+// Chapter Two's Dusk Bell showdown, on its own: the first stroke, the Warden's wind-up key through
+// the lens from the Present, the second stroke, its charge into a rewind, and the last stroke.
+import { boot, newGame, sleep } from './lib.mjs';
+import { driver } from './lib.mjs';
+const { browser, page, errors } = await boot({ chapter: 'saltwick' });
+const d = driver(page, errors);
+const { tap, down, up, walkTo, check, tp, K } = d;
+await newGame(page);
+await page.evaluate(() => { const g = window.__game; Object.assign(g.state.flags, { clapperFitted: true }); g.craft.unlock('rewind'); g.craft.unlock('reach'); g.refreshWorld(); });
+const W = () => page.evaluate(() => { const w = window.__game.warden; return { state: w.state, x: +w.x.toFixed(2), z: +w.z.toFixed(2), stunT: +(w.stunT || 0).toFixed(2), hits: window.__game.strikeables.find((s) => s.id === 'duskBell').hits }; });
+await tp(215.4, 0, 3.0, 2); await sleep(300);
+await tap(K.right, 60);
+await tap('KeyX'); await sleep(450);
+await check('first stroke', (s) => s.f.duskStroke1);
+console.log('warden', await W());
+await tap('KeyQ'); await page.waitForFunction(() => window.__game.era === 1 && window.__game.post.trans > 0.95, { timeout: 4000 }).catch(() => {});
+await walkTo(216.5, 6.6, { t: 4000 });
+console.log('player', await d.st().then((s) => [s.x, s.z, s.era]), 'warden', await W());
+await down('Tab'); await sleep(150); await tap('KeyE'); await sleep(300);
+console.log('prompt with lens', (await d.st()).prompt);
+await tap('KeyX'); await sleep(300); await up('Tab');
+await d.settle();
+await check('wind-up key struck', (s) => s.f.wardenKeyStruck);
+await tap('KeyE'); await page.waitForFunction(() => window.__game.era === 2 && window.__game.post.trans > 0.95, { timeout: 4000 }).catch(() => {});
+await tp(215.4, 0, 3.0); await sleep(300);
+await walkTo(214.2, 3.0, { t: 2000 }); await walkTo(215.4, 3.0, { t: 2000 });
+await tap(K.right, 60);
+await tap('KeyX'); await sleep(450);
+await check('second stroke', (s) => s.f.duskStroke2);
+for (let i = 0; i < 20; i++) { const w = await W(); if (w.state === 'chase') break; await sleep(150); }
+console.log('warden before rewind', await W());
+await down('KeyR'); await sleep(700);
+console.log('warden during rewind', await W(), 'rewinding', await page.evaluate(() => window.__game.rewinding));
+await up('KeyR'); await sleep(300);
+await check('the Warden crashes', (s) => s.f.wardenCrashed);
+console.log('warden', await W());
+await tp(215.4, 0, 3.0); await sleep(300);
+await tap(K.right, 60);
+await tap('KeyX'); await sleep(450);
+await d.settle();
+await check('Dusk Bell rung', (s) => s.f.duskRung);
+console.log('failures:', d.failures(), 'errors:', errors);
+await browser.close();
+process.exit(d.failures() ? 1 : 0);

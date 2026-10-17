@@ -853,8 +853,9 @@ export const CHAR = {
   // Sir Christopher: plum velvet and gold, white gloves, a watch chain. He has borrowed enough
   // hours to look no older than the day he left: dark hair, not a gray one in it
   christopher: { skin: '#e8c0a4', hair: '#2a1e2a', hairStyle: 'short', top: '#6a2a4a', legs: '#2a1e2a', boots: '#1e161c', belt: '#e8c25a', longCoat: '#5a1f3e', trim: '#e8c25a', sleeves: true, mittens: '#f0ece4', scarf: '#e8c25a', sunPendant: true },
-  // the two of them as apprentices, on the midwinter night he kept (seen only as a memory)
+  // the two of them on the midwinter night he kept (seen only as a memory under the orrery)
   christopherYoung: { skin: '#e8c0a4', hair: '#2a1e2a', hairStyle: 'short', top: '#4a6aa0', apron: '#7a5232', legs: '#3a3a4a', boots: '#3a2a20', belt: '#3a2614', scarf: '#c83a4a', sleeves: true },
+  lyraYoung: { skin: '#d9a27c', hair: '#e6e2ea', hairStyle: 'circletLong', top: '#33416e', apron: '#c9a44a', legs: '#2c3760', boots: '#3a2a20', belt: '#c9a44a', robe: true, scarf: '#e8c25a', sleeves: true, sunPendant: true },
   eugeneYoung: { skin: '#f2cdb4', hair: '#5a4030', hairStyle: 'short', top: '#3a4a8a', apron: '#c9a44a', legs: '#2a2a3a', boots: '#3a2a20', belt: '#c9a44a', scarf: '#3a7a4a', sleeves: true },
   // Donald Eugene, who climbed a mountain on knees that are not what they were
   eugeneWinter: { skin: '#f2cdb4', hair: '#f0f0f6', hairStyle: 'baldRing', top: '#3a4a8a', legs: '#2a2a3a', boots: '#3a2a20', belt: '#c9a44a', longCoat: '#2a3a6a', trim: '#f0ece4', sleeves: true, hat: '#7a2e22', pom: '#f0ece4', scarf: '#3a7a4a', mittens: '#7a2e22', bootTrim: '#e8e0d0' },
@@ -874,6 +875,10 @@ export const CHAR = {
   pim: { skin: '#a8744e', hair: '#2a1a14', hairStyle: 'short', top: '#e0786a', apron: '#e8dcc0', legs: '#2f9a8a', boots: '#8a5a32' },
   maren: { skin: '#8a5a3c', hair: '#3a2a22', hairStyle: 'braid', top: '#e8dcc0', apron: '#2f9a8a', legs: '#8a7a5a', boots: '#5a3a22', belt: '#e0786a', wide: true },
 };
+CHAR.lyra = CHAR.michelle;
+CHAR.lyraWinter = CHAR.michelleWinter;
+CHAR.orin = CHAR.christopher;
+CHAR.orinYoung = CHAR.christopherYoung;
 
 // Every sheet in the game, by name. Each is drawn the first time it's asked for, so a chapter
 // only ever pays for its own cast.
@@ -883,7 +888,7 @@ const SHEETS = {
   vivienne: () => humanoidSheet(CHAR[theme.playerSheet] || CHAR.vivienne),
   megan: () => squirrelSheet(),
   zach: () => squirrelSheet({ B: '#86848e', L: '#cfccd6', acorn: false, spectacles: true }),
-  eugene: npc('eugene'), michelle: npc('michelle'),
+  eugene: npc('eugene'), michelle: npc('michelle'), lyra: npc('michelle'),
   // Chapter One: Hollowmere
   louise: npc('louise'), samaria: npc('samaria'), aria: npc('aria'), callie: npc('callie'), sheng: npc('sheng'), lillian: npc('lillian'),
   hobb: npc('hobb'), tamsin: npc('tamsin'), oren: npc('oren'),
@@ -895,9 +900,12 @@ const SHEETS = {
   digby: () => robotSheet('digby'),
   crab: () => crabSheet(),
   // Chapter Three: the mountain
-  michelleWinter: npc('michelleWinter'), ingrid: npc('ingrid'), tobin: npc('tobin'), sela: npc('sela'),
+  michelleWinter: npc('michelleWinter'), lyraWinter: npc('michelleWinter'), ingrid: npc('ingrid'), tobin: npc('tobin'), sela: npc('sela'),
   anwen: npc('anwen'), porterKit: npc('porterKit'), porterBram: npc('porterBram'),
-  christopher: npc('christopher'), christopherYoung: npc('christopherYoung'), eugeneYoung: npc('eugeneYoung'), eugeneWinter: npc('eugeneWinter'),
+  christopher: npc('christopher'), orin: npc('christopher'),
+  christopherYoung: npc('christopherYoung'), orinYoung: npc('christopherYoung'),
+  lyraYoung: npc('lyraYoung'),
+  eugeneYoung: npc('eugeneYoung'), eugeneWinter: npc('eugeneWinter'),
   statue: () => humanoidSheet(CHAR.statue, { npcOnly: true }), // the first Clockmaker, in stone
   meganWinter: () => squirrelSheet({ scarf: '#e04a4a' }),
   zachWinter: () => squirrelSheet({ B: '#86848e', L: '#cfccd6', acorn: false, spectacles: true, scarf: '#4a6ad8' }),
@@ -1133,6 +1141,29 @@ const ICONS = {
     rect(c, 4, 8, 10, 1, '#3a52b0');
     disc(c, 9, 5.5, 2, '#c87a2a');
     rect(c, 7, 3, 4, 1, '#6a4428');
+  },
+  masterDrawings: (c) => {
+    // Rolled blueprint parchment tied with a brass ring, showing the dome & sundial
+    rect(c, 2, 3, 12, 10, '#2a4a7a');
+    rect(c, 2, 3, 12, 1, '#3a6aa8');
+    rect(c, 2, 12, 12, 1, '#1c3258');
+    rect(c, 1, 2, 2, 12, '#e8dcb0');
+    rect(c, 13, 2, 2, 12, '#e8dcb0');
+    line(c, 5, 10, 8, 5, '#9fe8ff', 1);
+    line(c, 8, 5, 11, 10, '#9fe8ff', 1);
+    line(c, 4, 10, 12, 10, '#9fe8ff', 1);
+    px(c, 8, 4, '#ffd070');
+  },
+  masterKey: (c) => {
+    // The Master's Key: a star-iron and gold astronomical clock-key with four rings
+    disc(c, 6, 6, 5, '#c9a44a');
+    disc(c, 6, 6, 3, '#1c2440');
+    disc(c, 6, 6, 1.5, '#7ff6ff');
+    px(c, 6, 6, '#ffffff');
+    line(c, 9, 9, 14, 14, '#ffe08a', 2);
+    rect(c, 11, 13, 2, 2, '#c9a44a');
+    rect(c, 13, 11, 2, 2, '#c9a44a');
+    px(c, 4, 3, '#fff2b0');
   },
   // ---- Chapter Two: Saltwick ----
   watch: (c) => {

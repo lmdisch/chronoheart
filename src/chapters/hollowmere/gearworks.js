@@ -249,6 +249,110 @@ class Lift {
   }
 }
 
+/**
+ * A whipping escapement arm guarding one of the three summit escapement pins. At normal speed it
+ * spins too fast to approach; slow it with Tempo to step in and strike the pin with your wrench.
+ */
+class EscapementArm {
+  constructor(gw, spec) {
+    Object.assign(this, { gw, ...spec, cx: spec.x, cy: spec.y, angle: 0 });
+    this.pivot = new THREE.Group();
+    this.pivot.position.set(this.x, this.y + 0.55, this.z);
+    const armMat = new THREE.MeshStandardMaterial({ color: 0xb8862a, metalness: 0.65, roughness: 0.35 });
+    const tipMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xff9a3a).multiplyScalar(2) });
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.35, 10), armMat);
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.14, 0.18), armMat);
+    blade.position.set(0.62, 0, 0);
+    const tip = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.2, 0.24), tipMat);
+    tip.position.set(1.22, 0, 0);
+    this.pivot.add(hub, blade, tip);
+    gw.group.add(this.pivot);
+    this.mats = [armMat];
+  }
+  tint(k) {
+    tintAll(this.mats, k);
+  }
+  update(mdt) {
+    const g = this.gw.game, locked = !!g.state.flags[this.flag];
+    this.pivot.visible = !locked;
+    if (locked) return;
+    this.angle += this.speed * mdt;
+    this.pivot.rotation.y = this.angle;
+    if (g.era !== P || g.mode !== 'play' || g.player.invuln > 0 || g.player.state === 'roll') return;
+    const b = g.player.body;
+    if (Math.abs(b.y - this.y) > 0.9) return;
+    // check distance to the sweeping blade tip and mid-blade
+    for (const r of [0.65, 1.18]) {
+      const bx = this.x + Math.cos(this.angle) * r;
+      const bz = this.z - Math.sin(this.angle) * r;
+      if (Math.hypot(b.x - bx, b.z - bz) < 0.48) {
+        g.player.hurt(1, this.x);
+        break;
+      }
+    }
+  }
+  unsafe(x, y) {
+    return !this.gw.game.state.flags[this.flag] && Math.abs(x - this.x) < 1.5 && Math.abs(y - this.y) < 1.5;
+  }
+}
+
+/**
+ * The Runaway Mainspring's floor pulse: while any escapement pin remains unlocked, the wild
+ * mainspring sends a golden shockwave ring across the summit floor every few seconds. Jump or
+ * roll over the ring as it expands (Tempo slows it too).
+ */
+class MainspringWave {
+  constructor(gw, spec) {
+    Object.assign(this, { gw, cx: spec.x, cy: spec.y, z: spec.z, r: 0, cooldown: 1.5 });
+    this.mesh = new THREE.Mesh(
+      new THREE.TorusGeometry(1, 0.06, 8, 48).rotateX(Math.PI / 2),
+      new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffb03a).multiplyScalar(2), transparent: true, opacity: 0.85 }),
+    );
+    this.mesh.position.set(this.cx, this.cy + 0.14, this.z);
+    this.mesh.visible = false;
+    gw.group.add(this.mesh);
+  }
+  tint() {}
+  update(mdt) {
+    const g = this.gw.game, f = g.state.flags, b = g.player.body;
+    const active = !f.mainspringCalmed && !f.finished && g.era === P && b.x >= 335.2 && b.y >= this.cy - 0.5;
+    if (!active) {
+      this.mesh.visible = false;
+      this.r = 0;
+      return;
+    }
+    if (this.r <= 0) {
+      this.cooldown -= mdt;
+      if (this.cooldown <= 0) {
+        this.r = 0.4;
+        this.cooldown = 2.4;
+        audio.sfx('tick');
+      }
+      this.mesh.visible = false;
+      return;
+    }
+    this.r += mdt * 3.4;
+    if (this.r > 7.2) {
+      this.r = 0;
+      this.mesh.visible = false;
+      return;
+    }
+    this.mesh.visible = true;
+    this.mesh.scale.set(this.r, 1, this.r);
+    this.mesh.material.opacity = Math.max(0, 0.9 * (1 - this.r / 7.2));
+    // Low floor pulse: jump or roll over it
+    if (g.mode === 'play' && b.y < this.cy + 0.35 && g.player.state !== 'roll' && g.player.invuln <= 0) {
+      const d = Math.hypot(b.x - this.cx, b.z - this.z);
+      if (Math.abs(d - this.r) < 0.32) {
+        g.player.hurt(1, this.cx);
+      }
+    }
+  }
+  unsafe() {
+    return false;
+  }
+}
+
 // ---------------------------------------------------------------------------
 
 export class Gearworks {
@@ -263,7 +367,12 @@ export class Gearworks {
     const g = this.game;
     this.group = new THREE.Group();
     g.world.groups[P].add(this.group);
-    this.machines = [...GEAR.hammers.map((h) => new Hammer(this, h)), ...GEAR.springs.map((s) => new Spring(this, s))];
+    this.machines = [
+      ...GEAR.hammers.map((h) => new Hammer(this, h)),
+      ...GEAR.springs.map((s) => new Spring(this, s)),
+      ...GEAR.pins.map((p) => new EscapementArm(this, p)),
+      new MainspringWave(this, GEAR.mainspring),
+    ];
     this.lift = new Lift(this, GEAR.lift);
     this.machines.push(this.lift);
     this.rewindT = REWIND_EVERY;

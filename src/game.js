@@ -320,10 +320,13 @@ export class Game {
   /** Render `era` (its world, its people, its lamps) into the post-processing "other age" target. */
   captureEra(era) {
     const groups = this.world.groups, r = this.renderer;
+    const lyra = this.peekTarget !== null && this.npcs?.find((n) => n.id.startsWith('michelle') && n.active());
+    if (lyra) this.scene.add(lyra.group);
     groups.forEach((g, i) => (g.visible = i === era));
     r.updateLights(this.world.lights[era], r.camTarget, this.time);
     this.post.capture();
     groups.forEach((g, i) => (g.visible = i === this.era));
+    if (lyra) groups[lyra.era].add(lyra.group);
     r.updateLights(this.world.lights[this.era], r.camTarget, this.time);
   }
 

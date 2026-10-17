@@ -58,9 +58,9 @@ export const CHAPTERS = [
     eras: ['First Age', 'Golden Hour', 'Stopped Age'],
     credits: {
       eyebrow: 'The hours are home',
-      bonus: "You found every Lost Cog! Donald Eugene's parts tray is full at last.",
+      bonus: "You found every Lost Cog! Donald Eugene and Sir Orin forged The Master's Key: you can now shift freely across Highcrest's three ages, and unlock the Astral Clock-Door in Hollowmere Square!",
       // (not shown once every cog is found)
-      more: 'Your save is kept: choose Continue to walk Highcrest in the age you chose. Some of Donald Eugene\'s Lost Cogs are still up there.',
+      more: "Your save is kept: choose Continue to walk Highcrest in the age you chose. Find all ten Lost Cogs on the mountain to forge The Master's Key!",
     },
     theme: summit,
     requires: 'saltwick',

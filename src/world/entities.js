@@ -430,6 +430,30 @@ export class NPC extends EraEntity {
     if (this.spec.holo) {
       this.actor.mat.opacity = 0.6 + Math.sin(this.t * 13) * 0.05 + (Math.random() < 0.03 ? -0.3 : 0);
     }
+    // Lyra the Wise is a living Echo projected from Highcrest: she shimmers with Echo light under the Time Lens
+    if (this.id.startsWith('michelle') && !this.spec.memory) {
+      const peeking = this.game.peekTarget !== null && this.game.peekTarget !== undefined;
+      if (peeking) {
+        this.actor.mat.transparent = true;
+        this.actor.mat.opacity = 0.78 + Math.sin(this.t * 6) * 0.08;
+        this.actor.mat.emissive.setHex(0x36f0ff);
+        this.actor.mat.emissiveIntensity = 1.35;
+        this.actor.mat.color.setHex(0x88f4ff);
+        if (Math.random() < dt * 10) {
+          this.game.bursts.emit(this.x, this.y + 1.0, this.z, 1, { color: [0x7ff6ff, 0xffffff], speed: 0.7, life: 0.7, gravity: -0.6, jitter: 0.5 });
+        }
+        if (this.distTo(p) < 4.5 && !this.game.state.flags.lyraEchoSeen) {
+          this.game.state.flags.lyraEchoSeen = true;
+          this.game.hud.toast('Through the Time Lens, Lyra shimmers with the blue light of a living Echo.', 4400);
+        }
+      } else {
+        this.actor.mat.transparent = false;
+        this.actor.mat.opacity = 1;
+        this.actor.mat.emissive.setHex(0x000000);
+        this.actor.mat.emissiveIntensity = 1;
+        this.actor.mat.color.setHex(0xffffff);
+      }
+    }
     this.actor.mesh.position.set(this.x, y - 0.1, this.z);
     this.actor.mesh.quaternion.copy(this.game.renderer.billboardQ);
     if (this.shadow) this.shadow.position.set(this.x, this.y + 0.02, this.z);
@@ -622,6 +646,16 @@ export class Warden extends EraEntity {
     // it's a machine: Tempo slows it down or hurries it along when it's inside your bubble
     const tempo = g.era === this.era ? g.tempoAt(this.x, 0) : 1;
     dt *= tempo;
+    if (this.stunT > 0) {
+      this.stunT = Math.max(0, this.stunT - dt);
+      this.cone.visible = false;
+      this.actor.play('idle');
+      this.actor.mesh.position.set(this.x, -0.1, this.z);
+      this.actor.mesh.quaternion.copy(g.renderer.billboardQ);
+      this.shadow.position.set(this.x, 0.02, this.z);
+      if (Math.random() < dt * 8) g.bursts.emit(this.x, 1.4, this.z, 2, { color: [0xffd070, 0x9ff4ff], speed: 2, life: 0.4 });
+      return;
+    }
     this.stateT += dt;
     this.huntT = Math.max(0, this.huntT - dt);
     const seen = this.sees();
@@ -657,11 +691,19 @@ export class Warden extends EraEntity {
       if (this.stateT > WARDEN.windup) {
         this.state = 'chase';
         this.stateT = 0;
+        this.chargeTarget = { x: p.x, z: p.z };
         audio.sfx('glitch');
       }
     } else if (this.state === 'chase') {
       this.lostT = seen || this.huntT > 0 ? 0 : this.lostT + dt;
-      if (g.era === this.era) this.moveToward(p.x, p.z, WARDEN.charge, dt);
+      if (g.era === this.era) {
+        const prevX = this.x, prevZ = this.z;
+        this.moveToward(p.x, p.z, WARDEN.charge, dt);
+        const blocked = Math.hypot(this.x - prevX, this.z - prevZ) < WARDEN.charge * dt * 0.35;
+        if (blocked || (g.rewinding && this.stateT > 0.25)) {
+          g.onWardenChargeCrash?.(this);
+        }
+      }
       if (this.lostT > WARDEN.giveUp || (this.stateT > 5 && this.huntT <= 0)) {
         this.state = 'return';
         let best = 0;
@@ -979,7 +1021,7 @@ export class Strikeable extends EraEntity {
   constructor(game, spec) {
     super(game, spec);
     this.need = spec.hits ?? 3;
-    this.hits = 0;
+    this.hits = game.state?.flags?.[`${this.id}Hits`] || 0;
     this.jolt = 0;
     this.alwaysUpdate = true;
     if (spec.visual === 'bell') {
@@ -999,6 +1041,34 @@ export class Strikeable extends EraEntity {
       this.bell.position.set(spec.x, (spec.y ?? 0) + (spec.hang ?? 2.5), spec.z);
       this.group.add(this.bell);
       body.castShadow = true;
+      if (this.id === 'duskBell') {
+        this.shield = new THREE.Mesh(
+          new THREE.CylinderGeometry(1.15, 1.15, 2.6, 24, 1, true),
+          new THREE.MeshBasicMaterial({ color: 0xff3040, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false }),
+        );
+        this.shield.position.set(spec.x, (spec.y ?? 0) + 1.3, spec.z);
+        this.shield.visible = false;
+        this.group.add(this.shield);
+      }
+    } else if (spec.visual === 'key') {
+      this.keyGroup = new THREE.Group();
+      const mat = glowOf(spec.color ?? 0xffd070, 2.2);
+      const bow = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.06, 8, 20), mat);
+      bow.position.y = 0.25;
+      const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.45, 8), mat);
+      this.keyGroup.add(bow, stem);
+      this.keyGroup.position.set(spec.x, (spec.y ?? 0) + 1.35, spec.z);
+      this.group.add(this.keyGroup);
+    } else if (spec.visual === 'ice') {
+      const iceMat = new THREE.MeshStandardMaterial({ color: 0x8fe8ff, emissive: 0x36c0ff, emissiveIntensity: 0.45, roughness: 0.2, metalness: 0.1, transparent: true, opacity: 0.88 });
+      this.iceMesh = new THREE.Mesh(new THREE.DodecahedronGeometry(0.55, 0), iceMat);
+      this.iceMesh.position.set(spec.x, (spec.y ?? 0) + 0.55, spec.z);
+      this.group.add(this.iceMesh);
+    } else if (spec.visual === 'chime') {
+      const brass = std(spec.color ?? 0xffd070, { metalness: 0.75, roughness: 0.25, emissive: spec.color ?? 0xffd070, emissiveIntensity: 0.35 });
+      this.chimeMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.24, 1.3, 12), brass);
+      this.chimeMesh.position.set(spec.x, (spec.y ?? 0) + 1.1, spec.z);
+      this.group.add(this.chimeMesh);
     }
   }
   available() {
@@ -1019,7 +1089,9 @@ export class Strikeable extends EraEntity {
   strike() {
     const g = this.game;
     if (this.hits >= this.need) return;
+    if (g.canStrike && !g.canStrike(this)) return;
     this.hits++;
+    if (g.state?.flags) g.state.flags[`${this.id}Hits`] = this.hits;
     this.jolt = 1;
     audio.sfx('hit');
     if (this.bell) audio.sfx('bell', { freq: this.spec.freq, gain: 0.5 + 0.25 * this.hits });
@@ -1028,15 +1100,42 @@ export class Strikeable extends EraEntity {
     const sy = this.bell ? this.bell.position.y - 0.6 : this.y + 0.9;
     g.bursts.emit(this.x, sy, this.z, 10 + this.hits * 4, { color: [this.spec.color ?? 0xffd070, 0xffffff], speed: 4, life: 0.5, gravity: 5, glow: 2.5 });
     g.onStrike?.(this);
-    if (this.hits >= this.need) g.strikeDone(this);
+    if (this.hits >= this.need) {
+      if (this.iceMesh || this.keyGroup) this.group.visible = false;
+      g.strikeDone(this);
+    }
   }
   update(dt) {
     this.jolt = Math.max(0, this.jolt - dt * 1.4);
+    const t = this.game.time, f = this.game.state.flags;
     if (this.bell) {
-      const t = this.game.time, rung = this.game.state.flags[this.spec.flag];
-      if (this.spec.needs) this.tongue.visible = !!this.game.state.flags[this.spec.needs];
+      const rung = f[this.spec.flag];
+      if (this.spec.needs) this.tongue.visible = !!f[this.spec.needs];
       this.bell.rotation.z = Math.sin(t * 9) * 0.35 * this.jolt + (rung ? Math.sin(t * 1.3) * 0.03 : 0);
       this.metal.emissiveIntensity = 0.12 + this.jolt * 0.9 + (rung ? 0.25 + Math.sin(t * 2) * 0.08 : 0);
+      if (this.shield) {
+        const shielded = !rung && ((this.hits === 1 && !f.wardenKeyStruck) || (this.hits === 2 && !f.wardenCrashed));
+        this.shield.visible = shielded;
+        if (shielded) {
+          this.shield.rotation.y = t * 1.8;
+          this.shield.material.opacity = 0.22 + Math.sin(t * 5) * 0.08;
+        }
+      }
+    } else if (this.keyGroup) {
+      const av = this.available();
+      this.group.visible = av;
+      if (av && this.game.warden) {
+        this.x = this.game.warden.x;
+        this.z = this.game.warden.z;
+        this.keyGroup.position.set(this.x, (this.y ?? 0) + 1.45, this.z);
+        this.keyGroup.rotation.y = t * 4;
+      }
+    } else if (this.iceMesh) {
+      this.group.visible = this.available();
+      this.iceMesh.rotation.z = Math.sin(t * 50) * 0.12 * this.jolt;
+      this.iceMesh.scale.setScalar(1 - this.hits * 0.12);
+    } else if (this.chimeMesh) {
+      this.chimeMesh.rotation.z = Math.sin(t * 12) * 0.25 * this.jolt;
     }
   }
 }

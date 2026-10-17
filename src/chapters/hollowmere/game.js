@@ -12,7 +12,7 @@ import { setFade, letterbox } from '../../ui/ui.js';
 import { touchActive } from '../../ui/touch.js';
 import { Game, baseState, ERA_RING } from '../../game.js';
 import { progress } from '../../chapter.js';
-import { buildLevel, SPAWNS, CHECKPOINTS, AREAS, L, COG_TOTAL, STUDY } from './level.js';
+import { buildLevel, SPAWNS, CHECKPOINTS, AREAS, L, COG_TOTAL, STUDY, GARDEN } from './level.js';
 import { talk, interact, struck, ITEMS, INTRO, ENDING, ENDING_COGS, TEMPO_GIFT, TEMPO_LEARN, FAVORS } from './story.js';
 import { currentGoal } from './objectives.js';
 import { Interactable, Strikeable } from './entities.js';
@@ -95,6 +95,12 @@ export class HollowmereGame extends Game {
 
   canShift(target) {
     if (!this.state.flags.hasAmulet) return false;
+    if (this.world.pocket?.id === 'garden') {
+      audio.sfx('blocked');
+      this.hud.flashBlocked();
+      this.hud.toast('Ten thousand years on, the ages have settled into one.', 3000);
+      return false;
+    }
     if (this.gearworks.active) {
       audio.sfx('blocked');
       this.hud.flashBlocked();
@@ -172,7 +178,7 @@ export class HollowmereGame extends Game {
     this.updateTowerGlitch(dt);
   }
 
-  // ------------------------------------------------------------------ Donald Eugene's hideaway
+  // ------------------------------------------------------------------ Donald Eugene's hideaway & The Starlit Garden
   /** Through the door with the brass gear, into the hidden room (Past only). */
   async enterStudy() {
     this.mode = 'cutscene';
@@ -195,6 +201,36 @@ export class HollowmereGame extends Game {
     this.world.pocket = null;
     this.refreshWorld();
     this.player.place(STUDY.door - 0.4, 0, 0.8);
+    setFade(0);
+    this.mode = 'play';
+    this.lockT = 0.2;
+  }
+
+  /** Through the Star-iron Astral Door, into The Starlit Garden (10,000 Years On). */
+  async enterGarden() {
+    this.mode = 'cutscene';
+    setFade(1, '#fff6e0');
+    await new Promise((r) => setTimeout(r, 400));
+    this.world.pocket = GARDEN.pocket;
+    this.applyEra(ERA.FUTURE, true);
+    this.refreshWorld();
+    this.player.place((GARDEN.x0 + GARDEN.x1 + 1) / 2, 0, -1.3);
+    this.player.body.vx = this.player.body.vz = 0;
+    audio.sfx('bell');
+    setFade(0);
+    this.mode = 'play';
+    this.lockT = 0.3;
+    this.hud.showBanner('The Starlit Garden', this.era, 'Ten Thousand Years On');
+  }
+
+  async leaveGarden() {
+    this.mode = 'cutscene';
+    setFade(1);
+    await new Promise((r) => setTimeout(r, 300));
+    this.world.pocket = null;
+    this.applyEra(ERA.PRESENT, true);
+    this.refreshWorld();
+    this.player.place(GARDEN.door, 0, 0.8);
     setFade(0);
     this.mode = 'play';
     this.lockT = 0.2;
@@ -462,8 +498,11 @@ export class HollowmereGame extends Game {
       this.hud.toast('<b>A way back:</b> the old postern passage behind you is open, in the Present.', 5000);
     }
 
-    // walking out of Donald Eugene's hideaway
-    if (this.world.pocket && ctl && this.player.body.z > -0.7) this.leaveStudy();
+    // walking out of Donald Eugene's hideaway or the Starlit Garden
+    if (this.world.pocket && ctl && this.player.body.z > -0.7) {
+      if (this.world.pocket.id === 'garden') this.leaveGarden();
+      else this.leaveStudy();
+    }
 
     // entities
     this.player.update(dt);

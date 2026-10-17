@@ -4,7 +4,7 @@ import { ERA } from '../../core/util.js';
 import { LANTERN, CLAM } from './level.js';
 
 export const ITEMS = {
-  watch: { name: "Donald Eugene's Pocketwatch", desc: 'It runs backward, and it pulls toward the sea. Three clockmakers have carried it, and none of them ever knew why.' },
+  watch: { name: "Donald Eugene's Pocketwatch", desc: 'It runs backward, and it pulls toward the sea. Donald Eugene carried it down Highcrest fifty years ago to keep Sir Orin from rewinding the world.' },
   myWatch: { name: "Vivienne's Pocketwatch", desc: "Twelve lost cogs and one winter of Donald Eugene's evenings. It runs backward, exactly as promised." },
   nets: { name: 'Old Fishing Nets', desc: 'From the deck of the Marigold. Good for catching fish, or anything else that drifts by.' },
   clapper: { name: 'Bell Clapper', desc: 'The tongue of a great bell, misfiled in a salvage pit for three hundred years.' },
@@ -37,9 +37,10 @@ export const INTRO = [
   N('Or where it used to. The harbor is mud from wall to wall. The tide went out the night the Tower restarted, and it has not come back.'),
   DE('There. You see it, Vivienne? Not one drop. Now listen to this.'),
   N('He holds up his old pocketwatch. It is ticking. Backward.'),
-  DE('It began the moment you restarted the Tower. The other clock I told you about, the old one, ticking where no clock should be: this watch is tied to it somehow, and it pulls toward that headland. The Tide Well, they call it.'),
-  DE('My knees are not what they were, and that is a long road. So the watch goes with you. Mind it. I have carried it fifty years and never once understood it.'),
-  Wr("A clock that keeps the tide, and it's running the wrong way. All right, Master. Let's go and wind it forward."),
+  DE('I owe you the truth, apprentice. Fifty years ago, there were three of us up on Highcrest: Sir Orin, his wife Lyra, and me. When Lyra fell ill on Midwinter Night, Orin wanted to use this watch to wind the whole world back.'),
+  DE('Lyra made me swear to carry it down the mountain so he could not. What I never knew is that this watch was the Tide Clock\'s heart all along—and for fifty years, only the broken resonance of Hollowmere\'s dying tower kept the sea moving without it.'),
+  DE('The moment you mended the Clocktower, that false resonance broke, and the watch woke up pulling toward the headland. The Tide Well, they call it. Take it, Vivienne. Put back what I stole.'),
+  Wr("A clock that keeps the tide, and its heart has been hiding in your waistcoat for fifty years. All right, Master. Let's bring the sea home."),
   DE('One thing first. The harbor children have a rhyme: "Dawn and Noon and Dusk must ring, before the Well lets anything in." Three bells, apprentice. I would start by asking where they hang.'),
 ];
 
@@ -47,10 +48,10 @@ export const INTRO = [
 export const ENDING_A = [
   N('Vivienne comes up out of the Well with the sea at her heels. Behind her the water stops rising a hand below the door, exactly where it has always meant to stop.'),
   DE('Vivienne! I felt it turn. Every clock I own struck at once. I came up those steps like a man of forty. Well. Fifty.'),
-  Wr("Master... I'm sorry. Your watch. It was never a watch. It was the Tide Clock's heart, and it had to go back. I couldn't keep it."),
-  DE('Sorry? Fifty years I wound that watch, and my master before me, and hers before her. Not one of us ever asked where it was trying to go.'),
-  DE('We do not own time, apprentice. We never did. It is lent to us: a little, by the ones who came before, to be handed on to the ones who come after. All we choose is what we do while it is in our hands.'),
-  DE('And you chose to give it back. That is the whole of the craft. I have nothing left to teach you.'),
+  Wr("Master... I'm sorry. Your watch. It was the Tide Clock's heart, just as you feared, and it had to stay in the cradle. I couldn't bring it back."),
+  DE('Sorry? Fifty years I hid that watch in a drawer in the dark, terrified of what Orin would do if he found it, and terrified of what would happen if I let it go.'),
+  DE('Lyra used to tell us: we do not own time, Donald. It is lent to us—a little, by the ones who came before, to be handed on to the ones who come after. All we choose is what we do while it is in our hands.'),
+  DE('Orin could not let her hour go, and I could not let my fear go. You gave the watch back to the sea. That is the whole of the craft. I have nothing left to teach you.'),
   Wr("That isn't true. You still won't tell me how you get your gear trains so quiet."),
   DE('Ha! No. That one I am keeping. Now come and look. I think the sea has something to show you.'),
 ];
@@ -65,9 +66,9 @@ export const ENDING_B = [
   N('By morning the harbor is full. By evening the boats are out. And three hundred years on, where there was salt to the horizon, there are lights on the water.'),
   DE('There. A town that will never know how near it came to being a desert. That is the best sort of mending: the kind nobody ever finds out about.'),
   Wr("Somebody will find out. Give it six hundred years and there'll be a statue. There's always a statue."),
-  DE('...Vivienne. While I waited on the quay, I got talking to the harbormaster about that well. He says the tide folk did not design it. They were handed the drawings. By a traveler, in very odd clothes.'),
-  Wr("...That wasn't me. I'd remember. Wouldn't I?"),
-  DE('Not yet, perhaps. That, apprentice, is a puzzle for another day. Supper first. I am told there is smoked eel.'),
+  DE('...Vivienne. With Hollowmere\'s Tower locked forward and the Tide Clock whole again, Orin has nothing left down here to siphon quietly. If he is still keeping that last hour alive on Highcrest, he will start pulling whole hours straight out of the valley\'s nights.'),
+  Wr("Then when winter comes early, we climb Highcrest—both of us."),
+  DE('Both of us, apprentice. I left my best friend on that mountain fifty years ago. I will not leave you to face him alone. Supper first, though. I am told there is smoked eel.'),
 ];
 
 /** "One voice..." after each bell, whatever order they're rung in. */
@@ -97,7 +98,7 @@ function npcLines(game, id) {
         return [
           DE('Still here? Good. One more thing I should have said. The Chronoheart is whole again, since the Tower mended it: you may stay in any age as long as you please. No more racing its ring.'),
           DE("Mind, it cost you the seal ring, the lens and the escape wheel. They went into the Tower's heart to mend yours. A fair trade, I'd say."),
-          DE('The watch was my master\'s, and her master\'s before that. "Wind it, and keep it close," she told me. "It is looking for something." I thought she was being poetical.'),
+          DE('When Lyra pressed that watch into my hands on Highcrest, she whispered: "Keep it from Orin, Donald, until someone comes who knows how to let time move on." Fifty years I waited to find out who she meant.'),
           DE('The harbormaster will know about the bells. And Vivienne: be kind to these people. They have lost a whole sea.'),
         ];
       }
@@ -236,16 +237,16 @@ function npcLines(game, id) {
       ];
     }
     case 'michelle': {
-      const m = S('michelle', 'Michelle the Wise');
-      if (f.tideRestored) return [m('Some things are only ever lent to us. You gave yours back with good grace, Vivienne. I knew you would.'), m('And you were kind along the way. I can always tell.')];
+      const m = S('michelle', 'Lyra the Wise');
+      if (f.tideRestored) return [m('Some things are only ever lent to us. You gave yours back with good grace, Vivienne. I knew you would.'), m('And you were kind along the way. Even from Highcrest, my Echo can tell.')];
       if (f.hasRewind) {
         if (!f.tideGatePassed) return [m('Stand at the gate first. Then go down to the lever. The watch remembers the way back, even up a drop that your legs would not.')];
         return [m('Spend your time wisely, Vivienne. Even the time you get to spend twice.')];
       }
       return [
-        m("Ah. The clockmaker's apprentice. Keeper of the Chronoheart now, I hear. You are early. Or I am late. With you it is hard to say."),
+        m("Ah. Donald's apprentice. Keeper of the Chronoheart now, I see. You are early. Or my Echo is late. Across the years it is hard to say."),
         m('You did well in Hollowmere. And you were kind while you did it, which is rarer.'),
-        m('That watch in your pocket still runs backward, yes? Things that run backward want to take someone with them. Hold it tight, think of where you have just been... and let it.'),
+        m('That watch in your pocket was made for the sea, and it still runs backward. Fifty years ago I made Donald swear to carry it down from Highcrest so my husband Orin could not use it to rewind the world. Hold it tight, think of where you have just been... and let it carry you.'),
         N("The pocketwatch shivers in Vivienne's hand. For a heartbeat she is standing where she stood three steps ago."),
         { unlock: 'rewind' },
         m('There. It only ever takes you. The world keeps walking forward without you: gates go on closing, tides go on turning. Remember that, when you are tempted to lean on it.'),
@@ -377,10 +378,19 @@ export async function struck(game, ent) {
         N('On the strand below, in the first age, the tide folk fall silent and stare up at a bell that is ringing itself.'),
         bellCount(f),
       ]);
+    case 'wardenKey':
+      f.wardenKeyStruck = true;
+      if (game.warden) game.warden.stunT = 14;
+      audio.sfx('gate');
+      game.refreshWorld();
+      game.save();
+      game.hud.toast('<b>Wind-up key struck!</b> The Harbor Warden is stunned and its shield is down—ring the <b>second stroke</b>!', 5500);
+      return;
     case 'duskBell':
       ring('duskRung', 'noteDusk');
+      if (game.warden) game.warden.stunT = 20;
       return say([
-        N('The Dusk Bell has waited three hundred years to make its first sound. It makes it now: low and enormous, rolling out across the salt.'),
+        N('The Dusk Bell has waited three hundred years to make its first sound. It makes it now: low and enormous, rolling out across the salt as the Harbor Warden folds down into silent rest.'),
         N('Nothing answers. Not yet.'),
         bellCount(f),
       ]);
@@ -475,7 +485,7 @@ export async function interact(game, ent) {
         audio.sfx('socket');
         game.save();
         await say([N('The Dusk Bell: cast by the last harbor folk to call the sea home, and never once rung. You hang the clapper on its hook.'), Wr("Three hundred years late. Let's make it loud.")]);
-        game.hud.toast('Every stroke will bring the Warden. Ring, then <b>rewind</b> out of reach.', 5000);
+        game.hud.toast('Ring the Dusk Bell (<kbd>X</kbd>). Its Harbor Warden will wake to defend it!', 5000);
         return;
       }
       return say([N('A great bell, the color of dusk. It has no clapper. It has never made a sound.'), f.metDigby ? Wr('Salvage Pit 3, DIGBY said. Back west, in the Saltings.') : Wr('Somebody must know where its clapper went.')]);
@@ -539,9 +549,9 @@ export async function interact(game, ent) {
       await say([
         N("The Tide Clock's great wheel fills the wall, turning slowly the wrong way. At its foot is a cradle of dark stone, the size of a duck egg. Empty."),
         N("In Vivienne's pocket the watch is pulling so hard that it hums."),
-        Wr("It was never a watch. It's this clock's heart. Somebody carried it inland a very long time ago, and it has been trying to get home ever since."),
+        Wr("It was never a watch. It's this clock's heart. Master carried it down Highcrest fifty years ago to stop Sir Orin from rewinding the world, and it has been trying to get home ever since."),
         Wr("...If I put it back, I can't take it out again. No more running myself backward."),
-        Wr('Michelle said it. The world keeps walking forward. So should I.'),
+        Wr('Lyra said it. The world keeps walking forward. So should I.'),
         N('Vivienne sets the watch in the cradle. It fits as though it had only just been lifted out.'),
       ]);
       return game.placeHeart();

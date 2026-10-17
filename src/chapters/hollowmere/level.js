@@ -584,6 +584,12 @@ function hub(world) {
   b.deco(2.6, 1.1, 0.06, 0.7, 0.7, 0.05, 0xc9a44a);
   b.deco(3.6, 1.3, 0.06, 0.5, 0.5, 0.05, 0xa8843a);
   b.deco(9.1, 0, 0.0, 1.1, 2.0, 0.06, 0x4a2c18);
+  // Star-iron Astral Door on the east side of the workshop (opens with the Master's Key)
+  b.deco(11.35, 0, 0.0, 1.05, 2.0, 0.06, 0x2c3444);
+  b.deco(11.28, 2.0, 0.0, 1.2, 0.16, 0.1, C.stone[3]);
+  for (let i = 0; i < 4; i++) {
+    b.glow(11.58 + (i % 2) * 0.22, 1.18 + Math.floor(i / 2) * 0.22, 0.07, 0.18, 0.18, 0.02, i < 2 ? 0xffd070 : NEON.cyan);
+  }
   b.deco(8.6, 2.3, 0.04, 2.6, 0.5, 0.08, 0x3a2614); // sign
   b.glow(8.75, 2.42, 0.12, 2.3, 0.26, 0.02, 0xe0b040);
   b.light(7, 5.6, 1.5, 0xffd8a0, 6, 9, 0);
@@ -636,7 +642,7 @@ function hub(world) {
   b.solid(27, 1, 2, 27, 1, 2, jitter(C.metalL));
   b.solid(29, 2, 2, 29, 2, 2, jitter(C.metalL));
   for (const [hx, hy] of [[25, 0], [27, 1], [29, 2]]) b.glow(hx + 0.1, hy - 0.05, 2.1, 0.8, 0.06, 0.8, NEON.cyan);
-  filler(b, F, 13, 37, 31);
+  filler(b, F, 13, 29, 31);
 }
 
 // Sun-lilies: golden flowers that grew in the square in the oldest days (Karen Louise's favor).
@@ -1029,18 +1035,19 @@ function rampart(world) {
 // Donald Eugene's hideaway: a secret. In the Past, one plain house in Rampart Row has a tiny
 // brass gear pressed into its door. Knock, and it opens onto the room he rested in while he
 // hopped between the ages. The Everspring waits on his workbench: the Chronoheart never runs
-// down again. (Michelle the Wise mentions it, very quietly.)
+// down again. (Lyra the Wise mentions it, very quietly.)
 // While the player is inside, the front wall is cut away and the room joins the playable strip.
-export const STUDY = { x0: 87, x1: 92, h: 4, door: 89, pocket: { era: P, x0: 87, x1: 92, z0: -4 } };
+export const STUDY = { x0: 87, x1: 92, h: 4, door: 89, pocket: { id: 'study', era: P, x0: 87, x1: 92, z0: -4 } };
+export const GARDEN = { x0: 30, x1: 36, h: 5, door: 11.9, entryX: 33, pocket: { id: 'garden', era: F, x0: 30, x1: 36, z0: -4 } };
 function hideaway(world) {
   // bare earth under the house, so no grass grows through the floor
   world.staticBuilder(P).solid(STUDY.x0, -1, -4, STUDY.x1, -1, -1, jitter(C.sandDark));
   world.addFeature({
-    id: 'hideaway', eras: [P], key: () => String(!!world.pocket),
+    id: 'hideaway', eras: [P], key: () => String(world.pocket?.id === 'study'),
     build: (b) => {
       const { x0, x1, h, door } = STUDY;
       const wall = (x, y, z) => (y === h - 1 ? jitter(C.sandDark)(x, y, z) : jitter(C.sandstone)(x, y, z));
-      if (!world.pocket) {
+      if (world.pocket?.id !== 'study') {
         // outside: an ordinary old house, just like its neighbors
         b.solid(x0, 0, -4, x1, h - 1, -1, wall);
         for (let x = x0; x <= x1; x += 2) b.solid(x, h, -4, x, h, -4, jitter(C.sandstone));
@@ -1089,6 +1096,47 @@ function hideaway(world) {
       b.glow(x0 + 1.3, 1.6, -3.0, 0.2, 0.3, 0.2, NEON.warm);
       b.light(x0 + 2.8, 2.2, -1.6, 0xffc070, 6, 7, 0.08);
       crate(b, x1 - 1, 0, -1);
+    },
+  });
+}
+
+// The Starlit Garden (10,000 Years On): a secret fourth-era sanctuary behind the Astral Clock-Door,
+// unlocked once all 10 Lost Cogs in Chapter 3 grant the Master's Key.
+function starlitGarden(world) {
+  world.staticBuilder(F).solid(GARDEN.x0, -1, -4, GARDEN.x1, -1, -1, jitter(C.overgrowth));
+  world.addFeature({
+    id: 'starlitGarden', eras: [F], key: () => String(world.pocket?.id === 'garden'),
+    build: (b) => {
+      const { x0, x1, h } = GARDEN;
+      if (world.pocket?.id !== 'garden') {
+        filler(b, F, x0, x1, 32);
+        return;
+      }
+      // Sanctuary walls reclaimed by mossy stone, bioluminescent vines, and starlight
+      const wall = jitter(C.stoneMoss);
+      b.solid(x0, 0, -4, x1, h - 1, -4, wall);
+      b.solid(x0, 0, -3, x0, h - 1, -1, wall);
+      b.solid(x1, 0, -3, x1, h - 1, -1, wall);
+      b.deco(x0 + 1, 0.0, -3, x1 - x0 - 1, 0.04, 2.9, 0x224a38); // soft moss carpet
+      // Starlight pools and glowing sun-lilies
+      b.glow(x0 + 1.3, 0.05, -2.7, 1.4, 0.03, 1.1, NEON.cyan);
+      b.glow(x1 - 2.3, 0.05, -2.7, 1.4, 0.03, 1.1, NEON.cyan);
+      lilyCluster(b, x0 + 1.4, -2.5, 4, true);
+      lilyCluster(b, x1 - 2.2, -2.5, 4, true);
+      // Living tree-observatory at the center-back, encircled by four brass astrolabe rings
+      const cx = (x0 + x1 + 1) / 2;
+      b.deco(cx - 0.35, 0, -3.4, 0.7, 3.6, 0.6, C.log[0]);
+      for (let i = 0; i < 4; i++) {
+        const ry = 1.3 + i * 0.45;
+        b.glow(cx - 1.1 + i * 0.12, ry, -3.45, 2.2 - i * 0.24, 0.06, 0.08, i % 2 ? 0xffd070 : NEON.cyan);
+      }
+      b.canopy(cx, 4.4, -3.0, 2.4, [0x36f0ff, 0x7affc8, 0xffd070, 0x4aa06a], { maxZ: -1.2, seed: 99, squash: 0.7 });
+      // Memorial Plinth of the Four Clockmakers
+      b.deco(cx - 0.55, 0, -2.4, 1.1, 0.85, 0.7, CARVED[0]);
+      b.deco(cx - 0.62, 0.85, -2.45, 1.24, 0.1, 0.8, CARVED[2]);
+      b.glow(cx - 0.4, 0.4, -1.68, 0.8, 0.32, 0.03, 0xffd070);
+      b.light(cx, 2.6, -2.0, 0x9ff4ff, 8, 9, 0.05);
+      b.light(cx, 1.4, -2.2, 0xffd890, 5, 6, 0.05);
     },
   });
 }
@@ -1826,6 +1874,11 @@ export const GEAR = {
   springs: [{ x: 320, y: 0, z0: 2, z1: 4 }, { x: 330, y: 4, z0: 2, z1: 4 }],
   lift: { x0: 334, x1: 335, z0: 2, z1: 4, y: 8, h: 6 },
   mainspring: { x: 341.5, y: 14, z: 3.5 },
+  pins: [
+    { id: 'escapePin0', x: 337.5, y: 14, z: 1.8, flag: 'pin0Locked', name: 'west escapement pin', speed: 4.4 },
+    { id: 'escapePin1', x: 339.6, y: 14, z: 5.1, flag: 'pin1Locked', name: 'south escapement pin', speed: -5.2 },
+    { id: 'escapePin2', x: 343.2, y: 14, z: 2.0, flag: 'pin2Locked', name: 'east escapement pin', speed: 5.8 },
+  ],
 };
 
 function gearworks(world) {
@@ -1893,7 +1946,7 @@ export const SPAWNS = [
   { type: 'npc', id: 'samaria', era: P, x: 18.5, z: 2.0, sheet: 'samaria', name: 'Samaria the Sun-Keeper' },
   { type: 'npc', id: 'tick', era: F, x: 12.5, z: 2.0, sheet: 'tick', name: 'TICK (Archivist Unit)', hover: true },
   { type: 'npc', id: 'holo', era: F, x: 16.9, y: 1, z: 0.5, sheet: 'eugene', name: 'Memorial Hologram', holo: true },
-  { type: 'npc', id: 'michelle', era: M, x: 35.5, z: 2.2, sheet: 'michelle', name: 'Michelle the Wise' },
+  { type: 'npc', id: 'michelle', era: M, x: 35.5, z: 2.2, sheet: 'michelle', name: 'Lyra the Wise' },
   { type: 'npc', id: 'zach', era: M, x: 84.5, y: 1, z: 1.5, sheet: 'zach', name: 'Zach Tiberious', small: true },
   { type: 'npc', id: 'megan', era: M, x: 86.5, y: 2, z: 1.5, sheet: 'megan', name: 'Megan the Squirrel', small: true },
   { type: 'npc', id: 'aria', era: M, x: 110.2, z: 1.0, sheet: 'aria', name: 'Aria the Smith' },
@@ -1909,6 +1962,8 @@ export const SPAWNS = [
 
   // Interactables
   { type: 'interact', id: 'workbench', era: M, x: 9.0, y: 1, z: 0.5, prompt: 'Examine workbench' },
+  { type: 'interact', id: 'astralDoor', era: M, x: GARDEN.door, y: 0, z: 0.15, prompt: 'Star-iron door', reach: 1.05 },
+  { type: 'interact', id: 'gardenPlinth', era: F, x: (GARDEN.x0 + GARDEN.x1 + 1) / 2, y: 0, z: -2.0, prompt: 'Memorial of the Four Clockmakers', reach: 1.3 },
   { type: 'interact', id: 'wildLilies', era: P, x: 23.5, y: 0, z: 5.5, prompt: 'Wild flowers' },
   { type: 'interact', id: 'lilyBed', era: M, x: 23.5, y: 0, z: 5.5, prompt: 'Flower bed' },
   { type: 'interact', id: 'lever', era: P, x: 63.4, y: 0, z: 0.35, prompt: 'Spring lever', needs: 'springOpen' },
@@ -1916,6 +1971,7 @@ export const SPAWNS = [
   { type: 'strike', id: 'leverJam', era: P, x: 63.4, y: 0, z: 0.35, flag: 'springOpen', prompt: 'Strike the seized lever', hz: 1.7 },
   ...MILL_PLUGS.map((pl) => ({ type: 'strike', id: pl.id, era: P, x: TROUGH_X - 0.15, y: 0, z: pl.z, flag: 'millDammed', prompt: `Strike the ${pl.name} plug`, hx: 0.95, hz: 0.9, keep: !pl.good })),
   { type: 'strike', id: 'shutterLock', era: F, x: 172.6, y: 0, z: 3.5, flag: 'shutterBroken', prompt: 'Strike the rusted lock', hx: 1.1, hz: 1.9 },
+  ...GEAR.pins.map((pin) => ({ type: 'strike', id: pin.id, era: M, x: pin.x, y: pin.y, z: pin.z, flag: pin.flag, prompt: `Strike the ${pin.name}`, hx: 1.15, hz: 1.35 })),
   { type: 'interact', id: 'swimSign', era: F, x: L.pitX0 - 1.1, y: 0, z: 0.9, prompt: 'Pool sign', needs: 'springOpen' },
   { type: 'interact', id: 'cliffSign', era: M, x: 64.5, y: 0, z: 0.5, prompt: 'Inspect cliff' },
   { type: 'interact', id: 'soil', era: P, x: 92.5, y: 0, z: 3.5, prompt: 'Fertile soil' },
@@ -2014,6 +2070,7 @@ export function buildLevel(world, state) {
   rampart(world);
   smithy(world);
   hideaway(world);
+  starlitGarden(world);
   terrace(world);
   gatehouse(world);
   millHollow(world);

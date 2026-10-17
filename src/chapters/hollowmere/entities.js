@@ -132,10 +132,20 @@ export class Strikeable extends EraEntity {
       this.box.add(ring);
       this.group.add(this.box);
     }
+    if (this.id.startsWith('escapePin')) {
+      // a brass-and-iron escapement pin on the Gearworks summit deck
+      this.box = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 0.85, 12), new THREE.MeshStandardMaterial({ color: 0xc9963a, metalness: 0.7, roughness: 0.35 }));
+      this.lamp = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.14, 12), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffd070).multiplyScalar(2.2) }));
+      this.lamp.position.set(0, 0.42, 0);
+      this.box.add(this.lamp);
+      this.box.position.set(spec.x, spec.y + 0.42, spec.z);
+      this.group.add(this.box);
+    }
     // gone once it has given (spec.keep: it stays put, e.g. a plug that was the wrong one)
     this.group.visible = !game.state.flags[spec.flag] || !!spec.keep;
   }
   active() {
+    if (this.id.startsWith('escapePin') && !this.game.state.flags.gearworksOpen) return false;
     return super.active() && !this.game.state.flags[this.spec.flag];
   }
   /** Back as it was, to be struck again (the story re-seats a wrong plug). */

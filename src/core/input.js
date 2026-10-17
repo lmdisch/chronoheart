@@ -20,9 +20,9 @@ const BIND = {
   seal: ['KeyR'],
   rewind: ['KeyR'],
   echo: ['KeyV'],
-  // Tempo's own buttons on touch (virtual codes: no physical key sends them)
-  slow: ['TempoSlow'],
-  fast: ['TempoFast'],
+  // Tempo's own buttons on touch + optional instant keyboard keys (1/Z for Slow, 2 for Fast)
+  slow: ['TempoSlow', 'Digit1', 'KeyZ'],
+  fast: ['TempoFast', 'Digit2'],
 };
 
 class Input {

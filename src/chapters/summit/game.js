@@ -57,9 +57,72 @@ export class SummitGame extends Game {
       this.world.groups[era].add(a.mesh);
       return a;
     });
+    this.setupOrinBossMeshes();
   }
   syncBody() {
     this.powers.syncBody();
+  }
+  /** Visuals for the 3-phase confrontation with Sir Orin at the Needle. */
+  setupOrinBossMeshes() {
+    if (this.bossGroup) this.scene.remove(this.bossGroup);
+    this.bossGroup = new THREE.Group();
+    const ny = gy(5, L.needle.x);
+    // Containment ring around the Needle
+    this.bossRing = new THREE.Mesh(
+      new THREE.TorusGeometry(2.6, 0.09, 10, 36),
+      new THREE.MeshBasicMaterial({ color: 0x6ce2ff, transparent: true, opacity: 0.75 }),
+    );
+    this.bossRing.rotation.x = Math.PI / 2;
+    this.bossRing.position.set(L.christopherX, ny + 0.35, L.ZS + 2.2);
+    // Rolling Frost Wave (Phase 1)
+    this.frostWave = new THREE.Mesh(
+      new THREE.BoxGeometry(0.45, 1.35, 6.2),
+      new THREE.MeshBasicMaterial({ color: 0x8ae8ff, transparent: true, opacity: 0.65 }),
+    );
+    this.frostWave.position.set(L.christopherX + 1, ny + 0.68, L.ZS + 3);
+    this.frostWaveX = L.christopherX + 1;
+    // Sweeping Gnomon Beam (Phase 2)
+    this.gnomonPivot = new THREE.Group();
+    this.gnomonPivot.position.set(L.OX + 25.5, ny + 0.32, L.ZS + 3.5);
+    const beam = new THREE.Mesh(
+      new THREE.BoxGeometry(7.2, 0.18, 0.28),
+      new THREE.MeshBasicMaterial({ color: 0x6ce2ff, transparent: true, opacity: 0.8 }),
+    );
+    this.gnomonPivot.add(beam);
+    this.bossGroup.add(this.bossRing, this.frostWave, this.gnomonPivot);
+    this.scene.add(this.bossGroup);
+  }
+  startOrinBoss() {
+    this.frostWaveX = L.christopherX + 1;
+    this.hud.toast(
+      `<b>Phase 1/3:</b> Light the <b>Lantern</b> (${key('R', 'Lantern')}) on the <b>First Age</b> to dissolve Orin's Frost Waves, then strike the <b>East Frost-Anchor</b> (${key('X', 'Attack')})!`,
+      7000,
+    );
+  }
+  onOrinPhase1Done() {
+    this.hud.toast(
+      `<b>Phase 2/3 — Frost-Anchor shattered!</b> Record an <b>Echo</b> (${key('V', 'Echo')}) on one blue Frost-Lock plate and stand on the other while dodging the sweeping gnomon beam!`,
+      7500,
+    );
+  }
+  onOrinPhase2Done() {
+    this.bursts.emit(L.christopherX, gy(5, L.christopherX) + 1.2, L.ZS + 2.2, 45, {
+      color: [0x6ce2ff, 0xffe08a, 0xffffff],
+      speed: 4.5,
+      life: 0.9,
+    });
+    this.hud.toast(
+      `<b>Phase 3/3 — The Needle's lock is broken!</b> Stand beside Sir Orin, light the <b>Lantern</b> (${key('R', 'Lantern')}), swing it to <b>the Stopped Age</b> (${key('E', 'Future')}), and talk to him!`,
+      8000,
+    );
+  }
+  grantMasterKey() {
+    const f = this.state.flags;
+    if (f.masterKey) return;
+    f.masterKey = true;
+    progress.grantReward('masterKey');
+    if (!this.state.inventory.includes('masterKey')) this.giveItem('masterKey');
+    this.save();
   }
   /** After the hours go home: a midwinter night in the Present, and the Stopped Age thawing. */
   setMood() {
@@ -98,14 +161,14 @@ export class SummitGame extends Game {
     if (age !== undefined) this.applyEra(age, true);
   }
 
-  /** Not after the last shift; not in the frost; not off ground only the Lantern's age is holding up. */
+  /** Not after the last shift (unless you forged the Master's Key!); not in the frost. */
   canShift() {
     const f = this.state.flags, b = this.player.body;
-    if (f.endingAge !== undefined) {
-      this.hud.toast("The Chronoheart's last shift is spent. You live here now.", 3500);
+    if (f.endingAge !== undefined && !f.masterKey && !this.state.inventory.includes('masterKey')) {
+      this.hud.toast("The Chronoheart's last shift is spent. Find all ten Lost Cogs to forge the Master's Key!", 4000);
       return false;
     }
-    if (inFrost(b.x, b.y, b.z)) {
+    if (inFrost(b.x, b.y, b.z) && !f.hoursReturned) {
       audio.sfx('blocked');
       this.hud.toast(`The frost holds the ages still here: the Chronoheart can't shift. The Lantern still works (${key('R', 'Lantern')}).`, 4000);
       return false;
@@ -120,7 +183,7 @@ export class SummitGame extends Game {
       this.hud.toast(`<b>The Lantern!</b> It holds the age you last stepped out of. ${key('R', 'Lantern')} lights it: inside its light, that age is real.`, 8000);
     } else {
       f.hasEcho = true;
-      this.hud.toast(`<b>Echo!</b> ${key('V', 'Echo')} to start recording yourself, ${key('V', 'Echo')} again to stop. Your echo does it again, then waits.`, 8000);
+      this.hud.toast(`<b>Echo!</b> ${key('V', 'Echo')} to start recording yourself, ${key('V', 'Echo')} again to stop. Your echo remembers your path—and your Lantern's light!`, 8000);
     }
     this.powers.syncBody();
     this.save();
@@ -142,7 +205,14 @@ export class SummitGame extends Game {
     if (this.powers?.recording) this.powers.stopRecording();
   }
   onCog() {
-    if (this.state.cogs.length >= COG_TOTAL) setTimeout(() => this.hud.toast("That's all ten! Donald Eugene will want to hear about this.", 5000), 2500);
+    if (this.state.cogs.length >= COG_TOTAL) {
+      if (this.state.flags.hoursReturned && !this.state.flags.masterKey) {
+        this.grantMasterKey();
+        setTimeout(() => this.hud.toast("<b>All ten Lost Cogs!</b> You forged <b>The Master's Key</b>—you can now shift freely across all ages and open Hollowmere's Astral Clock-Door!", 7000), 2200);
+      } else {
+        setTimeout(() => this.hud.toast("That's all ten Lost Cogs! Donald Eugene and Sir Orin can forge the <b>Master's Key</b> with these.", 5500), 2500);
+      }
+    }
   }
 
   /** The Lantern's bubble shows like the time lens, round the lantern (the lens itself wins while held). */
@@ -161,22 +231,22 @@ export class SummitGame extends Game {
     }
   }
 
-  /** Talking to Sir Christopher with the Stopped Age lit beside him: the hours go home. */
+  /** Talking to Sir Orin with the Stopped Age lit beside him after breaking the Needle's locks: the hours go home. */
   use(target) {
     const f = this.state.flags, bb = this.world.bubble;
-    if (target.id === 'christopher' && f.summitTalk && !f.hoursReturned) {
-      const near = bb && bb.age === F && Math.hypot(bb.x - target.x, bb.y - (target.y + 1)) < BUBBLE_R + 1.5;
+    if (target.id === 'christopher' && f.summitTalk && f.orinPhase2 && !f.hoursReturned) {
+      const near = bb && bb.age === F && Math.hypot(bb.x - target.x, bb.y - (target.y + 1)) < BUBBLE_R + 1.8;
       if (near) return void this.runFinale();
     }
     super.use(target);
   }
 
   // ------------------------------------------------------------------ story set pieces
-  /** On the terrace: Sir Christopher, in front of the statue. */
+  /** On the terrace: Sir Orin, in front of the statue. */
   async meetChristopher() {
     const f = this.state.flags;
     f.christopherMet = true;
-    const ch = new NPC(this, { type: 'npc', id: 'christopherMeet', era: M, x: L.statueX + 1.6, y: gy(2, L.statueX + 1.6), z: zb(2) + 2.4, sheet: 'christopher', name: 'Sir Christopher' });
+    const ch = new NPC(this, { type: 'npc', id: 'christopherMeet', era: M, x: L.statueX + 1.6, y: gy(2, L.statueX + 1.6), z: zb(2) + 2.4, sheet: 'christopher', name: 'Sir Orin' });
     this.npcs.push(ch);
     this.entities.push(ch);
     letterbox(true);
@@ -193,7 +263,7 @@ export class SummitGame extends Game {
     this.save();
   }
 
-  /** The hours go home: a sunset fifty years late, Donald Eugene up the last switchback, and the last shift. */
+  /** The hours go home: a sunset fifty years late, Lyra waking for one final real hour, Donald Eugene up the last switchback, and the last shift. */
   async runFinale() {
     if (this.mode === 'ending') return;
     const f = this.state.flags;
@@ -224,6 +294,7 @@ export class SummitGame extends Game {
     await wait(500);
     const allCogs = this.state.cogs.length >= COG_TOTAL;
     await this.dialogue.run([...REUNION, ...(allCogs ? COGS_ENDING : []), ...CHOICE]);
+    if (allCogs) this.grantMasterKey();
     letterbox(false);
     const age = await this.chooseAge();
     await this.runEnding(age);
@@ -285,11 +356,65 @@ export class SummitGame extends Game {
     this.onCredits?.(this.state);
   }
 
+  /** Step the 3-phase Needle encounter with Sir Orin. */
+  updateOrinBoss(dt, ctl) {
+    const f = this.state.flags, b = this.player.body;
+    const active = this.era === M && f.summitTalk && !f.hoursReturned;
+    if (!this.bossGroup) return;
+    this.bossRing.visible = active && !f.orinPhase2;
+    this.frostWave.visible = active && !f.orinPhase1;
+    this.gnomonPivot.visible = active && !!f.orinPhase1 && !f.orinPhase2;
+    if (!active) return;
+
+    const ny = gy(5, L.needle.x);
+    this.bossRing.rotation.z += dt * 1.4;
+
+    // Phase 1: Rolling Frost Wave from the Needle eastward to U(36)
+    if (!f.orinPhase1) {
+      this.frostWaveX += dt * 5.2;
+      if (this.frostWaveX > L.OX + 35) this.frostWaveX = L.christopherX + 1;
+      this.frostWave.position.set(this.frostWaveX, ny + 0.68, L.ZS + 3);
+      if (ctl && tierAt(b.z) === 5 && Math.abs(b.x - this.frostWaveX) < 0.65 && b.y < ny + 1.3) {
+        const shielded = this.powers.lit && this.powers.age === ERA.PAST;
+        if (shielded) {
+          if (Math.random() < dt * 15) {
+            this.bursts.emit(this.frostWaveX, b.y + 0.8, b.z, 4, { color: [0xffb84a, 0x9fe8ff], speed: 2, life: 0.4 });
+          }
+        } else {
+          this.player.hurt(1, this.frostWaveX - 1);
+          if (!f.waveHint) {
+            f.waveHint = true;
+            this.hud.toast(`<b>Frost Wave!</b> Light your <b>Lantern</b> (${key('R', 'Lantern')}) on the <b>First Age</b> to walk right through it!`, 5500);
+          }
+        }
+      }
+    }
+
+    // Phase 2: Sweeping Gnomon Shadow-Beam between the two Frost-Lock plates
+    if (f.orinPhase1 && !f.orinPhase2) {
+      this.gnomonPivot.rotation.y += dt * 1.65;
+      if (ctl && tierAt(b.z) === 5 && b.y < ny + 0.45) {
+        const dx = b.x - this.gnomonPivot.position.x;
+        const dz = b.z - this.gnomonPivot.position.z;
+        const dist = Math.hypot(dx, dz);
+        if (dist < 3.6 && dist > 0.3) {
+          const ang = -this.gnomonPivot.rotation.y;
+          const rx = dx * Math.cos(ang) - dz * Math.sin(ang);
+          const rz = dx * Math.sin(ang) + dz * Math.cos(ang);
+          if (Math.abs(rx) < 3.5 && Math.abs(rz) < 0.32) {
+            this.player.hurt(1, this.gnomonPivot.position.x);
+          }
+        }
+      }
+    }
+  }
+
   // ------------------------------------------------------------------ per-frame
   updatePlay(dt) {
     const s = this.state, f = s.flags;
     s.playTime += dt;
     this.lockT = Math.max(0, this.lockT - dt);
+    this.chimeHoldT = Math.max(0, (this.chimeHoldT || 0) - dt);
     const ctl = this.controlsEnabled();
     const b = this.player.body;
 
@@ -313,20 +438,33 @@ export class SummitGame extends Game {
     this.powers.update(dt, ctl && !peeking);
     this.player.update(dt);
     this.updateEntities(dt);
+    this.updateOrinBoss(dt, ctl);
     for (const st of this.statues || []) st.update(0);
     // the orrery's rings, the clockworks' gears, the lighthouse beam far below: turning where time runs
-    for (const sp of SPINNERS) if (sp.era === this.era) sp.obj.rotation[sp.axis] += (sp.speed || (f.hoursReturned ? 0.12 : 0)) * dt; // (the Stopped Age's start again, slowly, once it thaws)
+    for (const sp of SPINNERS) if (sp.era === this.era) sp.obj.rotation[sp.axis] += (sp.speed || (f.hoursReturned ? 0.12 : 0)) * dt;
 
-    // talking and using things
+    // talking, using things, and striking chimes / brittle ice-locks with the wrench (X)
     const near = ctl ? this.nearestInteractive() : null;
-    this.hud.showPrompt(near ? (near.prompt ? near.prompt() : 'Interact') : null);
+    const strike = ctl && !near ? this.nearestStrike() : null;
+    if (strike) {
+      this.hud.showPrompt(strike.prompt(), 'strike');
+      if (!f.strikeHint) {
+        f.strikeHint = true;
+        this.hud.toast(`Swing your wrench (${key('X', 'Attack')}) to strike chimes and shatter brittle ice-locks!`, 5000);
+      }
+    } else {
+      this.hud.showPrompt(near ? (near.prompt ? near.prompt() : 'Interact') : null);
+    }
     if (near && input.hit('interact')) this.use(near);
 
     // the story, where you walk into it
     if (ctl && this.era === M && !f.christopherMet && b.x >= L.metX && b.x < L.metX + 12 && tierAt(b.z) === 2) this.meetChristopher();
     else if (ctl && this.era === M && !f.summitTalk && f.christopherMet && tierAt(b.z) === 5 && b.x < L.christopherX + 8) {
       f.summitTalk = true;
-      this.cutscene(SUMMIT).then(() => this.save());
+      this.cutscene(SUMMIT).then(() => {
+        this.startOrinBoss();
+        this.save();
+      });
     }
     // the overlook, the first time: the whole world, far below
     else if (ctl && !f.sawView && tierAt(b.z) === 5 && b.x <= L.overlookX1 && b.z < L.ZS - 4) {

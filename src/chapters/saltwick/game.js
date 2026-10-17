@@ -88,9 +88,59 @@ export class SaltwickGame extends Game {
     };
   }
 
-  /** A struck bell rings out. The Dusk Bell's Warden hears every stroke. */
+  /** Gate Dusk Bell strokes 2 and 3 behind stunning/crashing the Harbor Warden. */
+  canStrike(s) {
+    if (s.id !== 'duskBell') return true;
+    const f = this.state.flags;
+    if (s.hits === 1 && !f.wardenKeyStruck) {
+      audio.sfx('blocked');
+      this.hud.toast("The Warden's shield blocks the bell! Slip into the <b>Present</b>, open the <b>Time Lens</b> (<kbd>Tab</kbd>), and strike its wind-up key (<kbd>X</kbd>)!", 5500);
+      return false;
+    }
+    if (s.hits === 2 && !f.wardenCrashed) {
+      audio.sfx('blocked');
+      this.hud.toast("The shield is back up! Bait the Warden's charge in the <b>Future</b> and hold <b>Rewind</b> (<kbd>R</kbd>) so it crashes into a bollard!", 5500);
+      return false;
+    }
+    return true;
+  }
+
+  /** A struck bell rings out. The Dusk Bell's Warden hears every stroke and raises its shield. */
   onStrike(s) {
-    if (s.id === 'duskBell' && !this.state.flags.duskRung) this.warden?.hunt(4.5);
+    if (s.id !== 'duskBell' || this.state.flags.duskRung) return;
+    const f = this.state.flags;
+    if (s.hits === 1) {
+      f.duskStroke1 = true;
+      if (this.warden) {
+        this.warden.x = 216.5;
+        this.warden.z = 5.2;
+        this.warden.hunt(4.5);
+      }
+      this.save();
+      this.hud.toast("<b>First stroke!</b> The Warden raised a shield around the bell. Slip to the <b>Present</b> and strike its wind-up key through the <b>Time Lens</b> (<kbd>Tab</kbd> + <kbd>X</kbd>)!", 6000);
+    } else if (s.hits === 2) {
+      f.duskStroke2 = true;
+      if (this.warden) {
+        this.warden.stunT = 0;
+        this.warden.hunt(7.0);
+      }
+      this.save();
+      this.hud.toast("<b>Second stroke!</b> The Warden is charging—bait its lunge near a bollard and hold <b>Rewind</b> (<kbd>R</kbd>) so it crashes!", 6000);
+    }
+  }
+
+  /** When the Harbor Warden charges into a bollard (or the player rewinds out of its lunge). */
+  onWardenChargeCrash(w) {
+    const f = this.state.flags;
+    if (f.duskStroke2 && !f.wardenCrashed) {
+      f.wardenCrashed = true;
+      w.stunT = 14;
+      audio.sfx('gate');
+      this.renderer.shake = 0.65;
+      this.bursts.emit(w.x, 1.2, w.z, 35, { color: [0xff9a52, 0xffe39f, 0xffffff], speed: 4.5, life: 0.8 });
+      this.save();
+      this.hud.toast('<b>Crash!</b> The Harbor Warden smashed into the bollard and dropped its shield—ring the <b>final stroke</b>!', 5500);
+    }
   }
 
   /** Every last cog, after the story's told: Donald Eugene has his movement. */
@@ -287,6 +337,11 @@ export class SaltwickGame extends Game {
     if (!rewinding) {
       this.player.update(dt);
       if (this.mode === 'play') this.craft.record(dt);
+    }
+    if (f.duskStroke1 && !f.wardenKeyStruck && this.era !== ERA.FUTURE && this.warden) {
+      this.warden.x = 216.5;
+      this.warden.z = 5.2;
+      this.warden.facing = -1;
     }
     this.updateEntities(dt);
 

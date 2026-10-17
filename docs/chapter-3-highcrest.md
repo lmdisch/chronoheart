@@ -30,7 +30,7 @@ This chapter **climbs**, the way real mountain roads do: in switchbacks. The roa
 
 - **Travel through time** with `Q` and `E` (on touch: swipe), as before.
 - **Climb.** Just walk: the road goes uphill, a step at a time. At the end of each leg, where the prayer flags are strung, the road turns back up the mountain: walk up it with `W` (into the scene). East end, then west end, then east again.
-- **Frost.** Where Sir Christopher's frost lies on the ground, the ages are frozen together and **you can't shift**. The Lantern still works there.
+- **Frost.** Where Sir Orin's frost lies on the ground, the ages are frozen together and **you can't shift**. The Lantern still works there.
 - **Cold mist and the falls cost a heart** and put you back on solid ground.
 - **Hearts:** you start with 5. Each finished favor adds one. **Clock shrines**, at the top of each turn, save and heal you.
 - **The Menu** (`I`) shows your goal, a **Hint** if you're stuck (`G`), your items and your favors.
@@ -40,7 +40,7 @@ This chapter **climbs**, the way real mountain roads do: in switchbacks. The roa
 | Power | From | How it works |
 | --- | --- | --- |
 | **The Lantern** | Ingrid the Lamplighter, on the Lantern Road | Press `R` to light it. A circle of another age opens around you, and inside it **that age is real**: its floors, its bridges, its ice. It always lights on the First Age; while it's lit, `Q` and `E` swing it back and forth between the ages, just like the time lens. `R` again puts it out (not while it's the only thing holding you up). |
-| **Echo** | Michelle the Wise, in the Clockworks | Press `V` to record yourself, `V` again to stop. Your echo walks it over and over, as in Chapter One. **Up to three at once**; a new one replaces the oldest. Echoes can stand on plates. Tip: stand on a plate *before* you start recording, and your echo will just stand there. |
+| **Echo** | Lyra the Wise, in the Clockworks | Press `V` to record yourself, `V` again to stop. Your echo walks it over and over—and **remembers your Lantern's light** if it was lit while recording! **Up to three at once** (or **four** with Vivienne's Pocketwatch); a new one replaces the oldest. |
 
 ---
 
@@ -51,6 +51,7 @@ This chapter **climbs**, the way real mountain roads do: in switchbacks. The roa
 | `A` `D` | Move left / right |
 | `W` `S` | Move into / out of the scene (`W` walks up each turn) |
 | `Space` | Jump |
+| `X` | Swing your wrench: at brass resonance chimes and brittle ice-locks |
 | `F` | Talk, use |
 | `Q` / `E` | Travel one age back / forward (while the Lantern is lit: swing its light instead) |
 | `Tab` | Time lens |
@@ -81,30 +82,33 @@ On touch, the **Lantern** and **Echo** buttons appear once you have them.
 ### 3. The Icefall and the Sundial Terrace (walk east)
 
 - **The falls** cascade down the mountain and right through the road. Only in the Stopped Age are they frozen over. At the edge: `R`, then `E` to swing the Lantern forward to the Stopped Age. Walk across on the ice.
-- **Sir Christopher** is at the statue of the first Clockmaker. He knows you at once; you don't know him. He freezes the observatory's doors and leaves. Zach gives you his flag.
+- **Sir Orin** is at the statue of the First Clockmaker. He recognizes your goggles from the margin of the old drawings, reveals he is keeping his dying wife **Lyra** frozen at 11:59 on Midwinter Night, and seals the observatory doors in ice. Zach gives you his flag.
 - The road turns at the **east end**.
 
 ### 4. The Clockworks (walk west)
 
-- **Michelle** gives you the **Echo**.
-- **The clockworks door** wants all three green plates held at once. Stand on the first plate, `V`, wait a second, `V`: your echo stays there. Do the same on the second. Then stand on the third yourself. The door opens for good.
-- **The gold gate** is open only while its gold plate is held, and the plate is too far away to make it through in time. Leave an echo on the plate and walk through.
+- **Lyra the Wise** reveals she is a living Echo sent down the mountain through her **Echo Lens**, and gives the lens to you (**Echo**).
+- **The clockworks door** wants all three green plates held at once, and the third plate is crusted in frost (requiring **First Age** Lantern light). Leave echoes on the first two plates (`V`), then light the Lantern (`R`) on the First Age and stand on the third plate yourself (or record an Echo with the Lantern lit!). The door opens for good.
+- Inside the hall, pick up **The Master Drawings** (`masterDrawings`).
+- **The gold gate** opens while its gold plate is held (leave an echo on it), OR strike the brass **resonance chime** three times with your wrench (`X`) to hold the gate open for 9 seconds.
 - The road turns at the **west end**.
 
 ### 5. The Crevasses (walk east)
 
-- **The first crevasse** has a bridge only in the First Age: `R`, walk across, `R`.
-- **A rockfall** blocks the ledge in every age. The falls beside it freeze into a stair in the Stopped Age: at the foot of the falls, `R`, `E`, and jump up the ice steps, over the rockfall, and down the other side.
+- **The first crevasse:** Before entering the frost zone, shift to the **First Age** (`Q`) and give **The Master Drawings** to **Sela the Stonecutter** (`selaHigh`). A **600-year time-lapse** builds the First Clockmaker's carved stone bridge across the crevasse in every age! (Or cross using the First Age Lantern light.)
+- **The rockfall:** Before the rockfall frost zone, shift to the **First Age** (`Q`) and strike the **frozen thermal sluice** three times with your wrench (`X`). A **600-year time-lapse** carves warm stepped terraces right over the rockfall in the Present! (Or light the Lantern on the **Stopped Age** at the foot of the falls to climb the frozen cascade.)
 - The last turn is at the **east end**.
 
 ### 6. The Summit (walk west)
 
 - **The observatory's doors are frozen shut.** In the First Age there were no doors at all: `R` at the ice, and walk through.
-- **Tobin the Stargazer** keeps the star-books. **Under the orrery** a memory is replaying: two young apprentices on a midwinter night, long ago.
-- **Sir Christopher** is at the Needle, at the west end. He tells you about the best hour there ever was.
-- **The overlook:** walk out past the Needle to the rail at the north edge. Far below, through the clouds: Hollowmere and its Clocktower, and Saltwick, Keeper's Light, and the sea.
-- **Show him the Stopped Age:** next to him, `R`, `E`, and talk to him. He sees what his hour is turning into, and lets the hours go home.
-- **Donald Eugene** comes up the last switchback, long after dark. Then, **the last shift**.
+- **Tobin the Stargazer** keeps the star-books. **Under the orrery** (or by ringing the **Orrery alignment chime** with `X`), a memory is replaying: **Sir Orin and Lyra** fifty years ago on Midwinter Night.
+- **The overlook & brass telescope:** walk out past the Needle to the rail at the north edge and examine the **brass telescope** (`F`) to look down through the clouds at Hollowmere and Saltwick.
+- **Sir Orin & The Borrowed Hour (3-phase confrontation at the Needle):**
+  1. **Phase 1 (Frost Waves & East Anchor):** Light the **Lantern** (`R`) on the **First Age** so its warm bubble dissolves Orin's rolling Frost Waves, then strike the **East Frost-Anchor** three times with your wrench (`X`).
+  2. **Phase 2 (Twin Frost-Locks & Gnomon Beam):** Record an **Echo** (`V`) on one of the two blue Frost-Lock plates beside the Needle, then stand on the other plate yourself while jumping/stepping clear of the sweeping gnomon beam.
+  3. **Phase 3 (The Stopped Age):** Stand beside an exhausted Sir Orin, light the **Lantern** (`R`), swing it to **the Stopped Age** (`E`), and talk to him (`F`). Seeing that freezing time has turned even Lyra's memory into silent stone, he releases the Needle.
+- **One Final Real Hour:** As the fifty years of borrowed hours return home, **Lyra** wakes for one real, un-looped Midwinter hour alongside **Sir Orin**, **Donald Eugene**, and **Vivienne** under the four aligned rings before midnight strikes.
 
 ---
 
@@ -130,24 +134,24 @@ On touch, the **Lantern** and **Echo** buttons appear once you have them.
 | Favor | Asked by | What to do | Reward |
 | --- | --- | --- | --- |
 | **A light for the lookout** | Ingrid | Take a coal from the stonecutters' fire in the First Age (on the Lantern Road), and bring it to Ingrid. | The lookout lamp burns in every age after; +1 heart |
-| **Tobin's lost page** | Tobin | The page is past the ravine, at the front of the road. Give it to Tobin at the summit. | "C and D. Best night ever." +1 heart |
+| **Tobin's lost page** | Tobin | The page is past the ravine, at the front of the road. Give it to Tobin at the summit. | "O., L., & D. — Midwinter forever." +1 heart |
 | **Zach's flag** | Zach | Plant it out on the overlook, at the top of the world. | +1 heart |
 
 ---
 
-## The endings
+## The endings & The Master's Key
 
-At the summit the Chronoheart has one last shift in it, and wherever Vivienne steps, she stays. **No ending is marked as the right one.**
+At the summit the Chronoheart is ready for its long shift, and Vivienne chooses which age to call home. Because she already delivered the **Master Drawings** to Sela during the climb, **all three endings are completely paradox-free:**
 
-- **The First Age:** she stays, and draws the clocks for Sela's people, and the Wardens. The circle closes: this is how Vivienne becomes the first Clockmaker.
-- **Home, in Midwinter:** she goes home to Hollowmere with Donald Eugene and Sir Christopher. Every midwinter after, three clockmakers climb Highcrest to watch the stars.
+- **The First Age:** she stays to help Sela's builders raise the Observatory and tune the first clocks.
+- **Home, in Midwinter:** she walks home to Hollowmere with Donald Eugene and Sir Orin, climbing Highcrest every Midwinter after to drink cocoa under the stars and remember Lyra.
 - **The Waking Age:** she steps forward into the Stopped Age as it thaws, and stays to help it start again.
 
-After the credits, **Continue** puts you back on the mountain, in the age you chose, for good.
+**The Master's Key (All 10 Cogs):** Find all ten Lost Cogs on Highcrest and Donald Eugene and Sir Orin forge **The Master's Key**, which rekindles the Chronoheart so you can shift freely between all three healed ages on Highcrest—and unlocks the **Astral Clock-Door** in Hollowmere Square (**The Starlit Garden, 10,000 Years On**)!
 
 ---
 
 ## What carries over
 
 - **The Cog Finder**, if you brought all ten of Chapter One's cogs to Donald Eugene.
-- **Your own pocketwatch**, if you gave him all twelve of Chapter Two's: your echo remembers **eight seconds** instead of five.
+- **Your own pocketwatch**, if you gave him all twelve of Chapter Two's: your echo remembers **eight seconds** instead of five, and you can maintain **four echoes** at once instead of three.

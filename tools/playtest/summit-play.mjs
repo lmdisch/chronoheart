@@ -1,7 +1,7 @@
 // Chapter Three, Highcrest: the whole climb, every puzzle solved the way it's meant to be, with real
 // key presses: up the switchbacks (walking up each turn), the Lantern at the ravine, the falls, the crevasse, the rockfall
 // and the observatory doors; three echoes on the clockworks plates and one on the gold gate's;
-// the favors; Sir Christopher, the hours going home, the last shift, and the age you chose after
+// the Master Drawings to Sela; the favors; Sir Orin's three phases at the Needle, the hours going home, the last shift, and the age you chose after
 // the credits. Teleports only skip plain walking between them.
 import { boot, newGame, sleep, driver, autoplay } from './lib.mjs';
 
@@ -92,17 +92,17 @@ await walkTo(U(37.5), Z(2), { t: 5000 });
 await check('across the frozen falls', (s) => s.x > U(36.5) && onLeg(s, 2));
 await R();
 
-// ---- the Sundial Terrace: Sir Christopher
+// ---- the Sundial Terrace: Sir Orin
 await walkTo(U(62), Z(2), { t: 9000 });
 await d.settle();
-await check('Sir Christopher, at the statue', (s) => s.f.christopherMet && s.inv.includes('summitFlag'));
+await check('Sir Orin, at the statue', (s) => s.f.christopherMet && s.inv.includes('summitFlag'));
 await turn(2);
 await check('up the third switchback, to the Clockworks', (s) => onLeg(s, 3));
 
-// ---- the Clockworks: Michelle; three plates at once (two echoes and you)
+// ---- the Clockworks: Lyra; three plates at once (two echoes, and you in the Lantern's First Age light on the frosted one)
 await walkTo(U(91.8), Z(3, 1.6), { t: 3000 });
 await interactNow();
-await check('Michelle gives you the Echo', (s) => s.f.hasEcho);
+await check('Lyra gives you the Echo', (s) => s.f.hasEcho);
 await walkTo(U(84.5), Z(3, 1.5), { t: 4000 });
 await echoHere();
 await walkTo(U(80.5), Z(3, 5.5), { t: 4000 });
@@ -110,7 +110,13 @@ await echoHere();
 await check('two echoes, each on a plate', async () => (await lantern()).echoes === 2);
 await walkTo(U(76.5), Z(3, 1.5), { t: 4000 });
 await sleep(400);
+await check('the frosted plate does nothing without the First Age', (s) => !s.f.clockworksOpen);
+await R();
+await sleep(500);
 await check('all three plates at once: the clockworks door opens for good', (s) => s.f.clockworksOpen);
+await R();
+await walkTo(U(56.5), Z(3, 3.5), { t: 8000 });
+await check('the Master Drawings, in the Clockworks hall', (s) => s.inv.includes('masterDrawings'));
 
 // ---- the gold gate: an echo on its plate
 await walkTo(U(47.5), Z(3, 1.5), { t: 12000 });
@@ -121,12 +127,14 @@ await check('through the gold gate, held open by your echo', (s) => s.f.gateDPas
 await turn(3);
 await check('up the fourth switchback, to the Crevasses', (s) => onLeg(s, 4));
 
-// ---- the crevasse
-await walkTo(U(18.6), Z(4), { t: 6000 });
-await R();
-await walkTo(U(27.4), Z(4), { t: 5000 });
-await check('across the crevasse', (s) => s.x > U(26.5) && onLeg(s, 4));
-await R();
+// ---- the crevasse: Sela builds a bridge from the Master Drawings
+await shift('KeyQ');
+await walkTo(U(12.5), Z(4, 2.4), { t: 5000 });
+await interactNow();
+await check('Sela takes the Master Drawings: six hundred years of bridge', (s) => s.f.selaBuilt && !s.inv.includes('masterDrawings'));
+await shift('KeyE');
+await walkTo(U(27.4), Z(4), { t: 6000 });
+await check('across the crevasse on the stone bridge, no Lantern', (s) => s.x > U(26.5) && onLeg(s, 4));
 
 // ---- the rockfall: the Stopped Age's frozen falls, as a stair
 await walkTo(U(56.6), Z(4), { t: 8000 });
@@ -154,10 +162,24 @@ await walkTo(U(70.2), Z(5, 3.4), { t: 4000 });
 await interactNow();
 await check('the Borrowed Hour, replaying under the orrery', (s) => s.f.memorySeen);
 
-// ---- Sir Christopher, at the Needle; the view from the top; and Zach's flag
+// ---- Sir Orin, at the Needle: the Frost-Anchor, the twin Frost-Locks; the view from the top; and Zach's flag
 await walkTo(U(28), Z(5), { t: 12000 });
 await d.settle();
-await check('Sir Christopher tells you his story', (s) => s.f.summitTalk);
+await check('Sir Orin tells you his story', (s) => s.f.summitTalk);
+await R();
+await walkTo(U(27.6), Z(5, 2.5), { t: 4000 });
+await tap(d.K.right, 60);
+await d.strike(3);
+await check("phase 1: the Lantern's First Age through the frost waves, and the Frost-Anchor shattered", (s) => s.f.orinPhase1);
+await R();
+await walkTo(U(25.5), Z(5, 1.5), { t: 4000 });
+await echoHere();
+for (let i = 0; i < 4; i++) {
+  await walkTo(U(25.5), Z(5, 5.5), { t: 4000, tol: 0.15 });
+  await sleep(300);
+  if ((await d.st()).f.orinPhase2) break;
+}
+await check('phase 2: an echo on one Frost-Lock, you on the other', (s) => s.f.orinPhase2);
 await walkTo(U(9.5), ZB[5] - 7, { t: 6000 });
 await d.settle();
 await check('out on the overlook: the whole world, far below', (s) => s.f.sawView);
