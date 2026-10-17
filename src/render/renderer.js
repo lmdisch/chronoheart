@@ -7,11 +7,16 @@ import { foliageUniforms } from './foliage.js';
 import { waterUniforms } from './water.js';
 import { prefersTouch } from '../ui/touch.js';
 import { glowMat } from '../world/world.js';
+import { Clouds } from './clouds.js';
 
 /** Sky, fog and light for each age, from the chapter (which may change them as its story goes: see setMood). */
 export const ATMOS = theme.atmos;
 
 const POOL = 12;
+/** What an atmosphere field means when an age leaves it out (no aurora, stars that twinkle...). */
+const ATMOS_REST = { stars: 0, twinkle: 1, aurora: 0, moon: 0, rings: 0, cloudGlowAmt: 0, cloudSpeed: 1, handSpeed: 1, handShadow: 0.5 };
+/** Atmosphere fields that are colors, so an era change blends them as colors. */
+const COLOR_KEYS = new Set(['auroraA', 'auroraB', 'moonCol', 'ringCol', 'cloudTop', 'cloudShade', 'cloudGlow']);
 
 export class Renderer {
   constructor(container) {
@@ -30,11 +35,17 @@ export class Renderer {
     this.gl = r;
 
     this.scene = new THREE.Scene();
-    // Diorama camera: long lens, high pitch, far away (HD-2D look)
-    this.camera = new THREE.PerspectiveCamera(27, window.innerWidth / window.innerHeight, 1, 400);
+    // Diorama camera: long lens, high pitch, far away (HD-2D look). A chapter may set its own
+    // (theme.camera), and pull it back and down at a viewpoint (see setVista).
+    const cam = { fov: 27, pitch: 31, dist: 23.5, far: 400, ...theme.camera };
+    this.camera = new THREE.PerspectiveCamera(cam.fov, window.innerWidth / window.innerHeight, 1, cam.far);
     this.camTarget = new THREE.Vector3(10, 1, 3);
     this.camPos = new THREE.Vector3(10, 9, 20);
-    const pitch = THREE.MathUtils.degToRad(31), dist = 23.5;
+    const pitch = THREE.MathUtils.degToRad(cam.pitch), dist = cam.dist;
+    this.camBase = { pitch: cam.pitch, dist, lift: cam.lift ?? 0, fov: cam.fov, dx: 0 };
+    this.view = { ...this.camBase };
+    this.vista = null;
+    this.vistaAmt = 0;
     this.baseOffset = new THREE.Vector3(0, Math.sin(pitch) * dist, Math.cos(pitch) * dist);
     this.camOffset = this.baseOffset.clone();
     this.fitAspect();
@@ -54,6 +65,17 @@ export class Renderer {
       sunCol: { value: new THREE.Color() },
       stars: { value: 0 },
       time: { value: 0 },
+      // (a chapter's night skies: see the atmos fields aurora, moon and rings)
+      twinkle: { value: 1 },
+      aurora: { value: 0 },
+      auroraA: { value: new THREE.Color() },
+      auroraB: { value: new THREE.Color() },
+      moon: { value: 0 },
+      moonDir: { value: new THREE.Vector3(0, 0.5, -1).normalize() },
+      moonSize: { value: 0.1 },
+      moonCol: { value: new THREE.Color() },
+      rings: { value: 0 },
+      ringCol: { value: new THREE.Color() },
     };
     const sky = new THREE.Mesh(
       new THREE.SphereGeometry(300, 32, 16),
@@ -65,8 +87,12 @@ export class Renderer {
         vertexShader: `varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
         fragmentShader: `
           uniform vec3 top; uniform vec3 horizon; uniform vec3 sunDir; uniform vec3 sunCol; uniform float stars; uniform float time;
+          uniform float twinkle; uniform float aurora; uniform vec3 auroraA; uniform vec3 auroraB;
+          uniform float moon; uniform vec3 moonDir; uniform float moonSize; uniform vec3 moonCol; uniform float rings; uniform vec3 ringCol;
           varying vec3 vDir;
           float h21(vec2 p){ return fract(sin(dot(p, vec2(41.3, 289.1))) * 45758.5453); }
+          float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+            return mix(mix(h21(i), h21(i + vec2(1, 0)), f.x), mix(h21(i + vec2(0, 1)), h21(i + vec2(1, 1)), f.x), f.y); }
           void main(){
             float y = clamp(vDir.y, -0.2, 1.0);
             vec3 col = mix(horizon, top, pow(smoothstep(-0.05, 0.75, y), 0.8));
@@ -75,7 +101,36 @@ export class Renderer {
             if (stars > 0.0) {
               vec2 g = floor(vDir.xz / max(vDir.y, 0.05) * 60.0);
               float st = step(0.996, h21(g)) * smoothstep(0.1, 0.5, y);
-              col += vec3(st) * stars * (0.6 + 0.4 * sin(time * 2.0 + h21(g) * 30.0));
+              col += vec3(st) * stars * (1.0 - 0.4 * twinkle + 0.4 * twinkle * sin(time * 2.0 + h21(g) * 30.0));
+            }
+            vec3 d = normalize(vDir);
+            if (aurora > 0.0) {
+              // curtains of light: folds across the sky, rays running up them, drifting slowly
+              float az = atan(d.x, -d.z);
+              float fold = vn(vec2(az * 3.0 + time * 0.04, time * 0.03)) * 4.0;
+              float curtain = pow(0.5 + 0.5 * sin(az * 6.0 + fold), 3.0);
+              float band = smoothstep(0.04, 0.2, y) * (1.0 - smoothstep(0.3, 0.75, y - fold * 0.04));
+              float rays = 0.55 + 0.45 * vn(vec2(az * 90.0, time * 0.4));
+              col += mix(auroraA, auroraB, smoothstep(0.12, 0.55, y)) * curtain * band * rays * aurora;
+            }
+            if (rings > 0.0) {
+              // a planet's rings, seen edge-on across the sky
+              vec3 n = normalize(vec3(0.35, 1.0, 0.25));
+              float k = dot(d, n);
+              float ring = smoothstep(0.075, 0.07, abs(k - 0.03)) * smoothstep(-0.02, 0.06, y);
+              float stripe = 0.5 + 0.5 * sin(k * 260.0) * (0.7 + 0.3 * sin(k * 71.0));
+              ring *= step(0.012, abs(k - 0.035)); // the gap between the inner and outer rings
+              col = mix(col, ringCol * (0.55 + 0.45 * stripe), ring * rings * 0.8);
+            }
+            if (moon > 0.0) {
+              float c = dot(d, normalize(moonDir)), r = cos(moonSize);
+              float disc = smoothstep(r, r + 0.0015, c);
+              vec3 md = normalize(moonDir), u = normalize(cross(md, vec3(0, 1, 0))), v = cross(u, md);
+              vec2 q = vec2(dot(d, u), dot(d, v)) / sin(moonSize);
+              float mare = vn(q * 3.0 + 7.0) * 0.6 + vn(q * 9.0) * 0.4;
+              float lit = clamp(0.55 + 0.45 * dot(normalize(vec3(q, sqrt(max(0.0, 1.0 - dot(q, q))))), normalize(vec3(-0.6, 0.4, 0.7))), 0.0, 1.0);
+              col = mix(col, moonCol * (0.65 + 0.35 * mare) * lit, disc * moon);
+              col += moonCol * pow(max(c, 0.0), 60.0) * 0.35 * moon;
             }
             gl_FragColor = vec4(col, 1.0);
           }`,
@@ -105,6 +160,9 @@ export class Renderer {
       this.pool.push(l);
     }
 
+    // a sea of clouds below the world, for a chapter set above them
+    this.clouds = theme.clouds ? new Clouds(this.scene, theme.clouds) : null;
+
     this.atmos = this.cloneAtmos(ATMOS[1]);
     this.atmosFrom = null;
     this.atmosTo = null;
@@ -122,7 +180,13 @@ export class Renderer {
   fitAspect() {
     const aspect = window.innerWidth / window.innerHeight;
     const k = aspect < 1.2 ? Math.min(1.9, Math.sqrt(1.2 / aspect)) : 1;
-    this.camOffset.copy(this.baseOffset).multiplyScalar(k);
+    const p = THREE.MathUtils.degToRad(this.view.pitch);
+    this.camOffset.set(0, Math.sin(p), Math.cos(p)).multiplyScalar(this.view.dist * k);
+  }
+
+  /** At a viewpoint ({ pitch, dist, lift, fov, dx }), the camera eases back (and over by dx) to take in the view; null eases it home. */
+  setVista(v) {
+    this.vista = v;
   }
 
   onResize() {
@@ -151,6 +215,18 @@ export class Renderer {
     this.skyUniforms.horizon.value.copy(c('skyHorizon'));
     this.skyUniforms.sunCol.value.copy(c('sun'));
     this.skyUniforms.stars.value = a.stars ?? 0;
+    const su = this.skyUniforms;
+    su.twinkle.value = a.twinkle ?? 1;
+    su.aurora.value = a.aurora ?? 0;
+    if (a.auroraA !== undefined) su.auroraA.value.copy(c('auroraA'));
+    if (a.auroraB !== undefined) su.auroraB.value.copy(c('auroraB'));
+    su.moon.value = a.moon ?? 0;
+    if (a.moonCol !== undefined) su.moonCol.value.copy(c('moonCol'));
+    if (a.moonDir) su.moonDir.value.set(...a.moonDir).normalize();
+    if (a.moonSize) su.moonSize.value = a.moonSize;
+    su.rings.value = a.rings ?? 0;
+    if (a.ringCol !== undefined) su.ringCol.value.copy(c('ringCol'));
+    this.clouds?.applyAtmos(a);
     this.scene.fog.color.copy(c('fog'));
     this.scene.fog.near = a.fogNear;
     this.scene.fog.far = a.fogFar;
@@ -161,7 +237,8 @@ export class Renderer {
     this.hemi.intensity = a.hemiI;
     this.gl.toneMappingExposure = a.exposure;
     const d = new THREE.Vector3(...a.sunDir).normalize();
-    this.skyUniforms.sunDir.value.copy(d);
+    // (the sun drawn in the sky may sit somewhere other than where the light comes from: sunSky)
+    this.skyUniforms.sunDir.value.copy(a.sunSky ? new THREE.Vector3(...a.sunSky).normalize() : d);
     this.sunDirV = d;
     waterUniforms.uSunDir.value.copy(d);
     waterUniforms.uSunCol.value.copy(c('sun')).multiplyScalar(a.sunI * 0.5);
@@ -175,22 +252,25 @@ export class Renderer {
     this.atmosT = Math.min(1, this.atmosT + dt / (this.atmosDur || 0.55));
     const t = this.atmosT;
     const A = this.atmosFrom, B = this.atmosTo, out = this.atmos;
-    for (const k of Object.keys(B)) {
-      if (typeof B[k] === 'number' && /sky|fog$|sun$|hemiSky|hemiGround/.test(k) && k !== 'sunI' && k !== 'fogNear' && k !== 'fogFar') {
-        out[k] = new THREE.Color(A[k]).lerp(new THREE.Color(B[k]), t).getHex();
-      } else if (typeof B[k] === 'number') out[k] = lerp(A[k], B[k], t);
-      else if (Array.isArray(B[k])) out[k] = B[k].map((v, i) => lerp(A[k][i], v, t));
+    // a field only one of the two ages has (an aurora, a moon) blends from or to its resting value
+    const val = (X, Y, k) => X[k] ?? (k === 'sunSky' ? X.sunDir : k in ATMOS_REST ? ATMOS_REST[k] : Y[k]);
+    for (const k of new Set([...Object.keys(A), ...Object.keys(B)])) {
+      const a = val(A, B, k), b = val(B, A, k);
+      if (typeof b === 'number' && (/sky|fog$|sun$|hemiSky|hemiGround/.test(k) || COLOR_KEYS.has(k)) && k !== 'sunI' && k !== 'fogNear' && k !== 'fogFar') {
+        out[k] = new THREE.Color(a).lerp(new THREE.Color(b), t).getHex();
+      } else if (typeof b === 'number') out[k] = lerp(a, b, t);
+      else if (Array.isArray(b)) out[k] = b.map((v, i) => lerp(a[i], v, t));
     }
-    out.stars = lerp(A.stars ?? 0, B.stars ?? 0, t);
     this.applyAtmos(out);
   }
 
   /** Assign the nearest light sources of the current era to the pooled point lights. */
   updateLights(lights, focus, time) {
-    const fx = focus.x;
+    const fx = focus.x, deep = !!theme.openDepth;
     const cands = [];
     for (const l of lights) {
-      const d = Math.abs(l.x - fx);
+      // (on a mountainside the lights of the roads above and below are no nearer for being level)
+      const d = Math.abs(l.x - fx) + (deep ? Math.abs(l.y - focus.y) * 1.2 + Math.abs(l.z - focus.z) * 0.8 : 0);
       if (d < 26) cands.push([d, l]);
     }
     cands.sort((a, b) => a[0] - b[0]);
@@ -217,6 +297,7 @@ export class Renderer {
   /** Advance time for every animated shader (wind, water, emissive flicker). */
   tickShaders(t) {
     this.skyUniforms.time.value = t;
+    this.clouds?.tick(t, this.camera.position);
     voxelUniforms.uTime.value = t;
     foliageUniforms.uTime.value = t;
     waterUniforms.uTime.value = t;
@@ -224,15 +305,33 @@ export class Renderer {
 
   /** lead: desired horizontal look-ahead (world units) in the direction of travel. */
   updateCamera(dt, target, bounds, lead = 0) {
+    // ease toward a viewpoint's framing, or back to the chapter's own
+    const want = this.vista ? { ...this.camBase, ...this.vista } : this.camBase;
+    const ve = 1 - Math.exp(-1.6 * dt);
+    let moved = false;
+    for (const k of ['pitch', 'dist', 'lift', 'fov', 'dx']) {
+      const v = this.view[k] + (want[k] - this.view[k]) * ve;
+      if (Math.abs(v - this.view[k]) > 1e-4) moved = true;
+      this.view[k] = v;
+    }
+    this.vistaAmt += ((this.vista ? 1 : 0) - this.vistaAmt) * ve;
+    if (moved) {
+      this.fitAspect();
+      if (Math.abs(this.camera.fov - this.view.fov) > 1e-3) {
+        this.camera.fov = this.view.fov;
+        this.camera.updateProjectionMatrix();
+      }
+    }
     this.lookAhead += (lead - this.lookAhead) * (1 - Math.exp(-2.2 * dt));
     const desired = target.clone();
     desired.x += this.lookAhead;
-    desired.x = Math.max(bounds[0], Math.min(bounds[1], desired.x));
+    desired.x = Math.max(bounds[0], Math.min(bounds[1], desired.x)) + this.view.dx; // (a viewpoint may look off past the end)
     const k = 1 - Math.exp(-5 * dt);
     this.camTarget.x += (desired.x - this.camTarget.x) * k;
     this.camTarget.y += (desired.y - this.camTarget.y) * (1 - Math.exp(-3 * dt));
     this.camTarget.z += (desired.z - this.camTarget.z) * (1 - Math.exp(-2 * dt));
     this.camPos.copy(this.camTarget).add(this.camOffset);
+    this.camPos.y += this.view.lift;
     if (this.shake > 0) {
       this.shake = Math.max(0, this.shake - dt * 2.5);
       const s = this.shake * this.shake * 0.35;
@@ -240,11 +339,11 @@ export class Renderer {
       this.camPos.y += (Math.random() - 0.5) * s;
     }
     this.camera.position.copy(this.camPos);
-    this.camera.lookAt(this.camTarget.x, this.camTarget.y + 0.6, this.camTarget.z);
+    this.camera.lookAt(this.camTarget.x, this.camTarget.y + 0.6 + this.view.lift, this.camTarget.z);
     this.sky.position.copy(this.camera.position);
     // sun follows the camera so shadows stay crisp
     const d = this.sunDirV || new THREE.Vector3(0, 1, 0);
-    this.sun.target.position.set(this.camTarget.x, 0, 0);
+    this.sun.target.position.set(this.camTarget.x, this.camTarget.y, theme.openDepth ? this.camTarget.z : 0); // (and up with it, on a chapter that climbs)
     this.sun.position.copy(this.sun.target.position).addScaledVector(d, 60);
   }
 }

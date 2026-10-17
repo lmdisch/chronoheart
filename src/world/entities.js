@@ -40,7 +40,7 @@ function groundBelow(world, era, x, y, z) {
 export class Player {
   constructor(game) {
     this.game = game;
-    this.body = { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, hw: 0.28, hd: 0.22, h: 1.45, onGround: false };
+    this.body = { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, hw: 0.28, hd: 0.22, h: 1.45, onGround: false, stepUp: !!theme.slopes };
     this.actor = new Actor('vivienne', 2.1);
     this.mesh = this.actor.mesh;
     this.shadow = makeShadow(1.0);
@@ -174,6 +174,8 @@ export class Player {
       } else {
         b.vy = input.held('up') ? 3.2 : input.held('down') ? -3.2 : 0;
         b.vx = ix * 2.2;
+        // (where ladders run up through gaps in the floor above, keep to the middle of the rungs)
+        if (theme.grabLadders && !ix) b.vx = (Math.floor(b.x) + 0.5 - b.x) * 8;
         b.vz = 0;
         if (canAct && this.jumpBuf > 0) {
           this.jumpBuf = 0;
@@ -220,7 +222,9 @@ export class Player {
       }
       b.vy = Math.max(b.vy, -22);
 
-      if (canAct && onLadder && (input.held('up') || (input.held('down') && !b.onGround)) && !attacking) {
+      // (a chapter where ladders run down through holes in the floor: walk over one, and you catch hold)
+      const grab = theme.grabLadders && onLadder && b.vy < -1;
+      if (canAct && onLadder && (input.held('up') || (input.held('down') && !b.onGround) || grab) && !attacking) {
         this.state = 'climb';
         this.stateT = 0;
         b.vx = 0;
@@ -326,7 +330,10 @@ export class Player {
     else a.play('idle');
     a.update(dt);
 
-    this.mesh.position.set(b.x, b.y - 0.1, b.z);
+    // (a step up or down a slope is eased, not popped)
+    this.stepVis = ((this.stepVis || 0) - (b.stepped || 0)) * Math.exp(-14 * dt);
+    if (Math.abs(this.stepVis) > 1.2) this.stepVis = 0;
+    this.mesh.position.set(b.x, b.y - 0.1 + this.stepVis, b.z);
     this.mesh.quaternion.copy(g.renderer.billboardQ);
     this.mesh.visible = !(this.invuln > 0 && Math.floor(this.invuln * 16) % 2 === 0);
     const gy = groundBelow(world, era, b.x, b.y + 0.2, b.z);
@@ -369,7 +376,15 @@ export class NPC extends EraEntity {
     const size = spec.small ? 1.6 : 2.1;
     this.actor = new Actor(spec.sheet, size);
     this.group.add(this.actor.mesh);
-    if (spec.holo) {
+    if (spec.memory) {
+      // a memory, replaying: warm and see-through
+      this.actor.mat.transparent = true;
+      this.actor.mat.depthWrite = false;
+      this.actor.mat.opacity = 0.62;
+      this.actor.mat.emissive.setHex(0xffd890);
+      this.actor.mat.emissiveIntensity = 1.1;
+      this.actor.mat.color.setHex(0xffe8c0);
+    } else if (spec.holo) {
       this.actor.mat.transparent = true;
       this.actor.mat.opacity = 0.75;
       this.actor.mat.emissive.setHex(0x36f0ff);
@@ -404,12 +419,14 @@ export class NPC extends EraEntity {
     this.group.visible = this.present();
     if (!this.group.visible) return;
     this.t += dt;
-    if (Math.abs(p.x - this.x) < 5) this.facing = p.x > this.x ? 1 : -1;
+    // (spec.frozen: caught in an age where time has stopped. They don't turn, or breathe.)
+    if (!this.spec.frozen && Math.abs(p.x - this.x) < 5) this.facing = p.x > this.x ? 1 : -1;
     this.actor.flip = this.facing < 0;
-    this.actor.play(this.talking ? 'talk' : 'idle');
-    this.actor.update(dt);
+    this.actor.play(this.talking && !this.spec.frozen ? 'talk' : 'idle');
+    this.actor.update(this.spec.frozen ? 0 : dt);
     let y = this.y;
     if (this.spec.hover) y += 0.3 + Math.sin(this.t * 2) * 0.15;
+    if (this.spec.memory) this.actor.mat.opacity = 0.55 + Math.sin(this.t * 2.2) * 0.08;
     if (this.spec.holo) {
       this.actor.mat.opacity = 0.6 + Math.sin(this.t * 13) * 0.05 + (Math.random() < 0.03 ? -0.3 : 0);
     }

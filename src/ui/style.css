@@ -628,7 +628,7 @@ body.touch .toast { font-size: 0.8rem; padding: 7px 11px; }
 
 /* ---------------- chapters ---------------- */
 /* text that belongs to one chapter only (see body[data-chapter], set by src/main.js) */
-body[data-chapter='hollowmere'] .only-saltwick, body[data-chapter='saltwick'] .only-hollowmere { display: none !important; }
+body:not([data-chapter='hollowmere']) .only-hollowmere, body:not([data-chapter='saltwick']) .only-saltwick, body:not([data-chapter='summit']) .only-summit { display: none !important; }
 
 /* the title's chapter select: one card per chapter; the lit one is showing behind the title */
 .chapter-select { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin: 18px auto 0; max-width: 760px; }
@@ -705,3 +705,31 @@ body.has-rewind #chrono .ring-fg { stroke: var(--gold-2); }
   body.touch.has-rewind:not(.in-dialogue) #toasts { bottom: calc(314px + env(safe-area-inset-bottom, 0px)); }
 }
 @media (prefers-reduced-motion: reduce) { body.rewinding #app canvas { filter: none; } }
+
+/* ---------------- Chapter Three: Highcrest ---------------- */
+/* its ages are aurora green and moonlit violet */
+body[data-chapter='summit'][data-era='past'] { --era: #7affc8; --era-glow: rgba(122, 255, 200, 0.55); }
+body[data-chapter='summit'][data-era='future'] { --era: #c8c0ff; --era-glow: rgba(200, 192, 255, 0.55); }
+body[data-chapter='summit'] .era-strip .past { color: #7affc8; }
+body[data-chapter='summit'] .era-strip .future { color: #c8c0ff; }
+body[data-chapter='summit'] .tc-swipe-label.era-0 { --sw: #7affc8; }
+body[data-chapter='summit'] .tc-swipe-label.era-2 { --sw: #c8c0ff; }
+body[data-chapter='summit'] .tc-abil .tc-btn { width: 60px; height: 60px; }
+/* abilities: the Lantern (and the Echo, which Chapter One also has) */
+body:not(.has-lantern) .needs-lantern, body:not(.has-lantern) .tc-lantern { display: none !important; }
+@media (orientation: portrait) and (max-width: 600px) {
+  body.touch.has-lantern #prompt { bottom: calc(252px + env(safe-area-inset-bottom, 0px)); }
+  body.touch.has-lantern:not(.in-dialogue) #toasts { bottom: calc(306px + env(safe-area-inset-bottom, 0px)); }
+}
+/* the last shift: where will Vivienne stay? */
+.choice-panel {
+  position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 40; display: grid; gap: 12px;
+  width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow: auto; padding: 22px; text-align: center;
+}
+.choice-panel h2 { margin: 0 0 6px; }
+.choice-panel .choice { display: grid; gap: 4px; padding: 14px 18px; text-align: left; white-space: normal; }
+.choice-panel .choice-title { font: 700 1.05rem var(--font-title); letter-spacing: 0.04em; }
+.choice-panel .choice-text { font-size: 0.86rem; color: var(--muted); font-weight: 400; }
+.choice-panel .era-0 .choice-title { color: #7affc8; }
+.choice-panel .era-1 .choice-title { color: #ffd08a; }
+.choice-panel .era-2 .choice-title { color: #c8c0ff; }

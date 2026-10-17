@@ -17,6 +17,7 @@ const ICON = {
   help: '<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm1 14h-2v-2h2zm2.1-6.6-.9.9c-.7.7-1.2 1.3-1.2 2.7h-2v-.5c0-1.1.5-2.1 1.2-2.8l1.2-1.3A1.5 1.5 0 1 0 10.5 8.5h-2a3.5 3.5 0 1 1 6.6 1.9z"/></svg>',
   pause: '<svg viewBox="0 0 24 24"><path d="M7 5h3.5v14H7zm6.5 0H17v14h-3.5z"/></svg>',
   seal: '<svg viewBox="0 0 24 24"><path d="M6 2h12v2h-1v3.2L13.6 12l3.4 4.8V20h1v2H6v-2h1v-3.2l3.4-4.8L7 7.2V4H6zm3 2v2.6l3 4.2 3-4.2V4zm3 9.2-3 4.2V20h6v-2.6z"/></svg>',
+  lantern: '<svg viewBox="0 0 24 24"><path d="M10 2h4v2h-4zM8 5h8v2H8zm0 3h8v10H8zm2 2v6h4v-6zM7 19h10v2H7z"/></svg>',
   echo: '<svg viewBox="0 0 24 24"><path d="M9 3a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM6 9.5h6l1 6h-2l-.5 6.5h-3L7 15.5H5z"/><path opacity=".45" d="M16 3a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zm-2.4 6.5H19l1 6h-2l-.5 6.5h-3l-.2-3z"/></svg>',
 };
 
@@ -168,7 +169,10 @@ export class TouchControls {
     const fast = make('tc-fast', 'Fast', ICON.fast);
     // Chapter Two: the pocketwatch, once Michelle has shown you how. Hold to run yourself backward
     const rewind = make('tc-rewind', 'Rewind', ICON.rewind);
-    abil.append(seal, echo, slow, fast, rewind);
+    // Chapter Three: the Lantern (see body.has-lantern)
+    const lantern = make('tc-lantern', 'Lantern', ICON.lantern);
+    abil.append(seal, echo, slow, fast, rewind, lantern);
+    this.tap(lantern, () => this.pulse('KeyR'));
     this.hold(rewind, 'KeyR');
     this.hold(slow, 'TempoSlow');
     this.hold(fast, 'TempoFast');

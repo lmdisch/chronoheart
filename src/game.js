@@ -206,7 +206,7 @@ export class Game {
 
   placeAtShrine() {
     const cp = this.ch.CHECKPOINTS[this.state.checkpoint] || this.ch.CHECKPOINTS[0];
-    this.player.place(cp.x + 1.2, cp.y ?? 0, 3.5);
+    this.player.place(cp.x + (cp.dx ?? 1.2), cp.y ?? 0, cp.pz ?? 3.5);
   }
 
   refreshWorld() {
@@ -521,7 +521,7 @@ export class Game {
     let s = [this.player.lastSafe, this.player.lastGround].find((p) => p && this.isSafeSpot(p));
     if (!s) {
       const cp = this.ch.CHECKPOINTS[this.state.checkpoint];
-      s = { x: cp.x + 1.2, y: cp.y ?? 0, z: 3.5, era: ERA.PRESENT };
+      s = { x: cp.x + (cp.dx ?? 1.2), y: cp.y ?? 0, z: cp.pz ?? 3.5, era: ERA.PRESENT };
     }
     this.player.place(s.x, s.y, s.z);
     if (s.era !== this.era) this.applyEra(s.era, true);
@@ -640,9 +640,13 @@ export class Game {
     this.shiftGrace = Math.max(0, (this.shiftGrace || 0) - dt);
 
     // area banner
-    const bx = this.player.body.x;
+    const bx = this.player.body.x, by = this.player.body.y, bz = this.player.body.z;
     let ai = 0;
-    for (let i = 0; i < this.ch.AREAS.length; i++) if (bx >= this.ch.AREAS[i].x) ai = i;
+    // (an area may start at a height, too, or a way back up a mountainside, in a chapter that climbs)
+    for (let i = 0; i < this.ch.AREAS.length; i++) {
+      const A = this.ch.AREAS[i];
+      if (bx >= A.x && by >= (A.y ?? -99) && bz <= (A.zMax ?? 99) && bx <= (A.x1 ?? 1e9)) ai = i;
+    }
     if (ai !== this.areaIdx) {
       this.areaIdx = ai;
       // each area's name shows once, the first time you walk in
@@ -889,8 +893,8 @@ export class Game {
 
   updateTitle(dt) {
     this.titleT += dt;
-    const { x, sway } = theme.titleCam;
-    this.renderer.camTarget.set(x + Math.sin(this.titleT * 0.08) * sway, 1.5, 3);
+    const { x, sway, y = 1.5, z = 3 } = theme.titleCam;
+    this.renderer.camTarget.set(x + Math.sin(this.titleT * 0.08) * sway, y, z);
     if (this.titleT > 6) {
       this.titleT = 0;
       this.titleEra = (this.titleEra + 1) % 3;
@@ -919,12 +923,15 @@ export class Game {
       this.lapse.update?.(dt);
     } else if (this.mode !== 'title' && this.mode !== 'credits') {
       const b = this.player.body;
+      // a viewpoint: the camera eases back and down to take in the view (see L.vistas)
+      r.setVista(this.L.vistas?.find((v) => b.x >= v.x0 && b.x <= v.x1 && (v.y0 === undefined || (b.y >= v.y0 && b.y <= v.y1)) && (v.z0 === undefined || (b.z >= v.z0 && b.z <= v.z1))) || null);
       const lead = this.mode === 'play' && !this.rewinding ? this.player.facing * 1.3 + THREE.MathUtils.clamp(b.vx * 0.15, -0.8, 0.8) : 0;
-      r.updateCamera(dt, new THREE.Vector3(b.x, Math.max(b.y, theme.camFloor) + 0.6, b.z * 0.6 + 1.2), this.L.cameraBounds, lead);
+      // (on a road that winds back into the scene, the camera follows it all the way)
+      r.updateCamera(dt, new THREE.Vector3(b.x, Math.max(b.y, theme.camFloor) + 0.6, theme.openDepth ? b.z : b.z * 0.6 + 1.2), this.L.cameraBounds, lead);
     } else r.updateCamera(dt, r.camTarget.clone(), [r.camTarget.x - 100, r.camTarget.x + 100]);
     r.updateLights(this.world.lights[this.era], r.camTarget, this.time);
     r.tickShaders(this.time);
-    this.ambient.update(dt, this.time, r.camTarget.x);
+    this.ambient.update(dt, this.time, r.camTarget.x, r.camTarget.y);
     this.bursts.update(dt);
 
     // depth-of-field focus: camera distance to the player (or the camera target on the title)

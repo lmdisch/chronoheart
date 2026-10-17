@@ -2,6 +2,7 @@ import './ui/style.css';
 import { CHAPTERS, chapter, content, progress, switchChapter } from './chapter.js';
 import { HollowmereGame } from './chapters/hollowmere/game.js';
 import { SaltwickGame } from './chapters/saltwick/game.js';
+import { SummitGame } from './chapters/summit/game.js';
 import { audio } from './audio/audio.js';
 import { input } from './core/input.js';
 import { iconURL } from './render/sprites.js';
@@ -11,7 +12,7 @@ import { TouchControls } from './ui/touch.js';
 const $ = (id) => document.getElementById(id);
 // one chapter per page load (see src/chapter.js): its colors and its own lines of help text
 document.body.dataset.chapter = chapter.id;
-const GAMES = { hollowmere: HollowmereGame, saltwick: SaltwickGame };
+const GAMES = { hollowmere: HollowmereGame, saltwick: SaltwickGame, summit: SummitGame };
 const game = new GAMES[chapter.id]($('game-root'));
 window.__game = game; // handy for debugging
 window.__unlockChapters = () => {
@@ -27,6 +28,7 @@ const credits = $('credits');
 // The title: a card per chapter. The lit one is the chapter behind the title, which Continue
 // and New Game act on; picking another open one reloads the page on it.
 function chapterState(ch) {
+  if (ch.test) return 'Visual test';
   if (!progress.isOpen(ch)) return `Finish ${CHAPTERS.find((c) => c.id === ch.requires).label} to unlock`;
   const saved = progress.slot(ch.id), done = progress.isDone(ch.id);
   if (done) return saved && ch.keepsSave ? 'Complete · keep exploring' : saved ? 'Complete · a new story in progress' : 'Complete';
@@ -38,8 +40,8 @@ function refreshTitle() {
   document.querySelectorAll('.era-strip span:not(.dot)').forEach((el, i) => (el.textContent = chapter.eras[i]));
   const list = $('chapter-select');
   list.replaceChildren(
-    ...CHAPTERS.map((ch) => {
-      const open = progress.isOpen(ch), current = ch.id === chapter.id;
+    ...CHAPTERS.filter((ch) => !ch.test || ch.id === chapter.id).map((ch) => {
+      const open = progress.isOpen(ch) || !!ch.test, current = ch.id === chapter.id;
       const card = document.createElement('button');
       card.type = 'button';
       card.className = `chapter-card${current ? ' current' : ''}${open ? '' : ' locked'}${progress.isDone(ch.id) ? ' done' : ''}`;
@@ -228,7 +230,7 @@ game.onCredits = (state) => {
   $('credits-more').textContent = chapter.credits.more;
   $('credits-more').hidden = chapter.keepsSave && allCogs;
   // straight on to the next chapter, now that it's open
-  const next = CHAPTERS.find((c) => c.requires === chapter.id);
+  const next = CHAPTERS.find((c) => c.requires === chapter.id && !c.test);
   $('btn-credits-next').hidden = !next;
   if (next) $('btn-credits-next').textContent = `Begin ${next.label}`;
   credits.hidden = false;
@@ -237,7 +239,7 @@ game.onCredits = (state) => {
 };
 $('btn-credits-title').addEventListener('click', () => location.reload());
 $('btn-credits-next').addEventListener('click', () => {
-  const next = CHAPTERS.find((c) => c.requires === chapter.id);
+  const next = CHAPTERS.find((c) => c.requires === chapter.id && !c.test);
   if (next) switchChapter(next.id);
 });
 

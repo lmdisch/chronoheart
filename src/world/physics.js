@@ -11,6 +11,8 @@ export function moveBody(world, era, body, dt) {
   const maxD = Math.max(Math.abs(body.vx), Math.abs(body.vy), Math.abs(body.vz)) * dt;
   const steps = Math.max(1, Math.ceil(maxD / 0.3));
   const sdt = dt / steps;
+  const grounded = body.onGround && body.vy <= 0.01;
+  body.stepped = 0;
   body.onGround = false;
   body.hitX = false;
   body.hitZ = false;
@@ -20,7 +22,7 @@ export function moveBody(world, era, body, dt) {
     let d = body.vx * sdt;
     if (d) {
       body.x += d;
-      if (hits(world, era, body)) {
+      if (hits(world, era, body) && !(grounded && stepUp(world, era, body))) {
         if (d > 0) body.x = Math.floor(body.x + body.hw) - body.hw - EPS;
         else body.x = Math.floor(body.x - body.hw) + 1 + body.hw + EPS;
         if (hits(world, era, body)) body.x -= d; // fallback
@@ -32,7 +34,7 @@ export function moveBody(world, era, body, dt) {
     d = body.vz * sdt;
     if (d) {
       body.z += d;
-      if (hits(world, era, body)) {
+      if (hits(world, era, body) && !(grounded && stepUp(world, era, body))) {
         if (d > 0) body.z = Math.floor(body.z + body.hd) - body.hd - EPS;
         else body.z = Math.floor(body.z - body.hd) + 1 + body.hd + EPS;
         if (hits(world, era, body)) body.z -= d;
@@ -61,6 +63,32 @@ export function moveBody(world, era, body, dt) {
   if (!body.onGround && body.vy <= 0) {
     body.onGround = world.boxHits(era, body.x - body.hw, body.y - 0.05, body.z - body.hd, body.x + body.hw, body.y, body.z + body.hd);
   }
+  // walking down a slope: keep to the ground, one step at a time, rather than falling off each one
+  if (body.stepUp && grounded && !body.onGround && body.vy <= 0) {
+    const oy = body.y, ny = Math.round(oy) - 1;
+    if (Math.abs(oy - Math.round(oy)) < 0.2) {
+      body.y = ny;
+      if (!hits(world, era, body) && world.boxHits(era, body.x - body.hw, ny - 0.05, body.z - body.hd, body.x + body.hw, ny, body.z + body.hd)) {
+        body.onGround = true;
+        body.vy = 0;
+        body.stepped += ny - oy;
+      } else body.y = oy;
+    }
+  }
+}
+
+/** Walking into a step one block high: up onto it (for bodies that can, on a chapter with slopes). */
+function stepUp(world, era, body) {
+  if (!body.stepUp) return false;
+  const oy = body.y, ny = Math.floor(oy + 0.05) + 1;
+  if (ny - oy > 1.06) return false;
+  body.y = ny;
+  if (hits(world, era, body)) {
+    body.y = oy;
+    return false;
+  }
+  body.stepped += ny - oy;
+  return true;
 }
 
 export function hits(world, era, b) {

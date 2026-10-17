@@ -14,7 +14,7 @@ for (const chapter of ['hollowmere', 'saltwick']) {
     cont: !document.getElementById('btn-continue').hidden,
   }));
   check(title.chapter === chapter, `${chapter}: the page is running this chapter`);
-  check(title.cards.length === 2 && title.cards.filter((c) => c.includes('current')).length === 1, `${chapter}: two chapter cards, one current`);
+  check(title.cards.length === 3 && title.cards.filter((c) => c.includes('current')).length === 1, `${chapter}: three chapter cards, one current`);
   check(!title.cont, `${chapter}: no Continue on a clean save`);
   await newGame(page);
   await sleep(1200);

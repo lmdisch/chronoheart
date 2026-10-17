@@ -8,6 +8,7 @@ Vivienne is a clockmaker's apprentice with an amulet, the **Chronoheart**, that 
 | --- | --- | --- | --- |
 | **I** | [The Clocktower of Hollowmere](docs/chapter-1-hollowmere.md) | A valley town whose great Clocktower has stopped | The Chronoheart itself, then the Stasis Seal, Echoes and Tempo |
 | **II** | [The Backward Tide](docs/chapter-2-saltwick.md) | The harbor town of Saltwick, three weeks later, with no sea in it | A mended Chronoheart, a pocketwatch that runs you backward (Rewind), and reaching through the time lens |
+| **III** | [The Borrowed Hour](docs/chapter-3-highcrest.md) | Highcrest, the mountain above them both, in winter: a climb to the top of the world | The Lantern (carry a bubble of another age), Echoes that wait for you, and one last shift |
 
 Each chapter's guide has its controls, a full walkthrough, every Lost Cog and every favor.
 
@@ -32,11 +33,11 @@ Every world, sprite, melody and sound in the game is generated from code: there 
 ## Chapters and saving
 
 - **The title screen has a card for each chapter.** The lit card is the chapter showing behind the title; Continue and New Game act on it. Pick another card to switch.
-- **Chapter Two is locked until Chapter One is finished.** Finishing a chapter opens the next, and the credits offer to take you straight there.
+- **Each chapter is locked until the one before it is finished.** Finishing a chapter opens the next, and the credits offer to take you straight there.
 - **One save holds everything**: a slot for each chapter, plus which chapters are finished. It lives in your browser's local storage, so it stays on that browser and that address. Saves from before the two games were combined are brought over the first time the combined game runs.
 - **Every chapter keeps its save after the story.** Choose Continue to walk the valley with the Clocktower ticking, or the shore with the tide back in.
-- **Some rewards carry over.** Bring all ten of Chapter One's Lost Cogs to Donald Eugene and you start Chapter Two with the **Cog Finder**: Lost Cogs glint through the time lens. (The save records it under `rewards`.)
-- **Vivienne dresses for the place.** In Hollowmere she wears her teal workshop tunic and leather apron. In Saltwick she has a navy sea-coat, a red neckerchief, sailcloth trousers and yellow sea-boots. The goggles and the amulet go wherever she does.
+- **Some rewards carry over.** Bring all ten of Chapter One's Lost Cogs to Donald Eugene and you start Chapters Two and Three with the **Cog Finder**: Lost Cogs glint through the time lens. Earn your own pocketwatch in Chapter Two, and your echo in Chapter Three remembers longer. (The save records them under `rewards`.)
+- **Vivienne dresses for the place.** In Hollowmere she wears her teal workshop tunic and leather apron. In Saltwick she has a navy sea-coat, a red neckerchief, sailcloth trousers and yellow sea-boots. On Highcrest, a teal wool coat with a fur hem, a mustard scarf, and red earmuffs and mittens. The goggles and the amulet go wherever she does.
 
 To open every chapter without finishing the one before (for testing, or if you finished Chapter One before the game kept a record of it), add `#unlock` to the address once, or run `__unlockChapters()` in the browser console.
 
@@ -109,16 +110,23 @@ src/
       objectives.js         the goal and hint
       game.js               SaltwickGame: reaching through the lens, the watch, the Tide Well, the ending
       timecraft.js          Rewind, the timed gates, and the flood that carries you out of the Well
+    summit/               Chapter Three, Highcrest
+      theme.js              skies (aurora, the near moon, the cloud sea), music, and the ages after the ending
+      level.js              the whole mountain in all three ages: the switchback road, the frost, the towns far below
+      story.js              items, favors, every line of dialogue, the endings
+      objectives.js         the goal and hint
+      game.js               SummitGame: the frost, Sir Christopher, the hours going home, the last shift
+      powers.js             the Lantern, the Echo, pressure plates and gates
   core/                   input (keyboard + virtual keys), small utilities
   world/                  voxel world and collision, physics, the shared entities (player, NPCs, enemies, the Warden, bells...)
-  render/                 renderer, post-processing, procedural textures and sprites, the 3D characters, water and mud, foliage, particles
+  render/                 renderer, post-processing, procedural textures and sprites, the 3D characters, the cloud sea, mountain terrain, water and mud, foliage, particles
   audio/                  procedural music (one layer per age, the tune from the chapter) and sound effects
   ui/                     HUD and dialogue, touch controls, styles
 tools/
   reachability/           per chapter: do the gates hold, and can you always walk back to the start?
   playtest/               headless scripted playtests (see its README)
 docs/                     each chapter's player guide: how to play, walkthrough, cogs, favors, secrets
-IDEAS.md                  ideas for a third chapter
+IDEAS.md                  the story's decisions, and ideas that were considered
 ```
 
 ---
@@ -137,7 +145,7 @@ IDEAS.md                  ideas for a third chapter
 
 **Adding a chapter:** make `src/chapters/<id>/` with the same files, add it to `CHAPTERS` in `src/chapter.js` (with `requires` set to the chapter before it), and add its game class to `GAMES` in `src/main.js`. Anything only one chapter shows in the page (a line of help text, say) gets an `only-<id>` class in `index.html`.
 
-Chapter One's valley is **346 units long** (the last 40 are the Gearworks, inside the clock). Chapter Two's shore is **300**. Where each area begins is in `AREAS` in the chapter's `level.js`.
+Chapter One's valley is **346 units long** (the last 40 are the Gearworks, inside the clock). Chapter Two's shore is **300**. Chapter Three is a mountain: a road **100** long climbing its face in six switchback legs, each 16 further back and about 14 higher than the last, 77 to the top. It needs a few engine options: `theme.openDepth` (the road leaves the usual strip and winds back into the scene, walled by rock and barriers), `theme.zMin` / `yMax` (a bigger world), `theme.slopes` (you walk up and down single steps), and the terrain past the voxels is a mesh (`src/render/mountains.js`) built from the same height function, out to the ranges on the horizon. Where each area begins is in `AREAS` in the chapter's `level.js`.
 
 ---
 

@@ -10,7 +10,7 @@ function selfLit(mat, amount) {
   mat.onBeforeCompile = (sh) => {
     sh.fragmentShader = sh.fragmentShader.replace(
       '#include <emissivemap_fragment>',
-      `#include <emissivemap_fragment>\n totalEmissiveRadiance += diffuseColor.rgb * ${amount.toFixed(3)};`,
+      `#include <emissivemap_fragment>\n totalEmissiveRadiance = totalEmissiveRadiance * diffuseColor.rgb + diffuseColor.rgb * ${amount.toFixed(3)};`,
     );
   };
   mat.customProgramCacheKey = () => 'selfLit' + amount;

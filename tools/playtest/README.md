@@ -12,6 +12,8 @@ node tools/playtest/hollowmere-play.mjs    # Chapter One, the whole story, every
 node tools/playtest/hollowmere-check.mjs   # Chapter One's systems one at a time, the ending, old saves brought over
 node tools/playtest/saltwick-play.mjs      # Chapter Two, the whole story, every puzzle solved honestly
 node tools/playtest/saltwick-side.mjs      # Chapter Two: favors, hazards, the Warden, cogs, the world after the story
+node tools/playtest/summit-play.mjs        # Chapter Three, the whole climb: every Lantern and Echo puzzle, the favors,
+                                           #   Sir Christopher, the last shift, and the age you chose after the credits
 node tools/playtest/reach.mjs hollowmere   # tools/reachability/hollowmere.js: nowhere traps you
 node tools/playtest/reach.mjs saltwick     # tools/reachability/saltwick.js: every gate holds, nothing traps you
 ```

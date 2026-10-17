@@ -5,6 +5,10 @@
 //
 //   node tools/artifact/build.mjs            -> dist-artifact/chronoheart.html (the fragment to publish)
 //                                               dist-artifact/test.html       (the same, wrapped to open locally)
+//   node tools/artifact/build.mjs --chapter summit
+//                                            -> dist-artifact/summit.html, summit-test.html: the same game,
+//                                               opening on that chapter, every chapter unlocked (a review page
+//                                               for a chapter still being built: its saves are its own)
 import { build } from 'vite';
 import { readFileSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -14,6 +18,8 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const out = resolve(root, 'dist-artifact');
 const tmp = resolve(out, 'build');
 const THREE = '0.186.0';
+const at = process.argv.indexOf('--chapter');
+const only = at > 0 ? process.argv[at + 1] : null;
 
 await build({
   root,
@@ -49,13 +55,14 @@ ${css}
 </style>
 ${main}
 <script type="importmap">${importmap}</script>
-<script type="module">
+${only ? `<script>try { sessionStorage.setItem('chronoheart-chapter', '${only}'); history.replaceState(null, '', '#unlock'); } catch {}</script>\n` : ''}<script type="module">
 document.body.dataset.era = 'present';
 ${code}
 </script>
 `;
 mkdirSync(out, { recursive: true });
-writeFileSync(resolve(out, 'chronoheart.html'), fragment);
-writeFileSync(resolve(out, 'test.html'), `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head><body>${fragment}</body></html>`);
+const name = only || 'chronoheart';
+writeFileSync(resolve(out, `${name}.html`), fragment);
+writeFileSync(resolve(out, only ? `${only}-test.html` : 'test.html'), `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head><body>${fragment}</body></html>`);
 rmSync(tmp, { recursive: true, force: true });
-console.log(`dist-artifact/chronoheart.html  ${(fragment.length / 1024).toFixed(0)} KB`);
+console.log(`dist-artifact/${name}.html  ${(fragment.length / 1024).toFixed(0)} KB`);

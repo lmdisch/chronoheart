@@ -374,6 +374,98 @@ function paintPlaster(pc, baseHex, seed) {
   bakeRelief(pc, R, base, 0.6);
 }
 
+/** Packed snow: soft drifts, cool blue in the hollows, a few glints. */
+function paintSnow(pc, baseHex, seed) {
+  const R = ramp(baseHex, 6, 0.2, 0.1);
+  const n = fbm(seed, 3, 2);
+  const base = [];
+  pc.each((x, y) => {
+    const v = 0.6 + (n(x, y) - 0.5) * 0.55;
+    base.push(v);
+    pc.set(x, y, null, n(x, y) * 0.4, 0, 0.7);
+  });
+  bakeRelief(pc, R, base, 0.5);
+}
+
+/** A rock face with a lip of snow along its top edge. */
+function paintSnowSide(pc, snowHex, rockHex, seed, lipDepth = 3) {
+  paintCrag(pc, rockHex, seed + 3);
+  const S = ramp(snowHex, 6, 0.2, 0.1);
+  const n = valueNoise(seed, 8);
+  const rng = pc.rng;
+  for (let x = 0; x < TILE; x++) {
+    const depth = lipDepth + Math.round(n(x, 0) * 2) + (rng.chance(0.2) ? 2 : 0);
+    for (let y = 0; y < depth; y++) {
+      const v = 1 - y / depth;
+      pc.set(x, y, pick(S, clamp01(0.35 + v * 0.6)), 0.6 + v * 0.3, 0, 0.7);
+    }
+    pc.set(x, depth, pick(ramp(rockHex, 6, 0.4), 0.05), 0.1);
+  }
+}
+
+/**
+ * Mountain rock: broken into angular facets, each catching the light its own way, with dark
+ * cracks between them. No courses or bands, so a cliff of it reads as crag, not masonry.
+ */
+function paintCrag(pc, baseHex, seed) {
+  const R = ramp(baseHex, 7, 0.36, 0.08);
+  const n = fbm(seed, 3, 2);
+  const rng = pc.rng;
+  const pts = [];
+  for (let i = 0; i < 6; i++) pts.push({ x: rng() * TILE, y: rng() * TILE, tone: 0.3 + rng() * 0.5, gx: rng() - 0.5, gy: rng() - 0.5 });
+  const base = [];
+  pc.each((x, y) => {
+    // nearest two facet centers, on the torus (so the tile wraps)
+    let d1 = 1e9, d2 = 1e9, f = pts[0];
+    for (const p of pts) {
+      const dx = Math.min(Math.abs(x - p.x), TILE - Math.abs(x - p.x)), dy = Math.min(Math.abs(y - p.y), TILE - Math.abs(y - p.y));
+      const d = Math.hypot(dx * 1.15, dy);
+      if (d < d1) [d2, d1, f] = [d1, d, p];
+      else if (d < d2) d2 = d;
+    }
+    const crack = d2 - d1 < 0.6;
+    // each facet tilts a little: lighter on one edge than the other
+    const tilt = ((x - f.x) * f.gx + (y - f.y) * f.gy) * 0.05;
+    const v = crack ? 0.18 : f.tone + tilt + (n(x, y) - 0.5) * 0.18;
+    base.push(v);
+    pc.set(x, y, null, crack ? 0.05 : 0.45 + tilt * 2 + (n(x, y) - 0.5) * 0.3, 0, 0.9);
+  });
+  bakeRelief(pc, R, base, 0.6);
+}
+
+/** Clear ice: pale, glassy, with long cracks and a cold shine. */
+function paintIce(pc, baseHex, seed) {
+  const R = ramp(baseHex, 6, 0.3, 0.12);
+  const n = fbm(seed, 2, 2);
+  const base = [];
+  pc.each((x, y) => {
+    const v = 0.55 + (n(x, y) - 0.5) * 0.4 + ((x + y) % 7 === 0 ? 0.15 : 0);
+    base.push(v);
+    pc.set(x, y, null, 0.4, 0.05, 0.15);
+  });
+  const rng = pc.rng;
+  let cx = rng.int(2, 13);
+  for (let y = 0; y < TILE; y++) {
+    if (rng.chance(0.4)) cx += rng.chance(0.5) ? 1 : -1;
+    base[pc.i(cx, y)] = 0.95;
+  }
+  bakeRelief(pc, R, base, 0.3);
+}
+
+/** Polished marble with a few dark veins. */
+function paintMarble(pc, baseHex, seed) {
+  const R = ramp(baseHex, 6, 0.22, 0.04);
+  const n = fbm(seed, 3, 2);
+  const base = [];
+  pc.each((x, y) => {
+    const vein = Math.abs(Math.sin((x * 0.6 + y * 0.35 + n(x, y) * 6) * 1.2));
+    const v = 0.62 + (n(x, y) - 0.5) * 0.3 - (vein < 0.12 ? 0.35 : 0);
+    base.push(v);
+    pc.set(x, y, null, 0.5, 0, 0.35);
+  });
+  bakeRelief(pc, R, base, 0.2);
+}
+
 function paintWoodGrain(pc, baseHex, seed, o = {}) {
   const { vertical = true, plankW = 4, nails = false } = o;
   const R = ramp(baseHex, 7, 0.42, 0.07);
@@ -828,6 +920,13 @@ export const TILE_DEFS = {
   brass: P((pc) => paintMetal(pc, 0xb8862a, 65, { panel: 16, rough: 0.3 })),
   wellStone: P((pc) => paintBricks(pc, 0x3f5a62, 66, { rowH: 8, brickW: 8, offsets: [0, 4], spread: 0.4 })),
   glyphSea: P((pc) => paintGlyph(pc, 0x3f5a62, 67)),
+  // Chapter Three: the mountain
+  snowTop: P((pc) => paintSnow(pc, 0xeef4fa, 68)),
+  snowSide: P((pc) => paintSnowSide(pc, 0xeef4fa, 0x6e7584, 69)),
+  granite: P((pc) => paintCrag(pc, 0x6e7584, 70)),
+  ice: P((pc) => paintIce(pc, 0xa8d8ee, 71)),
+  copper: P((pc) => paintRoofTiles(pc, 0x4f9a8a, 72, { rowH: 4, tileW: 8, round: false })),
+  marble: P((pc) => paintMarble(pc, 0xe8e4dc, 73)),
 };
 
 export const TILE_NAMES = Object.keys(TILE_DEFS);

@@ -6,6 +6,7 @@
 // is ever left behind in the next. This module has no engine imports, so anything may import it.
 import hollowmere from './chapters/hollowmere/theme.js';
 import saltwick from './chapters/saltwick/theme.js';
+import summit from './chapters/summit/theme.js';
 
 export const CHAPTERS = [
   {
@@ -45,6 +46,25 @@ export const CHAPTERS = [
     theme: saltwick,
     requires: 'hollowmere',
     keepsSave: true, // the tide stays in: you can keep walking the shore after the credits
+  },
+  {
+    id: 'summit',
+    number: 3,
+    numeral: 'III',
+    label: 'Chapter Three',
+    title: 'The Borrowed Hour',
+    tagline: 'Someone is borrowing hours from every clock in the valley. Climb Highcrest, all the way to the top, and bring them home.',
+    blurb: 'Winter. Every clock in Hollowmere is losing an hour a night, and the hours are going up the mountain.',
+    eras: ['First Age', 'Golden Hour', 'Stopped Age'],
+    credits: {
+      eyebrow: 'The hours are home',
+      bonus: "You found every Lost Cog! Donald Eugene's parts tray is full at last.",
+      // (not shown once every cog is found)
+      more: 'Your save is kept: choose Continue to walk Highcrest in the age you chose. Some of Donald Eugene\'s Lost Cogs are still up there.',
+    },
+    theme: summit,
+    requires: 'saltwick',
+    keepsSave: true, // you can keep walking the mountain, in the age you chose
   },
 ];
 
@@ -137,7 +157,7 @@ function pickChapter() {
   // (a choice made on the title screen beats the address it was first opened with)
   const picked = store.session(PICK_KEY) || CHAPTERS[fromHash - 1]?.id || store.get(PICK_KEY) || save.last;
   const ch = CHAPTERS.find((c) => c.id === picked);
-  return ch && progress.isOpen(ch) ? ch : CHAPTERS[0];
+  return ch && (progress.isOpen(ch) || ch.test) ? ch : CHAPTERS[0];
 }
 
 /** The chapter this page load is running. */

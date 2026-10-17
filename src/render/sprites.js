@@ -73,6 +73,7 @@ function drawHumanoid(ctx, ox, oy, o, pose = {}) {
     const ey = hipY + Math.cos(lg.a) * legLen;
     L(lg.x, hipY, ex, ey, lg.col, 3);
     R(ex - 1, ey + 1, 4, 2, lg.boot);
+    if (o.bootTrim) R(ex - 1, ey, 4, 1, lg === legs[0] ? shadeCss(o.bootTrim, 0.8) : o.bootTrim); // fur at the top of the boot
   }
 
   if (o.robe) {
@@ -81,9 +82,20 @@ function drawHumanoid(ctx, ox, oy, o, pose = {}) {
     R(11 - wide + lean, hipY + 4, 9 + wide * 2, 2, o.legs);
     R(11 - wide + lean, hipY + 5, 9 + wide * 2, 1, shadeCss(o.legs, 0.8));
   }
+  if (o.longCoat) {
+    R(12 - wide + lean, hipY - 1, 7 + wide * 2, 4, o.longCoat);
+    R(11 - wide + lean, hipY + 2, 9 + wide * 2, 1, o.trim || shadeCss(o.longCoat, 0.8));
+  }
   const by = bob + (pose.crouch || 0);
+  if (o.pack) {
+    // a big expedition pack on her back, a rolled mat on top
+    R(9 - wide + lean, 14 + by, 4, 9, o.pack);
+    R(9 - wide + lean, 14 + by, 4, 1, shadeCss(o.pack, 1.2));
+    R(10 - wide + lean, 18 + by, 3, 1, shadeCss(o.pack, 0.7));
+    if (o.packTop) R(8 - wide + lean, 12 + by, 6, 2, o.packTop);
+  }
   // back arm
-  drawArm(L, R, 13 + lean, 17 + by, pose.armB ?? -0.2, shadeCss(o.top, 0.7), shadeCss(o.skin, 0.8), null);
+  drawArm(L, R, 13 + lean, 17 + by, pose.armB ?? -0.2, shadeCss(o.top, 0.7), o.mittens ? shadeCss(o.mittens, 0.8) : shadeCss(o.skin, 0.8), null, o.sleeves);
 
   // torso
   R(12 - wide + lean, 16 + by, 7 + wide * 2, 7, o.top);
@@ -120,6 +132,31 @@ function drawHumanoid(ctx, ox, oy, o, pose = {}) {
   // ear
   P(hx + 3, hy + 4, shadeCss(o.skin, 0.8));
   drawHair(P, R, hx, hy, o);
+  if (o.hoodTrim) {
+    // fur round the hood's opening
+    R(hx + 3, hy - 1, 6, 1, o.hoodTrim);
+    R(hx + 8, hy, 1, 4, o.hoodTrim);
+  }
+  if (o.hat) {
+    // a knit hat, pulled down over the ears, with a bobble
+    R(hx - 1, hy - 2, 10, 3, o.hat);
+    R(hx - 1, hy + 1, 10, 1, shadeCss(o.hat, 0.75));
+    for (let k = 0; k < 10; k += 2) P(hx - 1 + k, hy - 1, shadeCss(o.hat, 1.15));
+    if (o.pom) R(hx + 1, hy - 4, 3, 2, o.pom);
+  }
+  if (o.earmuffs) {
+    R(hx + 2, hy + 3, 3, 3, o.earmuffs);
+    P(hx + 3, hy + 4, shadeCss(o.earmuffs, 1.25));
+    P(hx + 4, hy + 2, '#3a3a44');
+    P(hx + 4, hy + 1, '#3a3a44');
+  }
+  if (o.scarf) {
+    // wound twice round the neck, one end hanging down the front
+    R(hx + 2, hy + 8, 7, 2, o.scarf);
+    P(hx + 3, hy + 8, shadeCss(o.scarf, 1.2));
+    R(hx + 6 + (lean > 0 ? 1 : 0), hy + 10, 2, 3, shadeCss(o.scarf, 0.85));
+    P(hx + 6 + (lean > 0 ? 1 : 0), hy + 13, o.scarfTip || shadeCss(o.scarf, 0.7));
+  }
   if (o.beard) {
     R(hx + 4, hy + 6, 5, 3, o.beard);
     R(hx + 5, hy + 9, 3, 1, o.beard);
@@ -136,15 +173,20 @@ function drawHumanoid(ctx, ox, oy, o, pose = {}) {
   }
 
   // front arm
-  drawArm(L, R, 16 + lean, 17 + by, pose.armF ?? 0.2, o.top, o.skin, pose.tool ? o.tool || 'wrench' : null);
+  drawArm(L, R, 16 + lean, 17 + by, pose.armF ?? 0.2, o.top, o.mittens || o.skin, pose.tool ? o.tool || 'wrench' : null, o.sleeves);
 }
 
-function drawArm(L, R, sx, sy, a, sleeve, skin, tool) {
+/** long: sleeves to the wrist, so only the hand (or a mitten) shows. */
+function drawArm(L, R, sx, sy, a, sleeve, skin, tool, long = false) {
   const len = 5;
   const mx = sx + Math.sin(a) * 3, my = sy + Math.cos(a) * 3;
   const ex = sx + Math.sin(a) * len, ey = sy + Math.cos(a) * len;
   L(sx, sy, mx, my, sleeve, 2);
-  L(mx, my, ex, ey, skin, 2);
+  if (long) {
+    const wx = sx + Math.sin(a) * 4.2, wy = sy + Math.cos(a) * 4.2;
+    L(mx, my, wx, wy, sleeve, 2);
+    L(wx, wy, ex, ey, skin, 2);
+  } else L(mx, my, ex, ey, skin, 2);
   if (tool === 'wrench') {
     const tx = ex + Math.sin(a) * 7, ty = ey + Math.cos(a) * 7;
     L(ex, ey, tx, ty, '#b88a3a', 2);
@@ -722,7 +764,7 @@ function robotSheet(kind) {
   return s.build();
 }
 
-function squirrelSheet({ B = '#c8642a', L = '#e8a060', acorn = true, spectacles = false } = {}) {
+function squirrelSheet({ B = '#c8642a', L = '#e8a060', acorn = true, spectacles = false, scarf = null } = {}) {
   const s = new Sheet(32, 32, 2, 8, { [B]: 'fur', [L]: 'fur' });
   const draw = (ctx, ox, oy, t) => {
     // big tail
@@ -743,6 +785,10 @@ function squirrelSheet({ B = '#c8642a', L = '#e8a060', acorn = true, spectacles 
     } else {
       // one paw raised, mid-lecture
       rect(ctx, ox + 21, oy + 22 - t, 1, 2, L);
+    }
+    if (scarf) {
+      rect(ctx, ox + 17, oy + 22, 5, 1, scarf);
+      rect(ctx, ox + 17, oy + 23, 1, 2, scarf);
     }
     if (spectacles) {
       px(ctx, ox + 19, oy + 19, '#e2bf62');
@@ -787,6 +833,35 @@ export const CHAR = {
       P(14 + lean, 17 + by, '#c23a2e');
     },
   },
+  // Chapter Three, up the mountain in winter: her teal wool coat to the knee with a fur hem, a
+  // mustard scarf, red earmuffs and mittens, fur-topped boots. The goggles and the amulet, as ever.
+  vivienneWinter: {
+    skin: '#f2c49a', hair: '#2e2236', hairStyle: 'bun', top: '#2a7a7c', legs: '#4a3a5a', boots: '#5a3a22', belt: '#3a2614', goggles: true, amulet: true,
+    longCoat: '#246c6e', trim: '#f0ece4', sleeves: true, scarf: '#e0a030', earmuffs: '#c83a4a', mittens: '#c83a4a', bootTrim: '#e8e0d0',
+  },
+  // ---- Chapter Three: the mountain, in winter ----
+  // Michelle the Wise, her star robe under a fur-trimmed shawl, and a knit hat at last
+  michelleWinter: { skin: '#d9a27c', hair: '#e6e2ea', hairStyle: 'long', top: '#33416e', apron: '#c9a44a', legs: '#2c3760', boots: '#3a2a20', belt: '#c9a44a', robe: true, sunPendant: true, hat: '#5a3a8a', pom: '#e6e2ea', scarf: '#f0ece4', mittens: '#33416e', sleeves: true },
+  // Ingrid lights the lamps on the Lantern Road, every night, all winter
+  ingrid: { skin: '#f0c0a0', hair: '#e8c870', hairStyle: 'braid', top: '#8a3a2a', legs: '#4a4038', boots: '#3a2a20', belt: '#3a2614', longCoat: '#7a2e22', trim: '#f0ece4', sleeves: true, hat: '#3a7a4a', pom: '#f0ece4', scarf: '#e8d8a0', mittens: '#3a7a4a', bootTrim: '#e8e0d0' },
+  // Tobin keeps the observatory's star-books: an indigo hood lined with fur, a long gray beard
+  tobin: { skin: '#c89070', hair: '#3a4a7a', hairStyle: 'hood', hoodTrim: '#f0ece4', beard: '#c8c8d0', top: '#3a4a7a', apron: '#c9a44a', legs: '#2c3458', boots: '#2a2420', belt: '#c9a44a', robe: true, wide: true, sleeves: true, mittens: '#5a4a3a' },
+  // the statue of the first Clockmaker on the Sundial Terrace: Vivienne, in stone (goggles and all)
+  statue: { skin: '#b8b2a4', hair: '#8f8a80', hairStyle: 'bun', top: '#a8a296', apron: '#9a958a', legs: '#8f8a80', boots: '#7f7a70', belt: '#8a857a', goggles: true, eye: '#6f6a62', amuletColor: '#d8d2c4' },
+  // Sela cuts the first stones of the observatory, in the First Age: furs and hide
+  sela: { skin: '#9a6a48', hair: '#1e1612', hairStyle: 'braid', top: '#8a6a4a', apron: '#5a4030', legs: '#6a5232', boots: '#4a3220', belt: '#c8642a', longCoat: '#7a5a3a', trim: '#d8c8a8', sleeves: true, mittens: '#5a4030', bootTrim: '#d8c8a8' },
+  // Sir Christopher: plum velvet and gold, white gloves, a watch chain. He has borrowed enough
+  // hours to look no older than the day he left: dark hair, not a gray one in it
+  christopher: { skin: '#e8c0a4', hair: '#2a1e2a', hairStyle: 'short', top: '#6a2a4a', legs: '#2a1e2a', boots: '#1e161c', belt: '#e8c25a', longCoat: '#5a1f3e', trim: '#e8c25a', sleeves: true, mittens: '#f0ece4', scarf: '#e8c25a', sunPendant: true },
+  // the two of them as apprentices, on the midwinter night he kept (seen only as a memory)
+  christopherYoung: { skin: '#e8c0a4', hair: '#2a1e2a', hairStyle: 'short', top: '#4a6aa0', apron: '#7a5232', legs: '#3a3a4a', boots: '#3a2a20', belt: '#3a2614', scarf: '#c83a4a', sleeves: true },
+  eugeneYoung: { skin: '#f2cdb4', hair: '#5a4030', hairStyle: 'short', top: '#3a4a8a', apron: '#c9a44a', legs: '#2a2a3a', boots: '#3a2a20', belt: '#c9a44a', scarf: '#3a7a4a', sleeves: true },
+  // Donald Eugene, who climbed a mountain on knees that are not what they were
+  eugeneWinter: { skin: '#f2cdb4', hair: '#f0f0f6', hairStyle: 'baldRing', top: '#3a4a8a', legs: '#2a2a3a', boots: '#3a2a20', belt: '#c9a44a', longCoat: '#2a3a6a', trim: '#f0ece4', sleeves: true, hat: '#7a2e22', pom: '#f0ece4', scarf: '#3a7a4a', mittens: '#7a2e22', bootTrim: '#e8e0d0' },
+  // the guides and porters of Highcrest: down coats, knit hats, and the biggest packs on the mountain
+  anwen: { skin: '#c8906a', hair: '#2a1a14', hairStyle: 'braid', top: '#e0482a', legs: '#3a3a4a', boots: '#3a2a20', belt: '#2a2a30', longCoat: '#c83a22', trim: '#f0ece4', sleeves: true, hat: '#f0c83a', pom: '#3a6ad8', mittens: '#3a6ad8', bootTrim: '#e8e0d0', goggles: true },
+  porterKit: { skin: '#a8744e', hair: '#1e1612', hairStyle: 'short', top: '#2a8ad8', legs: '#4a4038', boots: '#3a2a20', belt: '#3a2614', sleeves: true, hat: '#d83a3a', pom: '#f0f0f0', scarf: '#f0c83a', mittens: '#5a4030', bootTrim: '#e8e0d0', pack: '#e0782a', packTop: '#3ab05a' },
+  porterBram: { skin: '#b07a50', hair: '#3a2a1e', hairStyle: 'short', beard: '#3a2a1e', top: '#3ab05a', legs: '#5a4a3a', boots: '#3a2a20', belt: '#3a2614', sleeves: true, hat: '#3a6ad8', pom: '#f0c83a', mittens: '#7a2e22', bootTrim: '#e8e0d0', pack: '#c84a3a', packTop: '#f0c83a', wide: true },
   // ---- Chapter Two: the people of Saltwick ----
   // Brannoch, harbormaster of a harbor with no sea in it
   brannoch: { skin: '#c89070', hair: '#5a5a66', hairStyle: 'short', beard: '#6a6a76', top: '#27405e', apron: '#1c2e44', legs: '#3a3a44', boots: '#2a2420', belt: '#c9a44a', wide: true },
@@ -819,6 +894,13 @@ const SHEETS = {
   brannoch: npc('brannoch'), odalys: npc('odalys'), fenwick: npc('fenwick'), isha: npc('isha'), pim: npc('pim'), maren: npc('maren'),
   digby: () => robotSheet('digby'),
   crab: () => crabSheet(),
+  // Chapter Three: the mountain
+  michelleWinter: npc('michelleWinter'), ingrid: npc('ingrid'), tobin: npc('tobin'), sela: npc('sela'),
+  anwen: npc('anwen'), porterKit: npc('porterKit'), porterBram: npc('porterBram'),
+  christopher: npc('christopher'), christopherYoung: npc('christopherYoung'), eugeneYoung: npc('eugeneYoung'), eugeneWinter: npc('eugeneWinter'),
+  statue: () => humanoidSheet(CHAR.statue, { npcOnly: true }), // the first Clockmaker, in stone
+  meganWinter: () => squirrelSheet({ scarf: '#e04a4a' }),
+  zachWinter: () => squirrelSheet({ B: '#86848e', L: '#cfccd6', acorn: false, spectacles: true, scarf: '#4a6ad8' }),
   // both
   rat: () => ratSheet(),
   drone: () => droneSheet(),
@@ -1012,6 +1094,45 @@ const ICONS = {
     disc(c, 8, 8, 4, '#a8843a');
     disc(c, 8, 8, 2.6, '#36f0ff');
     px(c, 7, 7, '#ffffff');
+  },
+  // ---- Chapter Three: Highcrest ----
+  hourLantern: (c) => {
+    // Ingrid's gran's lantern: a brass cage round a glass that holds an hour's light
+    rect(c, 6, 0, 4, 1, '#a8843a');
+    rect(c, 7, 1, 2, 2, '#a8843a');
+    rect(c, 4, 3, 8, 2, '#c9a44a');
+    rect(c, 4, 5, 8, 7, '#a8843a');
+    rect(c, 5, 5, 6, 7, '#9ff4ff');
+    rect(c, 6, 6, 4, 5, '#e8fcff');
+    rect(c, 7, 5, 2, 7, '#c9a44a');
+    rect(c, 4, 12, 8, 2, '#c9a44a');
+    rect(c, 5, 14, 6, 1, '#7a5a2a');
+  },
+  ember: (c) => {
+    // a coal from the First Age's fire, that has never gone out
+    disc(c, 8, 9, 5, '#5a2a1a');
+    disc(c, 8, 9, 3.6, '#ff6a2a');
+    disc(c, 7, 8, 2, '#ffc870');
+    px(c, 6, 7, '#fff2c0');
+    px(c, 11, 5, '#ff9a3a');
+    px(c, 5, 4, '#ffc870');
+  },
+  page: (c) => {
+    // a page from Tobin's star-books
+    rect(c, 3, 2, 10, 12, '#e8dcb0');
+    rect(c, 3, 2, 10, 1, '#c9b88a');
+    for (const [x, y] of [[5, 5], [9, 4], [11, 8], [7, 9], [5, 12], [10, 11]]) px(c, x, y, '#2a3a6a');
+    line(c, 5, 5, 9, 4, '#7a8ab8', 1);
+    line(c, 9, 4, 11, 8, '#7a8ab8', 1);
+    line(c, 7, 9, 10, 11, '#7a8ab8', 1);
+  },
+  summitFlag: (c) => {
+    // Zach's flag: an acorn on a blue field
+    rect(c, 3, 1, 1, 14, '#6a4428');
+    rect(c, 4, 2, 10, 7, '#4a6ad8');
+    rect(c, 4, 8, 10, 1, '#3a52b0');
+    disc(c, 9, 5.5, 2, '#c87a2a');
+    rect(c, 7, 3, 4, 1, '#6a4428');
   },
   // ---- Chapter Two: Saltwick ----
   watch: (c) => {

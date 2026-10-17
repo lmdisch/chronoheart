@@ -46,7 +46,7 @@
 
         <div class="hud-right">
           <div id="inventory" aria-label="Inventory"></div>
-          <div class="hud-keys kb-only"><span id="hud-menu-key"><kbd>I</kbd> Menu</span> · <kbd>Tab</kbd> <span class="only-hollowmere">Peek</span><span class="only-saltwick">Lens</span> · <button id="hud-controls" class="hud-key-btn" type="button"><kbd>H</kbd> Controls</button> · <kbd>Esc</kbd> Pause<span class="needs-seal"> · <kbd>R</kbd> Seal</span><span class="needs-echo"> · <kbd>V</kbd> Echo</span><span class="needs-tempo"> · hold <kbd>Q</kbd> / <kbd>E</kbd> Tempo</span><span class="needs-rewind"> · hold <kbd>R</kbd> Rewind</span></div>
+          <div class="hud-keys kb-only"><span id="hud-menu-key"><kbd>I</kbd> Menu</span> · <kbd>Tab</kbd> <span class="only-hollowmere">Peek</span><span class="only-saltwick">Lens</span><span class="only-summit">Lens</span> · <button id="hud-controls" class="hud-key-btn" type="button"><kbd>H</kbd> Controls</button> · <kbd>Esc</kbd> Pause<span class="needs-seal"> · <kbd>R</kbd> Seal</span><span class="needs-lantern"> · <kbd>R</kbd> Lantern</span><span class="needs-echo"> · <kbd>V</kbd> Echo</span><span class="needs-tempo"> · hold <kbd>Q</kbd> / <kbd>E</kbd> Tempo</span><span class="needs-rewind"> · hold <kbd>R</kbd> Rewind</span></div>
         </div>
 
         <div id="resonance" hidden>
@@ -137,7 +137,9 @@
           <span class="tc-legend">Past · Future</span><span>Or tap the era names at the top</span>
           <span class="tc-legend">Amulet</span><span>Hold the amulet dial to open the time lens, a window onto another era around you, then tap Past or Future to choose which</span>
           <span class="tc-legend needs-seal">Seal</span><span class="needs-seal">Lights up beside something that shimmers. Tap to hold it in its moment, unchanged in every later age.</span>
-          <span class="tc-legend needs-echo">Echo</span><span class="needs-echo">In the Present: tap to start recording, tap again to stop (up to 5 seconds). Your echo repeats those moves, over and over. Up to 3 at once. Stand on an echo and tap <b>Dispel echo</b> to remove it.</span>
+          <span class="tc-legend needs-echo only-hollowmere">Echo</span><span class="needs-echo only-hollowmere">In the Present: tap to start recording, tap again to stop (up to 5 seconds). Your echo repeats those moves, over and over. Up to 3 at once. Stand on an echo and tap <b>Dispel echo</b> to remove it.</span>
+          <span class="tc-legend needs-lantern">Lantern</span><span class="needs-lantern">It holds the age you last stepped out of. Tap to light it: inside its light, that age is real (its floors, its bridges, its ice). Tap again to put it out. Shifting puts it out too, and fills it with the age you left.</span>
+          <span class="tc-legend needs-echo only-summit">Echo</span><span class="needs-echo only-summit">Tap to start recording yourself, tap again to stop. Your echo does it all again, then waits where you finished: on a plate, or holding the Lantern if it was lit. Record again to send the old echo home.</span>
           <span class="tc-legend needs-tempo">Slow · Fast</span><span class="needs-tempo">Tempo: hold to slow down or speed up the machines near you. Uses the Chronoheart's ring.</span>
           <span class="tc-legend needs-rewind">Rewind</span><span class="needs-rewind">Hold to run yourself backward along the path you just took: up drops, across gaps, back through era shifts. Only you: the world keeps going. The amulet's ring shows how much the watch remembers.</span>
           <span class="tc-legend needs-reach">Reach</span><span class="needs-reach">While the time lens is open, <b>Interact</b> and <b>Attack</b> go through it: use, take or strike something in the other age.</span>
@@ -155,7 +157,9 @@
           <span><kbd>Q</kbd> / <kbd>E</kbd></span><span>Travel one era back / forward</span>
           <span><kbd>Tab</kbd></span><span>Time lens: hold to open a window onto another era around you (Q/E chooses which). You can walk about with it</span>
           <span class="needs-seal"><kbd>R</kbd></span><span class="needs-seal">Stasis Seal: hold something in its moment, unchanged in every later age</span>
-          <span class="needs-echo"><kbd>V</kbd></span><span class="needs-echo">Echo (Present only): start / stop recording, up to 5 seconds; up to 3 echoes. Stand on one and press <kbd>F</kbd> to dispel it</span>
+          <span class="needs-echo only-hollowmere"><kbd>V</kbd></span><span class="needs-echo only-hollowmere">Echo (Present only): start / stop recording, up to 5 seconds; up to 3 echoes. Stand on one and press <kbd>F</kbd> to dispel it</span>
+          <span class="needs-lantern"><kbd>R</kbd></span><span class="needs-lantern">Lantern: light it / put it out. It holds the age you last stepped out of; inside its light, that age is real. Shifting puts it out, and fills it with the age you left</span>
+          <span class="needs-echo only-summit"><kbd>V</kbd></span><span class="needs-echo only-summit">Echo: start / stop recording yourself. Your echo does it again, then waits where you finished (holding the Lantern, if it was lit). Record again to send it home</span>
           <span class="needs-tempo">hold <kbd>Q</kbd> / <kbd>E</kbd></span><span class="needs-tempo">Tempo: hold <kbd>Q</kbd> to slow down the machines near you, <kbd>E</kbd> to speed them up (a quick tap still travels an era). Uses the Chronoheart's ring</span>
           <span class="needs-rewind">hold <kbd>R</kbd></span><span class="needs-rewind">Rewind: run yourself backward along the path you just took: up drops, across gaps, back through era shifts. Only you: the world keeps going. The amulet's ring shows how much the watch remembers</span>
           <span class="needs-reach"><kbd>Tab</kbd> + <kbd>F</kbd> / <kbd>X</kbd></span><span class="needs-reach">Reach: while the time lens is open, use, take or strike something in the other age</span>
@@ -166,6 +170,7 @@
         </div>
         <p class="muted small only-hollowmere">Push blocks by walking into them. The Chronoheart drains while you're in the Past or Future and recharges in the Present.</p>
         <p class="muted small only-saltwick">The Chronoheart is mended: stay in any age for as long as you like. Clean sea water is safe to swim in. Mud, and the tide-rip, are not.</p>
+        <p class="muted small only-summit">Where frost lies on the ground, the ages are frozen together: you can't shift there, but the Lantern works. Climb ladders with <kbd>W</kbd> (or up on the joystick).</p>
         <button id="btn-close-controls" class="btn primary">Got it</button>
       </div>
 

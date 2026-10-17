@@ -124,7 +124,7 @@ const SAVE = 'chronoheart-save-v2';
   const old = { flags: { hasAmulet: true, hasRewind: true }, inventory: ['watch'], taken: [], cogs: ['c1'], kindness: [], checkpoint: 1, playTime: 99 };
   const { browser, page, errors } = await boot({ storage: { 'chronoheart2-save-v1': old } });
   const got = await page.evaluate((k) => ({ chapter: document.body.dataset.chapter, cont: !document.getElementById('btn-continue').hidden, save: JSON.parse(localStorage.getItem(k) || 'null'), locked: document.querySelectorAll('.chapter-card.locked').length }), SAVE);
-  check(got.chapter === 'saltwick' && got.cont && got.locked === 0, 'an old Chapter Two save is brought over: it opens on Chapter Two, unlocked, with Continue');
+  check(got.chapter === 'saltwick' && got.cont && got.locked === 1, 'an old Chapter Two save is brought over: it opens on Chapter Two, unlocked, with Continue (Chapter Three waits for it)');
   await page.click('#btn-continue');
   await page.waitForFunction('window.__game.mode === "play"', { timeout: 20000 });
   const st = await page.evaluate(() => ({ cogs: __game.state.cogs.length, cp: __game.state.checkpoint, rewind: document.body.classList.contains('has-rewind') }));
@@ -136,7 +136,7 @@ const SAVE = 'chronoheart-save-v2';
   const old = { flags: { hasAmulet: true }, inventory: [], taken: [], cogs: ['a', 'b'], kindness: [], checkpoint: 2, playTime: 50, blockPos: { x: 143, z: 4 }, cratePos: { x: 140, z: 5 }, boulderPos: { x: 0, z: 0 }, sockets: {} };
   const { browser, page, errors } = await boot({ storage: { 'chronoheart-save-v1': old } });
   const got = await page.evaluate(() => ({ chapter: document.body.dataset.chapter, cont: !document.getElementById('btn-continue').hidden, locked: document.querySelectorAll('.chapter-card.locked').length }));
-  check(got.chapter === 'hollowmere' && got.cont && got.locked === 1, 'an old Chapter One save is brought over, and Chapter Two stays locked');
+  check(got.chapter === 'hollowmere' && got.cont && got.locked === 2, 'an old Chapter One save is brought over, and Chapters Two and Three stay locked');
   check(errors.length === 0, `no errors ${errors.join(' | ').slice(0, 800)}`);
   await browser.close();
 }

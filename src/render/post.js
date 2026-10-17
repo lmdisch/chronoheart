@@ -340,7 +340,8 @@ export class Post {
     this.time.uniforms.aspect.value = size.x / size.y;
     this.dof.uniforms.texel.value.set(1 / size.x, 1 / size.y);
     // blur radius is authored for 1080p; scale with resolution
-    this.dof.uniforms.maxBlur.value = Math.max(4, Math.round(9 * (size.y / 1080)));
+    this.baseBlur = Math.max(4, Math.round(9 * (size.y / 1080)));
+    this.dof.uniforms.maxBlur.value = this.baseBlur;
   }
 
   /** Render the current scene (with whatever era is visible) into prevRT. */
@@ -419,6 +420,9 @@ export class Post {
     this.focusDist += (focusDist - this.focusDist) * (1 - Math.exp(-4 * dt));
     const du = this.dof.uniforms, cam = this.r.camera;
     du.focus.value = this.focusDist;
+    // at a viewpoint, the far view stays sharp
+    // (a chapter with a view to look at blurs its distance less: theme.camera.blur)
+    du.maxBlur.value = Math.max(2, Math.round(this.baseBlur * (theme.camera?.blur ?? 1) * (1 - 0.7 * (this.r.vistaAmt || 0))));
     du.cameraNear.value = cam.near;
     du.cameraFar.value = cam.far;
 

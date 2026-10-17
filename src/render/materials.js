@@ -55,6 +55,13 @@ export const SURFACES = {
   rustHull: { side: 'rustHull', top: 'rustHull' },
   brass: { side: 'brass', top: 'brass' },
   wellStone: { side: 'wellStone', top: 'wellStone', alt: ['glyphSea', 0.05] },
+  // Chapter Three: the mountain
+  snow: { side: 'snowTop', top: 'snowTop' },
+  snowRock: { side: 'granite', top: 'snowTop', sideTop: 'snowSide' },
+  granite: { side: 'granite', top: 'granite' },
+  ice: { side: 'ice', top: 'ice' },
+  copper: { side: 'copper', top: 'copper' },
+  marble: { side: 'marble', top: 'marble' },
 };
 
 export const SURFACE_NAMES = Object.keys(SURFACES);

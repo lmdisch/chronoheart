@@ -52,9 +52,11 @@ export class Ambient {
   setEra(era) {
     this.systems.forEach((s, i) => (s.pts.visible = i === era));
   }
-  update(dt, t, cx) {
+  /** cx, cy: where the camera is looking. (cfg.follow: the motes keep to the camera's height, for a chapter that climbs.) */
+  update(dt, t, cx, cy = 0) {
     for (const s of this.systems) {
       if (!s.pts.visible) continue;
+      const y0 = s.cfg.follow ? cy - 3 : 0, y1 = y0 + (s.cfg.height ?? 12);
       const p = s.pts.geometry.attributes.position.array;
       const n = s.cfg.count;
       for (let i = 0; i < n; i++) {
@@ -65,8 +67,8 @@ export class Ambient {
         // wrap around camera
         if (p[i * 3] < cx - 30) p[i * 3] += 60;
         if (p[i * 3] > cx + 30) p[i * 3] -= 60;
-        if (p[i * 3 + 1] > 12) p[i * 3 + 1] = 0;
-        if (p[i * 3 + 1] < 0) p[i * 3 + 1] = 12;
+        if (p[i * 3 + 1] > y1) p[i * 3 + 1] -= y1 - y0;
+        if (p[i * 3 + 1] < y0) p[i * 3 + 1] += y1 - y0;
       }
       s.pts.geometry.attributes.position.needsUpdate = true;
     }

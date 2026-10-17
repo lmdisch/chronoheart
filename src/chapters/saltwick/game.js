@@ -135,6 +135,7 @@ export class SaltwickGame extends Game {
     const f = this.state.flags;
     if (f.ownWatch) return;
     f.ownWatch = f.hasRewind = true;
+    progress.grantReward('ownWatch'); // Chapter Three: your echo remembers longer
     if (!this.state.inventory.includes('myWatch')) this.giveItem('myWatch');
     this.craft.syncBody();
     this.save();
@@ -214,6 +215,7 @@ export class SaltwickGame extends Game {
     this.state.checkpoint = 0;
     if (allCogs) {
       f.ownWatch = f.hasRewind = true;
+      progress.grantReward('ownWatch');
       this.state.inventory.push('myWatch');
     }
     this.finishStory(); // the story is told, and the world it leaves is yours to keep walking in

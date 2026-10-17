@@ -11,13 +11,14 @@ export const T = { AIR: 0, SOLID: 1, WATER: 2, LADDER: 3, HAZARD: 4 };
 
 export const W = theme.width; // level length (x), set by the chapter
 export const YMIN = -5;
-export const YMAX = 26;
-export const ZMIN = -16;
-export const ZMAX = 14;
+export const YMAX = theme.yMax ?? 26; // (a chapter that climbs may build higher)
+export const ZMIN = theme.zMin ?? -16; // (a chapter on a mountainside reaches further back)
+export const ZMAX = theme.zMax ?? 14;
 export const PLAY_Z0 = 0;
 export const PLAY_Z1 = 7; // exclusive
 const H = YMAX - YMIN;
 const D = ZMAX - ZMIN;
+const OPEN = !!theme.openDepth;
 const CHUNK = 24;
 
 const boxGeo = new THREE.BoxGeometry(1, 1, 1);
@@ -308,8 +309,12 @@ export class World {
 
   /** Collision lookup: outside the playable strip counts as solid walls. */
   cell(era, x, y, z) {
+    // a bubble of another age (Chapter Three's Lantern): inside it, that age's cells are the real ones
+    const bb = this.bubble;
+    if (bb && (x + 0.5 - bb.x) ** 2 + (y + 0.5 - bb.y) ** 2 + (z + 0.5 - bb.z) ** 2 < bb.r * bb.r) era = bb.age;
     if (z < PLAY_Z0 && this.inPocket(era, x, z)) return y >= YMAX ? T.AIR : this.raw(era, x, y, z);
-    if (x < 0 || x >= W || z < PLAY_Z0 || z >= PLAY_Z1) return T.SOLID;
+    // (a chapter whose road winds back into the scene is walled by its own rock and barriers instead)
+    if (x < 0 || x >= W || (OPEN ? z < ZMIN || z >= ZMAX : z < PLAY_Z0 || z >= PLAY_Z1)) return T.SOLID;
     if (y >= YMAX) return T.AIR;
     return this.raw(era, x, y, z);
   }

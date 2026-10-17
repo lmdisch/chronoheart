@@ -1,6 +1,6 @@
-# Ideas for what comes next
+# The story, and ideas for it
 
-Notes from 2026-10-11, after Chapter Two (then a separate game, Chronoheart II) was finished. Nothing below is decided or built unless it says so.
+Notes from 2026-10-11 on. **Chapter Three, The Borrowed Hour, was built on 2026-10-16** (see docs/chapter-3-highcrest.md); what's below is the record of how the story was decided, and the ideas that weren't used.
 
 ## One game, three chapters
 
@@ -21,6 +21,15 @@ Answers to the questions Chapters One and Two leave open. Chapter Three tells th
 - **The Wardens** were built by the first Clockmaker. One wakes in the age after its clock fails and guards what is left (the Escapement Key, the Dusk Bell). Not yet hinted in the game.
 - **Michelle the Wise** is Donald Eugene's old master: the keeper of the watch before him ("her master before her"), and the traveler who gave the tide folk their drawings. She is not the borrower. Donald Eugene believes she has been gone for decades; she keeps out of his way. She moves through time out of order ("You are early. Or I am late."). Clue in the game: in Chapter Two she asks whether the watch "*still* runs backward".
 - **Chapter One's powers.** The seal ring, the lens and the escape wheel went into the Tower's heart to mend the Chronoheart (Donald Eugene says so in Chapter Two). Getting any of them back in Chapter Three means going back to the Tower.
+
+### Decided on 2026-10-16
+
+- **Vivienne is the first Clockmaker.** The traveler in odd clothes, the small strange boot prints at the Tide Well, and Donald Eugene's "Not yet, perhaps" were all her. The chain of masters is a loop: Vivienne in the oldest age teaches the first keeper, and the craft is handed down through Michelle to Donald Eugene, who teaches Vivienne. Nobody invented it; it was lent around a circle.
+- **The borrower is Sir Christopher**, Donald Eugene's first apprentice, long before Vivienne, who was corrupted. He has been borrowing hours from the clocks, and Hollowmere's Tower ran dry first. (This replaces "perhaps Michelle's own master".) **He recognizes Vivienne the moment he sees her; she has no idea who he is.** Still open: what corrupted him, and why he knows her face (he has lived long enough to have met her in the oldest age, as the first Clockmaker?). Donald Eugene has never mentioned another apprentice, which could become a clue in the first two chapters.
+- **Why Sir Christopher went wrong (decided 2026-10-16, kept gentle: this is a game for kids).** He was Donald Eugene's first apprentice and his best friend. Their happiest hour was a midwinter night at the observatory, everyone together under the stars. Then things changed, as things do: Donald Eugene grew up and moved on, and when the time came he gave the watch to someone else, because a keeper has to let time go forward and Christopher never could. Hurt and proud, Christopher kept that one golden hour instead, borrowing time from the clocks to replay it, and a little more each year to keep himself from changing too. He is grumpy and grand rather than wicked: he hoards hours the way a dragon hoards gold. Nobody dies. The sadness is only that things end, and the answer Vivienne brings is that endings make room for new things. (Idea to try: the chapter's Golden Hour age is his borrowed hour, the sunset that never quite sets; the Stopped Age is what the world becomes if he gets his way and nothing ever changes again.) The ending can bring the two old friends back together.
+- **Chapter Three's shape (decided 2026-10-16).** The place is **Highcrest**: the mountain, its little town and the observatory. Powers: the **Lantern** (a carried bubble of another age, whose floors and ice are real inside it) is the new one, and **Echoes** come back for the final ascent (an echo can hold the Lantern). Donald Eugene **climbs the mountain anyway** for the reunion, slowly, with Zach and Megan "helping". Lost Cogs and three favors, as in the other chapters.
+- **The player decides the true ending.** The last era shift is a choice of the age Vivienne lives in, and no choice is marked as the right one. Choosing the oldest age is the one that closes the loop.
+- **The setting has to wow.** A mountain observatory above the clouds, with Hollowmere and Saltwick far below, a different sky in each age (aurora night, golden hour, a strange near moon), the summit as the first clock (a sundial whose shadow sweeps the cloud sea), and ages leaking into each other. A visual test of it comes first, before any story or puzzle work.
 
 **Note on the Chapter Three pitch below:** its main power, Echoes, already exists in Chapter One (the Echo Gallery). A Chapter Three echo has to be clearly more than that, or the main power should be something else.
 

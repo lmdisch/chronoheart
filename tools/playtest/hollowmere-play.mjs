@@ -347,8 +347,8 @@ await check('all ten to Donald Eugene: the Cog Finder, carried to every chapter'
 
 // ---- Chapter Two starts with it, and Lost Cogs glint through the lens
 await page.reload();
-await page.waitForFunction(() => window.__game && document.querySelectorAll('.chapter-card').length === 2, { timeout: 30000 });
-await page.click('.chapter-card:not(.current)');
+await page.waitForFunction(() => window.__game && document.querySelectorAll('.chapter-card').length === 3, { timeout: 30000 });
+await page.click('.chapter-card:nth-child(2)');
 await page.waitForFunction(() => window.__game && document.body.dataset.chapter === 'saltwick', { timeout: 30000 }).catch(() => {});
 await autoplay(page);
 await sleep(1000);
