@@ -137,7 +137,7 @@ export const AREAS = [
 
 export const CHECKPOINTS = [
   { id: 0, x: 3.5, z: 1.2 },
-  { id: 1, x: 58.5, z: 1.2 },
+  { id: 1, x: 34.5, z: 1.2 }, // (before the Mudflats: it used to stand at 58.5, right beside the next one)
   { id: 2, x: 65.5, z: 5.6 },
   { id: 3, x: 105.5, z: 1.2 },
   { id: 4, x: 135.5, z: 1.2 },
@@ -171,6 +171,10 @@ const MUD = 0x6a5644;
 // ---------------------------------------------------------------------------
 // Ground
 // ---------------------------------------------------------------------------
+// once the tide is home the Future greens over (set from the save in buildLevel; the verges are
+// the 'greenF' feature, so they appear the moment it happens)
+let HEALED = false;
+
 function groundColor(era, x, y, z) {
   const h = hash3(x, y, z);
   if (x >= L.wellX0 && z <= 6) return pick(C.wellStone, x, y, z);
@@ -189,6 +193,8 @@ function groundColor(era, x, y, z) {
     return h < 0.08 ? C.dirt[0] : pick(C.grassM, x, y, z);
   }
   // the Dry Age: salt over everything, and here and there a rusted deck plate showing through
+  // (healed: grass behind the road, pale paving on it, sand down on the shore)
+  if (HEALED && y === -1 && z <= 7) return z >= 1 && z <= 5 ? shade(pick(C.cobble, x, y, z), 1.12) : z <= 0 ? pick(C.grassM, x, y, z) : pick(C.curb, x, y, z);
   if (y === -1 && z >= 1 && z <= 5 && x % 9 === 0 && h < 0.7) return pick(C.rustHull, x, y, z);
   return pick(C.salt, x, y, z);
 }
@@ -243,6 +249,25 @@ function buildGround(world) {
       for (const x of [L.basinX0, L.basinX1, L.chanX0]) b.ladder(x, -3, 0, x, -1, 0);
       // lights along the living shore
       for (let x = 4; x < L.stairX0; x += 9) if (!inBasin(F, x)) b.glow(x, -0.1, 7.9, 1.6, 0.05, 0.08, NEON.sea);
+    },
+  });
+  // ...and the salt greens over: grass behind the road, flower beds, young trees along the quay
+  world.addFeature({
+    id: 'greenF', eras: [F], key: (s) => String(!!s.flags.tideRestored),
+    build: (b, era, s) => {
+      if (!s.flags.tideRestored) return;
+      for (let x = 0; x < L.stairX0; x++) {
+        if (inBasin(F, x) || (x >= L.pitX0 && x <= L.pitX1)) continue;
+        for (let z = -4; z <= 0; z++) b.deco(x, 0, z, 1, 0.04, 1, pick(C.grassM, x, 3, z));
+        const r = hash3(x, 5, 91);
+        if (r < 0.22) b.deco(x + r * 3, 0.04, -0.2 + r, 0.3, 0.25, 0.3, [0xf0c040, 0xe86a8a, 0xf4f0e0, 0xb08af0][(r * 18) | 0]); // flowers
+        if (x % 12 === 9 && !inBasin(F, x + 1)) {
+          // a young tree in a stone ring, by the shore lamps
+          b.deco(x + 0.1, 0, 6.1, 0.8, 0.3, 0.8, C.stone[1]);
+          b.deco(x + 0.42, 0.3, 6.42, 0.16, 2.2, 0.16, C.log[1]);
+          b.canopy(x + 0.5, 3.0, 6.5, 1.1, C.leaves, { seed: x * 7 });
+        }
+      }
     },
   });
 }
@@ -499,7 +524,8 @@ function backdrop(world) {
     for (let x = 2; x < L.stairX0 - 2; x += rng.int(3, 6)) {
       const z = -rng.int(7, 11);
       if (inBasin(era, x) || inBasin(era, x + 1)) continue;
-      if (era === F) {
+      if (era === F && HEALED) blobTree(b, x, z, rng, era, 1 + rng() * 0.5);
+      else if (era === F) {
         if (rng.chance(0.5)) {
           // a salt spire, wind-carved
           const h = rng.int(3, 8);
@@ -515,7 +541,7 @@ function backdrop(world) {
       const y0 = inBasin(era, x) ? -3 : 0;
       if (era === F) {
         const hh = 4 + Math.floor(hash3(Math.floor(x / 5), 7, 1) * 9);
-        b.solid(x, y0, -16, x, hh, -14, (px, y, z) => jitter(y > hh - 2 ? C.salt : C.rustHull)(px, y, z));
+        b.solid(x, y0, -16, x, hh, -14, (px, y, z) => jitter(y > hh - 2 ? (HEALED ? C.overgrowth : C.salt) : C.rustHull)(px, y, z));
       } else {
         const hh = Math.max(2, Math.round(6 + n));
         const pal = era === P ? C.seaRock : x % 30 < 12 ? C.leaves : C.grassM;
@@ -644,7 +670,7 @@ function mudflats(world) {
   // PRESENT: the Marigold sits upright in the mud, her deck level with the quay
   let b = world.staticBuilder(M);
   b.solid(BOAT.x0, -3, BOAT.z0, BOAT.x1, -1, BOAT.z1, (x, y, z) => jitter(y === -1 ? C.drift : C.hull)(x, y, z));
-  b.deco(BOAT.x0 - 0.9, -1.4, BOAT.z0 + 0.6, 1.0, 1.2, 1.8, C.hull[1]);
+  // (nothing bridges the gap to the bank: from the quay it's a jump, and it has to look like one)
   b.deco(BOAT.x1 + 0.9, -1.2, BOAT.z0 + 0.9, 0.7, 1.0, 1.2, C.hull[1]);
   b.deco(44.4, 0, 1.2, 0.2, 4.4, 0.2, C.wood[1]);
   b.deco(43.2, 3.6, 1.24, 2.6, 0.1, 0.1, C.wood[1]);
@@ -1194,7 +1220,7 @@ export const SPAWNS = [
   { type: 'npc', id: 'isha', era: P, x: 18.5, z: 2.0, sheet: 'isha', name: 'Isha the Shell-Singer' },
   { type: 'npc', id: 'pim', era: P, x: 33.5, z: 4.6, sheet: 'pim', name: 'Pim', small: true },
   { type: 'npc', id: 'digby', era: F, x: 12.5, z: 2.0, sheet: 'digby', name: 'DIGBY (Salvage Unit)' },
-  { type: 'npc', id: 'michelle', era: M, x: 67.5, z: 1.6, sheet: 'michelle', name: 'Lyra the Wise' },
+  { type: 'npc', id: 'michelle', era: M, x: 67.5, z: 1.6, sheet: 'michelle', name: 'Mysterious Stranger', stranger: true },
   { type: 'npc', id: 'odalys', era: M, x: 145.5, z: 4.4, sheet: 'odalys', name: 'Odalys the Lightkeeper' },
   { type: 'npc', id: 'fenwick', era: M, x: 176.5, z: 1.6, sheet: 'fenwick', name: 'Old Fenwick' },
   { type: 'npc', id: 'maren', era: P, x: 252.5, y: HT, z: 1.8, sheet: 'maren', name: 'Maren the Tide-Reader' },
@@ -1252,7 +1278,7 @@ export const SPAWNS = [
   { type: 'cog', id: 'cogF3', era: F, x: 124.5, y: 4.7, z: 5.5 }, // on top of the sea wall
   { type: 'cog', id: 'cogP4', era: P, x: 150.5, y: 5.7, z: 2.0 }, // on the bare sea stack
   { type: 'cog', id: 'cogM3', era: M, x: 157.5, y: L.galleryY + 0.7, z: 1.5 }, // at the far end of the gallery
-  { type: 'cog', id: 'cogM4', era: M, x: 186.6, y: 1.3, z: 3.0 }, // off the end of the jetty: leap, and rewind
+  { type: 'cog', id: 'cogM4', era: M, x: 184.6, y: 2.3, z: 3.0 }, // over the end of the jetty: jump for it
   { type: 'cog', id: 'cogW1', era: M, x: 270.5, y: 8.7, z: 0.6 }, // in the Well, on the second terrace
 
   // Creatures
@@ -1281,6 +1307,7 @@ export const COG_TOTAL = new Set(SPAWNS.filter((s) => s.type === 'cog').map((s) 
 
 export function buildLevel(world, state) {
   world.__state = state;
+  HEALED = !!state.flags.tideRestored;
   buildGround(world);
   backdrop(world);
   shoreEnd(world);

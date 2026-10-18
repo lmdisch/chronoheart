@@ -33,7 +33,7 @@ The Future you walk through is the one that happens **if you fail**. Mend the Ti
 - **Travel through time.** `Q` steps one age back, `E` one age forward (on touch: swipe). The Chronoheart no longer runs down: explore as long as you like.
 - **You can't switch into something solid**, or over a drop with nothing to stand on: the amulet shakes and refuses, and shows you what's in the way.
 - **The time lens:** hold `Tab` (or hold the amulet dial on touch) to open a round window onto a neighboring age, live, and walk about with it.
-- **Clean sea water is safe to swim in** (hold Jump to rise, let go to sink). **Mud and the tide-rip are not**: they cost a heart and put you back on solid ground.
+- **Clean sea water is safe to swim in** (hold Jump to rise, let go to sink), but **not to stay under forever**: with your head underwater a row of bubbles counts down your breath (about ten seconds). Run out and you lose a heart every couple of seconds until you come up for air. **Mud and the tide-rip are not safe at all**: they cost a heart and put you back on solid ground.
 - **Hearts:** you start with 5. Each finished favor adds one.
 - **Clock shrines** are checkpoints. Walking past one saves and heals you. The game also saves after every important step.
 - **The Menu** (`I`, or the ☰ button) shows your current goal, a **Hint** if you're stuck (`G` opens it directly), your items and your favors.
@@ -43,7 +43,7 @@ The Future you walk through is the one that happens **if you fail**. Mend the Ti
 
 | Power | From | The rule, in one sentence |
 | --- | --- | --- |
-| **Rewind** | Lyra the Wise, at the head of the Long Pier | Hold `R` and the pocketwatch runs **you** backward along the path you just took (up drops, across gaps, back through era shifts), while the rest of the world keeps going. |
+| **Rewind** | The Mysterious Stranger, at the head of the Long Pier | Hold `R` and the pocketwatch runs **you** backward along the path you just took (up drops, across gaps, back through era shifts), while the rest of the world keeps going. |
 | **Reach** | The Keeper's Loupe, from Odalys the Lightkeeper | While the time lens is open, **Interact** and **Attack** go *through* it: use, take or strike something in the other age from where you stand in this one. |
 
 The amulet's ring shows how much path the watch remembers (about 8 seconds of your own movement; standing still costs nothing), and a faint gold trail shows it on the ground.
@@ -88,7 +88,7 @@ On-screen controls appear automatically on touch screens.
 
 > **Spoilers ahead.** The in-game **Hint** gives the same answers one step at a time.
 
-The road runs west to east along the shore. The harbor rhyme sets the goal: *"Dawn and Noon and Dusk must ring, before the Well lets anything in."* Each age hung one bell for the sea.
+The road runs west to east along the shore. The harbor rhyme sets the goal: *"Dawn and Noon and Dusk must chime, before the Well gives back the time."* Each age hung one bell for the sea.
 
 ### 1. Saltwick Quay
 
@@ -104,7 +104,7 @@ The road runs west to east along the shore. The harbor rhyme sets the goal: *"Da
 
 ### 3. The Long Pier: the Noon Bell
 
-- **Lyra the Wise** is waiting at the head of the pier. She teaches the pocketwatch to **Rewind**.
+- The **Mysterious Stranger** (the old woman from the river in Hollowmere) is waiting at the head of the pier. She teaches the pocketwatch to **Rewind**.
 - A raised quay deck runs out to **Bell Rock**, through the **tide gate**. The gate opens for 3.5 seconds when its lever is pulled, but the lever is down on the shore, and the only way back up is the ladder at the far west end.
 - So: climb the ladder and walk along the deck **to the gate first**. Step off the front of the deck beside it, pull the lever below, and **hold `R`**. The watch runs you straight back up to the gate. Walk through. (It locks open behind you.)
 - On top of Bell Rock, hit the **Noon Bell** three times with your wrench.
@@ -174,7 +174,7 @@ Then the tide comes in. **Hold Jump and swim up**, west over the terraces, and o
 | 8 | The Saltings | **Future** | On top of the sea wall, once the dune is there. |
 | 9 | Keeper's Light | **Past** | On top of the bare sea stack: climb the Keeper's stair in the Present, then step back. |
 | 10 | Keeper's Light | **Present** | At the far end of the lighthouse gallery. |
-| 11 | The Dry Lock | **Present** | In the air off the end of the jetty. Leap for it, and rewind before you land. |
+| 11 | The Dry Lock | **Present** | High over the end of the jetty. Jump for it. |
 | 12 | The Tide Well | **Present** | On the second terrace, in the back corner. |
 
 ---
@@ -193,7 +193,7 @@ Three optional side quests. Each gives you **+1 heart**. Nobody you meet knows y
 
 ## After the story
 
-- **Your save is kept.** Choose Continue and walk the shore with the tide back in. The Present's mud is sea again (swim it), the boats are afloat, and the Future is not the Dry Age any more.
+- **Your save is kept.** Choose Continue and walk the shore with the tide back in. The Present's mud is sea again (swim it), the boats are afloat, and the Future is not the Dry Age any more: it's the **Age of Lights**, a green harbor town in a long gold evening, grass and trees where the salt was.
 - **The Lost Cogs matter.** Finish with all twelve and Donald Eugene has exactly enough for a watch movement: you keep **Rewind** for good. Find the rest afterward and bring them to him on the quay, and he'll build it then.
 - **The Warden stands down.** With the tide home, it has nothing left to guard.
 - Talk to everyone again. Maren, in the Past, has something to show you.

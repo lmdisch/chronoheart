@@ -340,10 +340,20 @@ export class HollowmereGame extends Game {
     await this.cutscene(TEMPO_GIFT);
     f.hasTempo = true;
     this.abilities.syncBody();
-    this.state.checkpoint = 11;
     this.save();
-    await this.enterGearworks();
-    this.hud.toast(touchActive() ? 'Inside the clock there is only <b>Tempo</b>: hold <b>Slow</b> or <b>Fast</b>.' : 'Inside the clock, <kbd>Q</kbd> and <kbd>E</kbd> are always <b>Tempo</b>: hold to slow time around you, or speed it up.', 7000);
+    this.hud.toast('The east wall beside the deck has opened. Walk on into the clock.', 5000);
+  }
+
+  /** Walking into the clock (through the deck's doorway, or the door on the Tower floor): the ages wind together there, into the Present. */
+  updateClockEntry(f) {
+    if (!this.gearworks.active || this.mode !== 'play') return;
+    if (this.era !== ERA.PRESENT && this.post.trans > 0.95) this.doShift(ERA.PRESENT);
+    if (!f.gearworksToast) {
+      f.gearworksToast = true;
+      this.state.checkpoint = 11;
+      this.save();
+      this.hud.toast(touchActive() ? 'Inside the clock there is only <b>Tempo</b>: hold <b>Slow</b> or <b>Fast</b>.' : 'Inside the clock, <kbd>Q</kbd> and <kbd>E</kbd> are always <b>Tempo</b>: hold to slow time around you, or speed it up.', 7000);
+    }
   }
 
   /** Up through the doorway on the Tower's east wall, into the clock. */
@@ -501,6 +511,7 @@ export class HollowmereGame extends Game {
     if (this.era === ERA.PRESENT && this.player.body.onGround) this.lastSafePresent = { x: this.player.body.x, y: this.player.body.y, z: this.player.body.z };
     this.updateEntities(dt);
     this.updateRollSpots(f);
+    this.updateClockEntry(f);
 
     // interaction
     const near = ctl ? this.nearestInteractive() : null;

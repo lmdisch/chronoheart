@@ -52,6 +52,17 @@ kbd {
   clip-path: path('M11 19 L2 10 C-1 6 2 1 6.5 1 C9 1 10.5 3 11 4 C11.5 3 13 1 15.5 1 C20 1 23 6 20 10 Z');
 }
 .heart.empty { filter: none; opacity: 0.6; }
+/* breath underwater: a row of bubbles that pop one by one */
+#breath { display: flex; gap: 4px; margin-top: 2px; }
+#breath[hidden] { display: none; }
+.bubble {
+  width: 13px; height: 13px; border-radius: 50%;
+  border: 2px solid #bfeeff; background: radial-gradient(circle at 35% 35%, #ffffff 0 18%, rgba(160, 225, 255, 0.55) 30%, rgba(90, 170, 220, 0.35));
+  box-shadow: 0 0 6px rgba(150, 220, 255, 0.6); transition: transform 0.2s, opacity 0.2s;
+}
+.bubble.popped { transform: scale(0.4); opacity: 0.15; }
+#breath.low .bubble:not(.popped) { border-color: #ff9aa8; animation: breath-warn 0.5s ease-in-out infinite alternate; }
+@keyframes breath-warn { to { transform: scale(1.15); } }
 .heart.empty::before { background: #3a2a40; }
 .cogs { display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 0.95rem; color: var(--gold-2); }
 .cogs img { width: 20px; height: 20px; image-rendering: pixelated; }

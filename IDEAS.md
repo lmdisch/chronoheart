@@ -31,6 +31,13 @@ Answers to the questions Chapters One and Two leave open. Chapter Three tells th
 - **The player decides the true ending.** The last era shift is a choice of the age Vivienne lives in, and no choice is marked as the right one. Choosing the oldest age is the one that closes the loop.
 - **The setting has to wow.** A mountain observatory above the clouds, with Hollowmere and Saltwick far below, a different sky in each age (aurora night, golden hour, a strange near moon), the summit as the first clock (a sundial whose shadow sweeps the cloud sea), and ages leaking into each other. A visual test of it comes first, before any story or puzzle work.
 
+### Decided on 2026-10-18 (after Logan played all three chapters)
+
+- **The wise woman is a mystery until the very end.** In every chapter she is only the **Mysterious Stranger**: she never gives her name, she is cryptic, and she never says she is an echo. She is Lyra, sending echoes of herself across the years to help Vivienne so that Orin can let go and accept that things end. The only clue is the time lens: look at her through it and she flickers blue, like an echo. In Chapter Three the memory under the orrery only makes Vivienne think she has heard that voice before. Vivienne recognizes her at the reunion, when the real Lyra steps out of the Observatory.
+- **The Orin fight happens at the End of Time:** he takes Vivienne from the Needle to a ruined throne room of black marble with gold in its cracks (kintsugi), with nothing outside it. His throne is against the far wall.
+- **Nobody up the mountain knows about time travel.** Townsfolk like Bram only know old songs (a warm spring before the ice, falls that froze into a stair).
+- **Hearts carry between chapters:** each favor's heart from an earlier chapter is added in the later ones.
+
 **Note on the Chapter Three pitch below:** its main power, Echoes, already exists in Chapter One (the Echo Gallery). A Chapter Three echo has to be clearly more than that, or the main power should be something else.
 
 ## Chapter Three

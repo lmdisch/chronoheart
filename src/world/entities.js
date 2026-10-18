@@ -11,6 +11,7 @@ import { Actor } from '../render/actors.js';
 import { theme, content } from '../chapter.js';
 
 const GRAV = 28;
+const BREATH = 10; // seconds of air underwater
 
 // shared blob-shadow
 const shadowTex = (() => {
@@ -68,6 +69,7 @@ export class Player {
   place(x, y, z) {
     Object.assign(this.body, { x, y, z, vx: 0, vy: 0, vz: 0 });
     this.state = 'normal';
+    this.breath = BREATH;
     this.game.craft?.clearTrail(); // Chapter Two's pocketwatch can't follow you through a jump like that
   }
 
@@ -112,6 +114,29 @@ export class Player {
     if (this.hp <= 0) this.game.onDeath();
   }
 
+  /**
+   * Breath: with your head under water it runs down (BREATH seconds), and with none left each
+   * moment costs a heart. Surface, and it fills again quickly. The bubbles show only while it isn't full.
+   */
+  updateBreath(dt, world, era) {
+    const g = this.game, b = this.body;
+    const under = g.mode === 'play' && overlapsType(world, era, b, T.WATER, 0.8, 1.0);
+    this.breath = Math.max(0, Math.min(BREATH, (this.breath ?? BREATH) + (under ? -dt : dt * 4)));
+    if (under && this.breath <= 0) {
+      this.breath = 2;
+      this.hurt(1, b.x, { force: 0, ignoreRoll: true });
+      if (!g.state.flags.breathHint) {
+        g.state.flags.breathHint = true;
+        g.hud.toast('Out of breath! Swim up for air.', 4000);
+      }
+    }
+    if (under && !g.state.flags.diveHint) {
+      g.state.flags.diveHint = true;
+      g.hud.toast(`Underwater, your breath runs out: watch the bubbles, and come up before they're gone.`, 5000);
+    }
+    g.hud.setBreath(this.breath < BREATH ? this.breath / BREATH : null);
+  }
+
   heal(n) {
     this.hp = Math.min(this.maxHp, this.hp + n);
     this.game.hud.setHearts(this.hp, this.maxHp);
@@ -148,6 +173,7 @@ export class Player {
       }
     }
     this.wasWater = inWater;
+    this.updateBreath(dt, world, era);
 
     if (canAct) {
       if (input.hit('jump')) this.jumpBuf = 0.14;
@@ -433,7 +459,7 @@ export class NPC extends EraEntity {
     if (this.spec.holo) {
       this.actor.mat.opacity = 0.6 + Math.sin(this.t * 13) * 0.05 + (Math.random() < 0.03 ? -0.3 : 0);
     }
-    // Lyra the Wise is a living Echo projected from Highcrest: she shimmers with Echo light under the Time Lens
+    // the Mysterious Stranger is Lyra's echo, sent down the years from Highcrest: only the time lens shows it
     if (this.id.startsWith('michelle') && !this.spec.memory) {
       const peeking = this.game.peekTarget !== null && this.game.peekTarget !== undefined;
       if (peeking) {
@@ -447,7 +473,7 @@ export class NPC extends EraEntity {
         }
         if (this.distTo(p) < 4.5 && !this.game.state.flags.lyraEchoSeen) {
           this.game.state.flags.lyraEchoSeen = true;
-          this.game.hud.toast('Through the Time Lens, Lyra shimmers with the blue light of a living Echo.', 4400);
+          this.game.hud.toast('Through the time lens, the stranger flickers with a pale blue light... like an echo of someone.', 4400);
         }
       } else {
         this.actor.mat.transparent = false;

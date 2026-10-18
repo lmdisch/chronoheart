@@ -1042,7 +1042,7 @@ function rampart(world) {
 // Donald Eugene's hideaway: a secret. In the Past, one plain house in Rampart Row has a tiny
 // brass gear pressed into its door. Knock, and it opens onto the room he rested in while he
 // hopped between the ages. The Everspring waits on his workbench: the Chronoheart never runs
-// down again. (Lyra the Wise mentions it, very quietly.)
+// down again. (The Mysterious Stranger mentions it, very quietly.)
 // While the player is inside, the front wall is cut away and the room joins the playable strip.
 export const STUDY = { x0: 87, x1: 92, h: 4, door: 89, pocket: { id: 'study', era: P, x0: 87, x1: 92, z0: -4 } };
 export const GARDEN = { x0: 30, x1: 36, h: 5, door: 11.9, entryX: 33, pocket: { id: 'garden', era: F, x0: 30, x1: 36, z0: -4 } };
@@ -1809,6 +1809,7 @@ function tower(world) {
     b.solid(L.towerX0, 0, ZMIN, L.towerX1, 22, -1, jitter(pal));
     b.solid(L.towerX0, 4, 0, L.towerX0, 12, 6, jitter(pal));
     b.solid(L.towerX1 - 1, 0, 0, L.towerX1, 22, 6, jitter(pal));
+    b.air(L.towerX1 - 1, GEAR_DOOR.y, GEAR_DOOR.z0, L.towerX1, GEAR_DOOR.y + 2, GEAR_DOOR.z1); // (walled up by 'clockDoor' until it opens)
     // the high west ledge stands in every age; only the Past has a way up
     b.solid(T.ledge.x0, 0, 0, T.ledge.x1, T.ledge.top - 1, T.ledge.z1, jitter(pal));
     if (era === P) {
@@ -1866,6 +1867,21 @@ function tower(world) {
       b.deco(T.belfry.x1 - 0.5, top - 1, 0.1, 1.4, 0.3, 1.8, C.rust[0]);
     }
   }
+  // the third key opens the Tower's east wall beside the reactor deck: a doorway straight into
+  // the clock (see GEAR_DOOR), in every age, since the wall stands in all three
+  world.addFeature({
+    id: 'clockDoor', eras: [P, M, F], key: (s) => String(!!s.flags.gearworksOpen),
+    build: (b, era, s) => {
+      const d = GEAR_DOOR;
+      if (!s.flags.gearworksOpen) {
+        const pal = era === P ? C.sandstone : era === M ? C.stone : C.metalL;
+        b.solid(L.towerX1 - 1, d.y, d.z0, L.towerX1, d.y + 2, d.z1, jitter(pal));
+        return;
+      }
+      b.glow(L.towerX1 - 1, d.y + 2.95, d.z0, 2, 0.05, d.z1 - d.z0 + 1, 0xffd070);
+      b.light(L.towerX1 + 0.5, d.y + 1.5, 2, 0xffd070, 6, 8, 0);
+    },
+  });
   // the belfry floor survives into the Future only if it was sealed in its moment
   world.addFeature({
     id: 'belfryF', eras: [F], key: (s) => String(!!s.flags.belfrySealed),
@@ -1885,6 +1901,9 @@ function tower(world) {
 //   hammers that slam too fast to slip under (slow them), a spring plate that only kicks hard
 //   enough when it runs fast, the two together, and a lift the Tower's stutter keeps throwing
 //   back down (hurry it up, then hold it at the top). The great mainspring waits at the summit.
+// the doorway from the reactor deck into the clock, and the gantry and ladder down inside it
+export const GEAR_DOOR = { y: 16, z0: 1, z1: 3, gantryX1: L.gearX0 + 3, ladderX: L.gearX0 + 4 };
+
 export const GEAR = {
   x0: L.gearX0, x1: W - 1,
   ledgeA: { x0: 321, x1: 330, top: 4 },
@@ -1936,6 +1955,13 @@ function gearworks(world) {
       b.light(326, 7, 2, 0xffb060, 6, 9, 0.1);
       // the way back down, beside the shrine
       b.glow(G.x0 + 0.02, 0, 4, 0.04, 2.2, 1.0, 0xffd8a0);
+      // in from the reactor deck: an iron gantry, and a ladder down to the floor
+      const gd = GEAR_DOOR;
+      b.solid(G.x0, gd.y - 1, gd.z0, gd.gantryX1, gd.y - 1, gd.z1, jitter(iron));
+      b.glow(G.x0, gd.y - 0.06, gd.z1 + 0.98, gd.gantryX1 - G.x0 + 1, 0.06, 0.04, 0xffc860);
+      b.ladder(gd.ladderX, 0, gd.z0, gd.ladderX, gd.y - 1, gd.z1);
+      for (const z of [gd.z0, gd.z1 + 0.85]) b.deco(gd.ladderX + 0.05, 0, z, 0.12, gd.y + 0.9, 0.12, 0x55555f);
+      for (let y = 0.5; y < gd.y; y += 1) b.deco(gd.ladderX + 0.1, y, gd.z0, 0.06, 0.08, gd.z1 - gd.z0 + 1, 0x7a7a86);
       // an iron railing along the front, and lamps to see the machines by
       b.deco(G.x0, 0.9, 7.3, G.x1 - G.x0 + 1, 0.12, 0.12, 0x55555f);
       b.deco(G.x0, 0.45, 7.3, G.x1 - G.x0 + 1, 0.08, 0.1, 0x44444f);
@@ -1966,7 +1992,7 @@ export const SPAWNS = [
   { type: 'npc', id: 'samaria', era: P, x: 18.5, z: 2.0, sheet: 'samaria', name: 'Samaria the Sun-Keeper' },
   { type: 'npc', id: 'tick', era: F, x: 12.5, z: 2.0, sheet: 'tick', name: 'TICK (Archivist Unit)', hover: true },
   { type: 'npc', id: 'holo', era: F, x: 16.9, y: 1, z: 0.5, sheet: 'eugene', name: 'Memorial Hologram', holo: true },
-  { type: 'npc', id: 'michelle', era: M, x: 35.5, z: 2.2, sheet: 'michelle', name: 'Lyra the Wise' },
+  { type: 'npc', id: 'michelle', era: M, x: 35.5, z: 2.2, sheet: 'michelle', name: 'Mysterious Stranger', stranger: true },
   { type: 'npc', id: 'zach', era: M, x: 84.5, y: 1, z: 1.5, sheet: 'zach', name: 'Zach Tiberious', small: true },
   { type: 'npc', id: 'megan', era: M, x: 86.5, y: 2, z: 1.5, sheet: 'megan', name: 'Megan the Squirrel', small: true },
   { type: 'npc', id: 'aria', era: M, x: 110.2, z: 1.0, sheet: 'aria', name: 'Aria the Smith' },

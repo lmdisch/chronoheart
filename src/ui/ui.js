@@ -39,6 +39,21 @@ export class HUD {
     for (let i = 0; i < max; i++) html += `<span class="heart ${i < hp ? 'full' : 'empty'}"></span>`;
     this.hearts.innerHTML = html;
   }
+  /** Breath underwater, as a row of bubbles (left: 0..1); null hides it. */
+  setBreath(left) {
+    const el = (this.breathEl ||= document.getElementById('breath'));
+    if (left === null) {
+      if (!el.hidden) el.hidden = true;
+      return;
+    }
+    const n = 8, full = Math.ceil(left * n);
+    if (el.hidden || el.childElementCount !== n) {
+      el.hidden = false;
+      el.innerHTML = '<span class="bubble"></span>'.repeat(n);
+    }
+    [...el.children].forEach((b, i) => b.classList.toggle('popped', i >= full));
+    el.classList.toggle('low', left < 0.3);
+  }
   setMeter(v, era, steady = false) {
     this.ring.style.strokeDashoffset = `${this.circ * (1 - v)}`;
     this.chrono.classList.toggle('low', v < 0.25 && era !== 1 && !steady);

@@ -144,6 +144,11 @@ export const progress = {
     save.rewards[id] = true;
     write();
   },
+  /** Hearts earned by kindness in the chapters before this one: they come with you. */
+  carriedHearts(id) {
+    const n = CHAPTERS.find((c) => c.id === id)?.number ?? 1;
+    return CHAPTERS.filter((c) => c.number < n).reduce((sum, c) => sum + (save.slots[c.id]?.kindness?.length || 0), 0);
+  },
   /** Open to play? The first chapter always is; each later one once the one before it is finished. */
   isOpen: (ch) => !ch.requires || !!save.done[ch.requires] || !!save.unlocked,
   unlockAll() {

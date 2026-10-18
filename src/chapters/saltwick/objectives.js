@@ -111,7 +111,7 @@ export function currentGoal(game) {
       if (!f.noonRung) return step('Ring the Noon Bell.', `It hangs in its frame on top of Bell Rock. Three good swings of your wrench (${k.attack}).`);
       return step('Keep heading east.', 'Steps lead down the far side of Bell Rock.');
     }
-    if (!f.hasRewind) return step('Find a way out to Bell Rock.', 'Lyra the Wise is waiting at the head of the pier. She has something to say about that watch.');
+    if (!f.hasRewind) return step('Find a way out to Bell Rock.', 'The stranger in the shawl is waiting at the head of the pier. She has something to say about that watch.');
     if (!f.tideGatePassed) {
       return step(
         'Get through the tide gate.',

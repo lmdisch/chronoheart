@@ -199,7 +199,7 @@ export class Game {
     this.shrines = this.ch.CHECKPOINTS.map((c) => new Shrine(this, c));
     this.entities.push(...this.shrines);
     this.player = new Player(this);
-    this.player.maxHp = this.player.hp = BASE_HP + this.state.kindness.length; // each kindness adds a heart
+    this.player.maxHp = this.player.hp = this.maxHearts();
     this.placeAtShrine();
     this.attach();
   }
@@ -222,7 +222,11 @@ export class Game {
     this.beginPlay();
     this.player.place(this.L.start.x, 0, this.L.start.z);
     this.renderer.camTarget.set(this.L.start.x + 4, 1, 3);
-    this.cutscene(this.ch.INTRO).then(() => this.afterIntro());
+    this.cutscene(this.ch.INTRO).then(() => {
+      this.afterIntro();
+      const carried = progress.carriedHearts(chapter.id);
+      if (carried) setTimeout(() => this.hud.toast(`The kindness you did in earlier chapters comes with you: <b>+${carried} ${carried === 1 ? 'heart' : 'hearts'}</b>.`, 5000), 13500);
+    });
   }
 
   continueGame() {
@@ -683,12 +687,17 @@ export class Game {
     this.save();
   }
 
+  /** Each kindness adds a heart, and the hearts earned in earlier chapters come along too. */
+  maxHearts() {
+    return BASE_HP + this.state.kindness.length + progress.carriedHearts(chapter.id);
+  }
+
   completeKindness(id) {
     const s = this.state;
     if (s.kindness.includes(id)) return;
     s.kindness.push(id);
     const p = this.player;
-    p.maxHp = BASE_HP + s.kindness.length;
+    p.maxHp = this.maxHearts();
     p.hp = p.maxHp;
     this.hud.setHearts(p.hp, p.maxHp);
     audio.sfx('heal');
@@ -884,6 +893,7 @@ export class Game {
     const target = this.blockFlashT > 0 ? this.blockFlashEra : sp ? sp.target : this.peekTarget;
     const want = target !== null && target !== undefined ? (this.blockFlashT > 0 ? Math.min(1, this.blockFlashT * 2) : sp ? sp.amt : 1) : 0;
     this.post.peekAmt += (want - this.post.peekAmt) * 0.25;
+    if (want === 0 && this.post.peekAmt < 0.02) this.post.peekAmt = 0; // closed means closed: no blocks left showing an old frame
     if (this.post.peekAmt > 0.01 && target !== null && target !== undefined) {
       const tu = this.post.time.uniforms, b = this.player.body;
       if (this.blockFlashT > 0) tu.peekTint.value.setRGB(1.4, 0.35, 0.35);

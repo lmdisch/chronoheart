@@ -150,6 +150,9 @@ export function natural(x, z) {
   // rock, crests and gullies: more of it the further from the road
   const wild = 1.5 + s * 0.12 + Math.max(0, PLATEAU - z) * 0.07 + Math.max(0, z - 10) * 0.1;
   h += (ridged(x * 0.045, z * 0.045, 4) - 0.45) * wild * 2 + fbm(x * 0.012, z * 0.012, 2) * Math.min(1, s / 25) * 10;
+  // in front of Base Camp's road the ground always falls away below it, so nothing hides the road
+  // from the camera (eased back in toward the shoulders)
+  if (z > 6.5 && s < 8) h = Math.min(h, legH(0, uc) - 1.5 - (z - 7) * 0.9 + s * 1.2);
   return Math.max(h, -36);
 }
 
@@ -240,6 +243,15 @@ export const L = {
   vistas: [{ x0: U(-2), x1: U(OVERLOOK_U - 6), z0: ZS - 12, z1: ZS + 7, pitch: 33, dist: 56, lift: 2, fov: 52 }],
 };
 
+/**
+ * The End of Time: where Sir Orin takes the fight. A ruined throne room of black marble, its
+ * cracks filled with gold, floating high over Base Camp where no camera on the climb ever looks.
+ * Standing height `y`; its floor runs x0..x1, z0..z1. His throne is against the east wall, so
+ * there is no getting behind him. The same in every age (the Lantern still works in here).
+ */
+export const ARENA = { x0: 34, x1: 66, y: 86, z0: -3, z1: 3, startX: 37.5, daisX: 61, throneX: 65, orinX: 63.5, anchorX: 51.5, platesX: 44.5, shieldX: 59 };
+export const inArena = (x, y, z) => x >= ARENA.x0 - 1 && x <= ARENA.x1 + 2 && y > ARENA.y - 6 && z >= ARENA.z0 - 1 && z <= ARENA.z1 + 1;
+
 /** Where Christopher's frost holds the ages still: no shifting inside, only the Lantern. */
 export const FROST_ZONES = [
   { k: 1, x0: U(24), x1: U(41) }, // the ravine
@@ -270,6 +282,8 @@ export const CHECKPOINTS = [
     const u = LEGS[k].dir < 0 ? 92 : 6;
     return { id: k, x: U(u), y: legH(k, u), z: zb(k) + 1.2, pz: zb(k) + 3.5, dx: LEGS[k].dir < 0 ? -1.2 : 1.2 };
   }),
+  // at the End of Time: fall here, and you get up here (see ARENA, defined below)
+  { id: 6, x: 35.5, y: 86, z: -2.6, pz: 0.5, dx: 1.5 },
 ];
 
 /**
@@ -289,13 +303,13 @@ export const PLATES = [
     ...(i === 2 ? { requiresAge: P } : {}),
   })),
   { id: 'plateD', x: L.plateDX, y: gy(3, L.plateDX), z: Z3 + 1, gate: 'gateD', color: 0xffd08a },
-  { id: 'orinPlate0', x: U(25), y: gy(5, U(25)), z: ZS + 1, gate: 'orinShield', color: 0x6ce2ff, needs: 'orinPhase1' },
-  { id: 'orinPlate1', x: U(25), y: gy(5, U(25)), z: ZS + 5, gate: 'orinShield', color: 0x6ce2ff, needs: 'orinPhase1' },
+  { id: 'orinPlate0', x: ARENA.platesX, y: ARENA.y, z: ARENA.z0 + 0, gate: 'orinShield', color: 0x6ce2ff, needs: 'orinPhase1' },
+  { id: 'orinPlate1', x: ARENA.platesX, y: ARENA.y, z: ARENA.z1 - 1, gate: 'orinShield', color: 0x6ce2ff, needs: 'orinPhase1' },
 ];
 export const GATES = [
   { id: 'clockworks', x: L.doorX, y: gy(3, L.doorX), z0: Z3, z1: Z3 + 6, eras: [P, M, F], openFlag: 'clockworksOpen', color: 0x7affc8, dir: -1 },
   { id: 'gateD', x: L.gateDX, y: gy(3, L.gateDX), z0: Z3, z1: Z3 + 6, eras: [P, M, F], passFlag: 'gateDPassed', color: 0xffd08a, dir: -1 },
-  { id: 'orinShield', x: U(21), y: gy(5, U(21)), z0: ZS + 1, z1: ZS + 5, eras: [M], openFlag: 'orinPhase2', color: 0x6ce2ff, dir: -1, noWall: true },
+  { id: 'orinShield', x: ARENA.shieldX, y: ARENA.y, z0: ARENA.z0, z1: ARENA.z1, eras: [P, M, F], openFlag: 'orinPhase2', color: 0x6ce2ff, dir: -1 },
 ];
 
 /** Things that turn: the orrery's rings, the lighthouse beam far below. Spun each frame by the game. */
@@ -474,6 +488,12 @@ function fallenPine(b, era) {
   b.solid(x, y + 2, 0, x + 1, y + 2, 6, jitter(C.snow));
   // its branches, snapped off, in the snow
   for (let i = 0; i < 4; i++) b.deco(x + 2.2 + i * 0.7, y, 1 + i * 1.3, 1.4, 0.25, 0.25, C.log[i % 3]);
+  // in the Stopped Age, drifts frozen hard against its west side make a stair up onto the trunk:
+  // from the road at the front, one block up, one more (stepping back), then onto the trunk
+  if (era === F) {
+    b.solid(x - 1, gy(0, x - 1), 6, x - 1, y, 6, jitter(C.ice));
+    b.solid(x - 1, gy(0, x - 1), 5, x - 1, y + 1, 5, jitter(C.ice));
+  }
 }
 
 /** The Lantern Road: the town in its alcove, its lamps and flags; in the First Age, the stonecutters' camp. */
@@ -823,13 +843,13 @@ export const SPAWNS = [
   { type: 'npc', id: 'ingridF', era: F, ...on(1, L.ingridX, 5.2), sheet: 'ingrid', name: 'Ingrid the Lamplighter', frozen: true, tint: FROZEN, unless: 'hoursReturned' },
   { type: 'npc', id: 'ingridW', era: F, ...on(1, L.ingridX, 5.2), sheet: 'ingrid', name: 'Ingrid the Lamplighter', needs: 'hoursReturned' },
   { type: 'npc', id: 'sela', era: P, ...on(1, L.campPastX + 2.5, 5.6), sheet: 'sela', name: 'Sela the Stonecutter' },
-  { type: 'npc', id: 'michelle', era: M, ...on(1, L.michelleX, 1.4), sheet: 'michelleWinter', name: 'Lyra the Wise', unless: 'christopherMet' },
+  { type: 'npc', id: 'michelle', era: M, ...on(1, L.michelleX, 1.4), sheet: 'michelleWinter', name: 'Mysterious Stranger', unless: 'christopherMet', stranger: true },
   { type: 'npc', id: 'porterRest', era: M, ...on(1, U(44.5), 1.4), sheet: 'porterKit', name: 'Kit the Porter' },
   // the Sundial Terrace
   { type: 'npc', id: 'zach', era: M, ...on(2, U(70.5), 5.6), sheet: 'zachWinter', name: 'Zach Tiberious', small: true, unless: 'christopherMet' },
   { type: 'npc', id: 'megan', era: M, ...on(2, U(71.6), 5.9), sheet: 'meganWinter', name: 'Megan the Squirrel', small: true, unless: 'christopherMet' },
   // the Clockworks
-  { type: 'npc', id: 'michelleDome', era: M, ...on(3, L.michelle2X, 1.6), sheet: 'michelleWinter', name: 'Lyra the Wise' },
+  { type: 'npc', id: 'michelleDome', era: M, ...on(3, L.michelle2X, 1.6), sheet: 'michelleWinter', name: 'Mysterious Stranger', stranger: true },
   { type: 'npc', id: 'porterHigh', era: M, ...on(4, U(8.5), 1.6), sheet: 'porterBram', name: 'Bram the Porter' },
   { type: 'npc', id: 'selaHigh', era: P, ...on(4, U(12.5), 1.6), sheet: 'sela', name: 'Sela the Stonecutter' },
   // the Summit: Tobin, the memory under the orrery, Sir Orin at the Needle
@@ -838,8 +858,8 @@ export const SPAWNS = [
   { type: 'npc', id: 'tobinW', era: F, ...on(5, L.tobinX, 5.4), sheet: 'tobin', name: 'Tobin the Stargazer', needs: 'hoursReturned' },
   { type: 'npc', id: 'youngLyra', era: M, ...on(5, U(68.2), 2.4), sheet: 'lyraYoung', name: 'Lyra (Memory)', needs: 'christopherMet', unless: 'hoursReturned', memory: true },
   { type: 'npc', id: 'youngChristopher', era: M, ...on(5, U(69.6), 2.4), sheet: 'christopherYoung', name: 'Sir Orin (Memory)', needs: 'christopherMet', unless: 'hoursReturned', memory: true },
-  { type: 'npc', id: 'christopher', era: M, ...on(5, L.christopherX, 2.2), sheet: 'christopher', name: 'Sir Orin', needs: 'christopherMet', reach: 2.4 },
-  { type: 'npc', id: 'lyraEnd', era: M, ...on(5, U(23.2), 2.4), sheet: 'michelleWinter', name: 'Lyra the Wise', needs: 'hoursReturned' },
+  { type: 'npc', id: 'christopher', era: M, ...on(5, L.christopherX, 2.2), sheet: 'christopher', name: 'Sir Orin', needs: 'christopherMet', reach: 2.4 }, // (on his throne during the fight: see SummitGame.placeOrin)
+  { type: 'npc', id: 'lyraEnd', era: M, ...on(5, U(23.2), 2.4), sheet: 'michelleWinter', name: 'Lyra', needs: 'hoursReturned' },
   { type: 'npc', id: 'eugene', era: M, ...on(5, U(28.5), 4.4), sheet: 'eugeneWinter', name: 'Donald Eugene', needs: 'hoursReturned' },
   { type: 'npc', id: 'zachEnd', era: M, ...on(5, U(30.2), 5.6), sheet: 'zachWinter', name: 'Zach Tiberious', small: true, needs: 'hoursReturned' },
   { type: 'npc', id: 'meganEnd', era: M, ...on(5, U(31.4), 6), sheet: 'meganWinter', name: 'Megan the Squirrel', small: true, needs: 'hoursReturned' },
@@ -852,7 +872,7 @@ export const SPAWNS = [
   { type: 'strike', id: 'cwChime', era: M, ...on(3, U(44.5), 4.8), hits: 3, flag: 'cwChimeRung', prompt: 'Strike the Clockworks resonance chime', visual: 'chime', color: 0xffd070, freq: 392, hx: 1.2, hz: 1.4 },
   { type: 'strike', id: 'thermalLever', era: P, ...on(4, U(50.5), 1.6), hits: 3, flag: 'springOpened', prompt: 'Shatter the frozen thermal sluice', visual: 'ice', color: 0x7be0ff, hx: 1.3, hz: 1.4 },
   { type: 'strike', id: 'orreryChime', era: M, ...on(5, U(73.5), 2.2), hits: 3, flag: 'orreryChimeRung', prompt: 'Ring the Orrery alignment chime', visual: 'chime', color: 0xffe08a, freq: 523, hx: 1.2, hz: 1.4 },
-  { type: 'strike', id: 'orinAnchor', era: M, ...on(5, U(28.5), 2.5), hits: 3, flag: 'orinPhase1', needs: 'summitTalk', prompt: "Shatter the Needle's Frost-Anchor", visual: 'ice', color: 0x6ce2ff, hx: 1.4, hz: 1.5 },
+  { type: 'strike', id: 'orinAnchor', era: M, x: ARENA.anchorX, y: ARENA.y, z: ARENA.z0 + 0.6, hits: 3, flag: 'orinPhase1', needs: 'summitTalk', prompt: "Shatter the Needle's Frost-Anchor", visual: 'ice', color: 0x6ce2ff, hx: 1.4, hz: 1.5 },
   // things to look at, and use
   { type: 'interact', id: 'lookoutLamp', era: M, ...on(1, L.lampX + 0.5, 5.4), prompt: 'The lookout lamp' },
   { type: 'interact', id: 'statue', era: M, ...on(2, L.statueX + 0.5, 0.5), prompt: 'The statue' },
@@ -1125,6 +1145,94 @@ function below(group, era) {
   for (let i = 0; i < 30; i++) tree(sw, -30 + rng() * 20, -6 + rng() * 14, 2 + rng() * 2.5);
 }
 
+/**
+ * The End of Time: Sir Orin's throne room (see ARENA). Black marble, broken, mended with gold.
+ * It only exists while the fight is on, and while you're in it, the mountain isn't drawn (see
+ * SummitGame.arenaMood): nothing else is at the end of time.
+ */
+const MARBLE = [0x3e3a48, 0x48434f, 0x35313d, 0x524c5a, 0x413c4a]; // (black marble, as dark as still reads)
+const GOLD = 0xffc24a;
+export const fightOn = (s) => !!(s.flags.summitTalk && !s.flags.hoursReturned);
+function endOfTimeFeature(world) {
+  world.addFeature({ id: 'endOfTime', eras: [P, M, F], key: (s) => String(fightOn(s)), build: (b, era, s) => fightOn(s) && endOfTime(b, era) });
+}
+function endOfTime(b, era) {
+  const A = ARENA, y = A.y, rng = makeRng(990 + era * 0); // (the same in every age)
+  const marble = jitter(MARBLE);
+  // the floor, two blocks thick, its underside broken off in hanging chunks
+  b.solid(A.x0, y - 2, A.z0, A.x1, y - 1, A.z1, marble);
+  for (let x = A.x0; x <= A.x1; x++) {
+    const hang = Math.floor(hash3(x, 7, 7) * 4);
+    if (hang) b.solid(x, y - 2 - hang, A.z0 + 1 + (x % 3), x, y - 3, A.z0 + 2 + (x % 3), marble);
+  }
+  // walls: the back, and either end (the east one behind the throne), their tops broken
+  for (let x = A.x0 - 1; x <= A.x1 + 1; x++) {
+    const top = y + 7 + Math.floor(hash3(x, 3, 1) * 4) - (x % 9 === 4 ? 3 : 0);
+    b.solid(x, y - 2, A.z0 - 1, x, top, A.z0 - 1, marble);
+  }
+  for (const x of [A.x0 - 1, A.x1 + 1]) b.solid(x, y - 2, A.z0, x, y + 8, A.z1, marble);
+  // an invisible rail along the open front edge
+  for (let x = A.x0; x <= A.x1; x++) for (let yy = y; yy <= y + 6; yy++) b.setCell(x, yy, A.z1 + 1, 1, 0);
+  // the dais, two steps up, and the throne against the east wall
+  b.solid(A.daisX, y, A.z0, A.x1, y, A.z1, marble);
+  b.solid(A.daisX + 2, y + 1, A.z0 + 1, A.x1, y + 1, A.z1 - 1, marble);
+  b.solid(A.throneX, y + 2, A.z0 + 2, A.x1, y + 2, A.z1 - 2, marble); // the seat
+  b.solid(A.x1, y + 3, A.z0 + 2, A.x1, y + 6, A.z1 - 2, marble); // its back
+  for (const yy of [y + 1, y + 2]) b.glow(A.daisX - 0.02 + (yy - y - 1) * 2, yy - 0.06, A.z0, 0.06, 0.06, A.z1 - A.z0 + 1, GOLD);
+  b.glow(A.x1 - 0.06, y + 6.9, A.z0 + 1.9, 0.1, 0.12, 3.2, GOLD);
+  for (const z of [A.z0 + 1.95, A.z1 - 1.05]) b.glow(A.throneX, y + 2.92, z, A.x1 - A.throneX + 1, 0.1, 0.1, GOLD);
+  // above the throne, a great clock face, shattered, its pieces held in place with gold
+  for (let i = 0; i < 48; i++) {
+    const a = (i / 48) * Math.PI * 2;
+    if (hash3(i, 1, 2) < 0.18) continue;
+    b.glow(A.x1 - 1.6 + Math.cos(a) * 3.2, y + 9 + Math.sin(a) * 3.2, A.z0 - 0.05, 0.28, 0.28, 0.05, GOLD);
+  }
+  b.deco(A.x1 - 1.7, y + 9, A.z0 - 0.04, 0.16, 2.6, 0.05, GOLD);
+  b.deco(A.x1 - 1.7, y + 9, A.z0 - 0.04, 1.9, 0.16, 0.05, GOLD);
+  // broken columns along the back wall, banded in gold; the tops of some float a little way off
+  for (let x = A.x0 + 3; x < A.daisX - 1; x += 6) {
+    const h = 3 + Math.floor(hash3(x, 5, 5) * 5);
+    b.deco(x + 0.05, y, A.z0 - 0.15, 0.9, h, 0.5, MARBLE[3]);
+    b.glow(x, y + h - 0.6, A.z0 - 0.2, 1.0, 0.08, 0.6, GOLD);
+    b.glow(x, y + 0.4, A.z0 - 0.2, 1.0, 0.08, 0.6, GOLD);
+    if (h < 6) {
+      b.deco(x + 0.2, y + h + 1.2 + hash3(x, 1, 1), A.z0 - 0.1, 0.8, 1.4, 0.45, MARBLE[1]);
+      b.glow(x + 0.15, y + h + 1.1 + hash3(x, 1, 1), A.z0 - 0.15, 0.9, 0.06, 0.5, GOLD);
+    }
+  }
+  // the cracks, everywhere, filled with gold: across the floor, and up the back wall
+  for (let i = 0; i < 13; i++) {
+    let cx = A.x0 + rng() * (A.daisX - A.x0), cz = A.z0 + rng() * (A.z1 - A.z0 + 1);
+    for (let j = 0; j < 3 + rng.int(0, 3); j++) {
+      const along = j % 2 === 0, len = 0.6 + rng() * 1.6, dir = rng() < 0.5 ? -1 : 1;
+      const nx = along ? cx + len * dir : cx, nz = along ? cz : Math.max(A.z0, Math.min(A.z1 + 0.9, cz + len * dir));
+      b.glow(Math.min(cx, nx), y + 0.005, Math.min(cz, nz), Math.max(0.045, Math.abs(nx - cx)), 0.02, Math.max(0.045, Math.abs(nz - cz)), GOLD);
+      cx = nx;
+      cz = nz;
+    }
+  }
+  for (let i = 0; i < 18; i++) {
+    let cx = A.x0 + rng() * (A.x1 - A.x0), cy = y + 1 + rng() * 6;
+    for (let j = 0; j < 4; j++) {
+      const up = j % 2 === 0, len = 0.5 + rng() * 1.5;
+      const nx = up ? cx : cx + (rng() < 0.5 ? -len : len), ny = up ? cy + len : cy;
+      b.glow(Math.min(cx, nx), Math.min(cy, ny), A.z0 - 0.04, Math.max(0.07, Math.abs(nx - cx)), Math.max(0.07, Math.abs(ny - cy)), 0.04, GOLD);
+      cx = nx;
+      cy = ny;
+    }
+  }
+  // the rest of the world, in pieces: shards of marble drifting in the dark all round
+  for (let i = 0; i < 70; i++) {
+    const fx = A.x0 - 25 + rng() * (A.x1 - A.x0 + 50), fz = A.z0 - 6 - rng() * 22, fy = y - 12 + rng() * 26;
+    const sz = 0.4 + rng() * 2.2;
+    b.deco(fx, fy, fz, sz, sz * (0.5 + rng()), sz * (0.5 + rng()), MARBLE[i % 5]);
+    if (rng() < 0.6) b.glow(fx - 0.02, fy + sz * 0.4, fz - 0.02, sz + 0.04, 0.06, 0.06, GOLD);
+  }
+  // light: gold, from the cracks and the throne
+  for (let x = A.x0 + 4; x < A.x1; x += 8) b.light(x, y + 4, A.z0 + 2, 0xffc870, 9, 14, 0.05);
+  b.light(A.x1 - 2, y + 6, A.z0 + 2, 0xffd890, 9, 14, 0);
+}
+
 // ---------------------------------------------------------------------------
 export function buildLevel(world) {
   SPINNERS.length = 0;
@@ -1155,5 +1263,8 @@ export function buildLevel(world) {
   selaSteps(world);
   springSteps(world);
   zachFlag(world);
+  endOfTimeFeature(world);
   world.finalizeStatic();
+  // (everything built so far is the mountain: hidden while you're at the End of Time)
+  for (const g of world.groups) for (const c of g.children) c.userData.scenery = true;
 }

@@ -51,8 +51,8 @@ export const TEMPO_LEARN = [
 
 // The third key: the clock face opens, and the way up into the clock with it.
 export const TEMPO_GIFT = [
-  N('The third key slides home. High above, the great clock face splits along its seams and swings open.'),
-  N("Golden light pours down the shaft. But the Tower's heart still stutters: somewhere up inside the clock, the great mainspring is running wild."),
+  N('The third key slides home. Beside the deck, the east wall of the Tower grinds aside, and golden light pours through.'),
+  N("Beyond it is the inside of the clock. But the Tower's heart still stutters: somewhere up in there, the great mainspring is running wild."),
   Wr("Up there the ages are wound too tightly to step between. But I can still turn time slower and faster."),
   Wr('Then that is where I am going.'),
 ];
@@ -175,7 +175,7 @@ function npcLines(game, id) {
         Wr("Not if I can help it. That's not how this is going to go, Master."),
       ];
     case 'michelle': {
-      const m = S('michelle', 'Lyra the Wise');
+      const m = S('michelle', 'Mysterious Stranger');
       if (f.finished) return [m('I heard it from here: the first tick. Like an old friend breathing easy again.'), m('Spend your time well, Vivienne. The valley has its heartbeat back, though the mountain above us is still holding its breath.')];
       if (f.metMichelle && game.state.kindness.length >= FAVORS.length)
         return [m("You have the look of someone who has been busy being kind, Vivienne. I can always tell."), m('People remember a kindness far longer than you would think. And so do I.')];
@@ -187,7 +187,8 @@ function npcLines(game, id) {
         m('A little advice before you cross. Time is the one thing none of us gets back, and it is very easy to waste—or to cling to until it turns to stone. Spend it wisely.'),
         m('Your master used to vanish for days at a time, you know. When we were young, he told me he kept a room "in the oldest age, behind a door with a brass gear where no one would ever think to knock."'),
         m('And wherever you find yourself, always remember to help others. A kindness echoes across the years far longer than you would think.'),
-        Wr("I'll remember. Thank you, Lyra."),
+        Wr("I'll remember. Thank you... um. I didn't catch your name."),
+        m('No. You didn\'t.'),
       ];
     }
     case 'zach': {
@@ -757,7 +758,7 @@ export async function interact(game, ent) {
       await say([
         N('A hidden room: a cot, a lantern, maps of the valley in three different ages, and the Clocktower chalked on the wall, covered in notes.'),
         N('On the workbench lies a letter, held down by a coil of bright star-iron, beside a faded charcoal sketch of three young clockmakers marked "D., O., & L."'),
-        N('"Vivienne. If you found this room, you\'ve been paying attention—or Lyra pointed you here. Fifty years ago, there were three of us who kept the valley\'s clocks: Orin, Lyra, and I."'),
+        N('"Vivienne. If you found this room, you\'ve been paying attention—or somebody pointed you here. Fifty years ago, there were three of us who kept the valley\'s clocks: Orin, Lyra, and I."'),
         N('"On the night Lyra fell ill, Orin locked the mountain observatory in a single borrowed hour so she would never slip away from him. That fifty-year pull is what finally snapped our Tower\'s mainspring."'),
         N('"This is the Everspring: a mainspring of star-iron that never runs down. Fit it to the Chronoheart and it will never need to recharge again. ~D.E."'),
         Wr('Three clockmakers... Donald Eugene, Orin, and Lyra. And someone up on the mountain has been holding onto a single hour for fifty years...'),

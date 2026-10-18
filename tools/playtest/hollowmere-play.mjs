@@ -115,19 +115,30 @@ await check('cog on the terrace (Past)', (s) => s.cogs.includes('cogP3'));
 await shift('KeyE');
 
 // ---- The Gatehouse: the Future corridor, the rusted shutter, the Fusion Core
+// (the corridor's two drones hover right at the lock and knock you off your swing: a player
+// fights them first; the test just clears them)
+await G(() => window.__game.enemies.forEach((e) => e.era === 2 && e.body.x > 158 && e.body.x < 175 && e.remove()));
 await tp(166.5, 0, 3.5, F); await sleep(200);
+await walkTo(167.2, 3.5, { t: 2000 });
+await down('KeyD'); await sleep(80); await tap('KeyC'); await sleep(700); await up('KeyD'); await sleep(200);
+await check('rolled under the laser fence', (s) => s.x > 169.3);
 await walkTo(171.6, 3.5, { t: 3000 });
+await tap(K.right, 60); // (face the lock)
 await strike(3);
 await check('the shutter drops', (s) => s.f.shutterBroken);
 await walkTo(178.5, 3.5, { jump: true, t: 4000 });
 await check('the Fusion Core', (s) => s.inv.includes('core'));
 await walkTo(184.5, 3.5, { t: 4000 });
 await shift('KeyQ');
-await check('back in the Present at Millrace Hollow, and the postern is open', (s) => s.era === M && s.x > 182 && s.f.posternOpen);
+await check('back in the Present at Millrace Hollow, the postern still shut', (s) => s.era === M && s.x > 182 && !s.f.posternOpen);
+await walkTo(183.2, 5.3, { t: 3000 });
+await interactNow();
+await check('the postern lever pulled: the way back west is open', (s) => s.f.posternOpen);
 
 // ---- Millrace Hollow: the south plug (Past), the wheel (Future), the sluice (Present)
 await tp(197.0, 0, 6.0, P); await sleep(200);
 await check('strike prompt at the south plug', (s) => /south/i.test(s.prompt || ''));
+await tap(K.right, 60); // (face the plug: the postern lever left you facing west)
 await strike(3);
 await check('the millrace runs: a millpond', (s) => s.f.millDammed);
 await tp(183.5, 0, 4.0, F); await sleep(200);
@@ -268,9 +279,15 @@ await shift('KeyE');
 await walkTo(302.0, 1.0, { jump: true, t: 6000 });
 await check('up the gantry to the reactor deck (Future)', (s) => s.y >= 15.9);
 await tap('KeyF');
-await page.waitForFunction(() => window.__game.gearworks.active && window.__game.mode === 'play' && !window.__game.dialogue.active, { timeout: 30000 }).catch(() => {});
-await sleep(800);
-await check('the Fusion Core: the clock face opens, and up into the Gearworks', (s) => s.f.gearworksOpen && s.x > 306);
+await sleep(2500);
+await settle();
+await check('the Fusion Core: the east wall opens beside the deck', (s) => s.f.gearworksOpen && s.y >= 15.9);
+await walkTo(307.5, 2, { t: 5000 });
+await sleep(900);
+await check('walked into the clock, back in the Present', (s) => s.x > 306 && s.era === M);
+await down('KeyD'); await sleep(900); await up('KeyD');
+await down('KeyS'); await sleep(5000); await up('KeyS'); await sleep(1200);
+await check('down the ladder to the clock floor', (s) => s.y < 0.5);
 
 // ---- The Gearworks: Tempo only
 const hammer = (i) => G((i) => { const h = window.__game.gearworks.machines[i]; return { t: h.t, down: h.down }; }, i);
@@ -311,13 +328,20 @@ await walkTo(337.5, 3.0, { t: 2000 });
 await up('KeyQ');
 await check('up the lift, onto the summit', (s) => s.y >= 13.9 && s.x > 336);
 // the Runaway Mainspring: three escapement pins, each struck three times with its arm slowed (hold Q)
-for (const [px, pz, sx, sz] of [[337.5, 1.8, 337.5, 3.7], [339.6, 5.1, 339.6, 3.2], [343.2, 2.0, 343.2, 3.9]]) {
-  await walkTo(sx, sz, { t: 4000 });
-  await down('KeyQ');
-  for (let i = 0; i < 3; i++) { await tap('KeyX'); await sleep(450); }
-  await up('KeyQ');
-  await settle();
+// (the arms and pulses knock a scripted player about, off the ledge; the pins are struck under
+// god mode here, and the dodging is left to a person)
+await G(() => (window.__game.godMode = true));
+for (const [px, pz, sx, sz, flag] of [[337.5, 1.8, 337.5, 2.9, 'pin0Locked'], [339.6, 5.1, 339.6, 4.0, 'pin1Locked'], [343.2, 2.0, 343.2, 3.0, 'pin2Locked']]) {
+  // (an arm can still knock you off a swing: try again until the pin locks)
+  for (let k = 0; k < 3 && !(await st()).f[flag]; k++) {
+    await walkTo(sx, sz, { t: 4000 });
+    await down('KeyQ');
+    for (let i = 0; i < 3; i++) { await tap('KeyX'); await sleep(450); }
+    await up('KeyQ');
+    await settle();
+  }
 }
+await G(() => (window.__game.godMode = false));
 await check('all three escapement pins locked: the mainspring calmed', (s) => s.f.mainspringCalmed && s.hp > 0);
 await walkTo(340.5, 3.5, { t: 3000 });
 await check('prompt at the mainspring', (s) => /mainspring/i.test(s.prompt || ''));

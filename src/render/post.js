@@ -133,7 +133,7 @@ const TimeShader = {
           float dc = length((cell + 0.5) / peekBlocks - peekCenter * asp);
           // blocks on the rim drift in and out of the other age, each in its own time
           float n = 0.5 + 0.5 * sin(time * 2.2 + h2(cell) * 6.2832);
-          float t = clamp((R - dc + (n - 0.5) * 0.07) / 0.06, 0.0, 1.0);
+          float t = clamp((R - dc + (n - 0.5) * 0.07 * min(1.0, peek * 4.0)) / 0.06, 0.0, 1.0);
           float live = sin(t * 3.14159);
           float w = smoothstep(0.12, 0.9, t);
           float built = step(f.y, w) * step(0.001, w);

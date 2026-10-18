@@ -36,7 +36,7 @@ Every world, sprite, melody and sound in the game is generated from code: there 
 - **Each chapter is locked until the one before it is finished.** Finishing a chapter opens the next, and the credits offer to take you straight there.
 - **One save holds everything**: a slot for each chapter, plus which chapters are finished. It lives in your browser's local storage, so it stays on that browser and that address. Saves from before the two games were combined are brought over the first time the combined game runs.
 - **Every chapter keeps its save after the story.** Choose Continue to walk the valley with the Clocktower ticking, or the shore with the tide back in.
-- **Some rewards carry over.** Bring all ten of Chapter One's Lost Cogs to Donald Eugene and you start Chapters Two and Three with the **Cog Finder**: Lost Cogs glint through the time lens. Earn your own pocketwatch in Chapter Two, and your echo in Chapter Three remembers longer (8 seconds) and holds 4 echoes at once. Find all ten Lost Cogs in Chapter Three to forge **The Master's Key**, allowing free shifting across Highcrest's three healed ages and unlocking the secret **Astral Clock-Door** in Hollowmere Square (**The Starlit Garden, 10,000 Years On**). (The save records them under `rewards`.)
+- **Some rewards carry over.** Bring all ten of Chapter One's Lost Cogs to Donald Eugene and you start Chapters Two and Three with the **Cog Finder**: Lost Cogs glint through the time lens. Earn your own pocketwatch in Chapter Two, and your echo in Chapter Three remembers longer (8 seconds) and holds 4 echoes at once. Find all ten Lost Cogs in Chapter Three to forge **The Master's Key**, allowing free shifting across Highcrest's three healed ages and unlocking the secret **Astral Clock-Door** in Hollowmere Square (**The Starlit Garden, 10,000 Years On**). (The save records them under `rewards`.) **Hearts carry over too:** every heart a favor earned in an earlier chapter is added to the five you start each later chapter with.
 - **Vivienne dresses for the place.** In Hollowmere she wears her teal workshop tunic and leather apron. In Saltwick she has a navy sea-coat, a red neckerchief, sailcloth trousers and yellow sea-boots. On Highcrest, a teal wool coat with a fur hem, a mustard scarf, and red earmuffs and mittens. The goggles and the amulet go wherever she does.
 
 To open every chapter without finishing the one before (for testing, or if you finished Chapter One before the game kept a record of it), add `#unlock` to the address once, or run `__unlockChapters()` in the browser console.
@@ -51,7 +51,7 @@ These are the same in every chapter. Each chapter's guide lists the powers it ad
 | --- | --- |
 | `A` `D` | Move left / right |
 | `W` `S` | Move into / out of the scene; climb ladders |
-| `Space` | Jump (hold for a higher jump); hold to swim upward |
+| `Space` | Jump (hold for a higher jump); hold to swim upward (underwater, watch your breath) |
 | `Shift` | Sprint |
 | `C` | Dodge-roll |
 | `X` | Swing your wrench |

@@ -43,7 +43,7 @@ The valley is one long road, built three times. What you do in one age carries f
 
 | Ability | Where | What it does |
 | --- | --- | --- |
-| **Stasis Seal** | Donald Eugene's satchel at Tamsin's Crossing (Present) | Hold something in its moment, so it stays exactly the same in every later age. Things that can be sealed shimmer with pale light; stand beside one and a **Seal** prompt appears. |
+| **Stasis Seal** | Donald Eugene's satchel at Tamsin's Crossing (Present) | Hold something in its moment, so it stays exactly the same in every later age. Things that can be sealed shimmer with pale light; stand beside one and a **Seal** prompt appears. It works on **creatures** too: get right up close to a thornback, a rat or a drone and seal it. It stays frozen in a crystal shell in that age and every later one, and by the Future someone has put up a museum placard beside it. |
 | **Echo** | Donald Eugene's lectern at the Echo Gallery (Present) | Record up to 5 seconds of your own movement. Your echo replays it on a loop, forever. Present only, up to 3 echoes at once (a 4th replaces the oldest). Stand on an echo and press **Interact** to dispel it. |
 | **Tempo** | Donald Eugene's toolbox at the gate of the Warden's Courtyard (Present) | Slow time around you, or speed it up. On touch, hold **Slow** or **Fast**. On a keyboard, **hold Q** (or `1`/`Z`) to slow and **hold E** (or `2`) to speed up; a quick tap of `Q`/`E` still travels an era. Only the machines within a few blocks feel it; you move as usual. It runs on the Chronoheart's ring, which refills when you let go. |
 
@@ -130,8 +130,8 @@ The road runs west to east. Each area below lists what you need and how to get i
 ### 7. The Gatehouse: the Fusion Core (Era Key of the Future)
 
 - In the Present, the road beyond the gatehouse is buried under rubble.
-- In the **Future**, a security corridor runs through to a vault. Get past the two drones to the **shutter** that seals the corridor: its lock housing has rusted through, and three hits of your wrench break it. Then hop onto the vault pedestal for the **Fusion Core**.
-- Once you reach Millrace Hollow, the old **postern passage** opens behind you (Present), so you can always walk back west.
+- In the **Future**, a security corridor runs through to a vault. Get past the two drones. Halfway along, a **laser fence** crosses the corridor: too high to jump, but there's a gap along the floor, so **roll** under it (`C`). Then reach the **shutter** that seals the corridor: its lock housing has rusted through, and three hits of your wrench break it. Hop onto the vault pedestal for the **Fusion Core**.
+- At the west edge of Millrace Hollow, in the **Present**, pull the **old postern lever** to open a passage back west through the rubble. Partway along it the roof has caved in to a crawlspace: **roll** through.
 
 ### 8. Millrace Hollow
 
@@ -192,7 +192,7 @@ Every key you place makes the Tower lurch, its gears turn faster, and its time-s
 
 ### 13. The Gearworks & The Runaway Mainspring
 
-The third key opens the great clock face. You're carried up into the clock itself, where the ages are wound too tightly to pull apart: here **Q** (or `1`/`Z`) and **E** (or `2`) are Tempo from the instant you press them, slowing down and speeding up the machines around you (see [Abilities](#abilities-you-pick-up-along-the-way)). A clock shrine saves at the entrance, and a glowing doorway on each side links the Gearworks and the Tower floor.
+The third key opens the Tower's east wall, right beside the reactor deck: walk through into the clock itself, onto an iron gantry, and climb down its ladder. In there the ages are wound too tightly to pull apart (you're back in the Present the moment you step in): here **Q** (or `1`/`Z`) and **E** (or `2`) are Tempo from the instant you press them, slowing down and speeding up the machines around you (see [Abilities](#abilities-you-pick-up-along-the-way)). A clock shrine saves at the entrance, and a glowing doorway on each side links the Gearworks and the Tower floor.
 
 1. **The hammers.** Two hammers slam far too fast to slip under. Hold **Q** to slow them, wait for one to lift, and run.
 2. **The spring plate.** It kicks every beat, but only hard enough to reach the ledge when it runs fast. Stand on it, hold **E**, and steer onto the ledge.
@@ -248,11 +248,11 @@ Nobody you meet knows you're traveling through time: in the Past and the Future 
 
 ## Secrets
 
-> **Big spoilers.** Lyra the Wise drops the only hint, in her very first conversation.
+> **Big spoilers.** The Mysterious Stranger by the river drops the only hint, in her very first conversation.
 
 ### Donald Eugene's hideaway (Rampart Row)
 
-Lyra the Wise mentions that your master "kept a room in the oldest age, behind a door no one would ever think to knock on." While he hopped between the ages trying to fix the Tower, Donald Eugene needed somewhere to rest.
+The Mysterious Stranger mentions that your master "kept a room in the oldest age, behind a door no one would ever think to knock on." While he hopped between the ages trying to fix the Tower, Donald Eugene needed somewhere to rest.
 
 In the **Past**, look closely at the houses along the back of **Rampart Row**. One door looks just like the others, except for a tiny **brass gear** pressed into the wood above the latch. Stand right in front of it and **knock**. Inside is his secret workshop, a letter from fifty years ago about **Donald, Orin, and Lyra**, and on the workbench, the **Everspring**: a mainspring that never runs down. Fit it to the Chronoheart and its ring turns gold and **never drains again**, so you can stay in any age for as long as you like.
 

@@ -5,7 +5,7 @@ import { L, gy, zb } from './level.js';
 
 export const ITEMS = {
   hourLantern: { name: "Ingrid's Lantern", desc: "Her gran's. It never kept time with the other lamps. Lit, it shines with another age's light, and inside that light the other age is real. Q and E choose which." },
-  lens: { name: 'The Echo Lens', desc: "From the heart of the Clocktower. Lyra's Echo borrowed it back. Through it, the Chronoheart remembers you well enough to make another of you—and even remembers your Lantern's light." },
+  lens: { name: 'The Echo Lens', desc: "From the heart of the Clocktower. The stranger borrowed it back for you. Through it, the Chronoheart remembers you well enough to make another of you—and even remembers your Lantern's light." },
   ember: { name: 'A Coal from the First Fire', desc: "From the builders' fire in the First Age. It has never gone out, and it never will." },
   page: { name: 'A Page of Star-Book', desc: "Torn from one of Tobin's star-books: four rings, drawn in a line. Someone has written in the margin." },
   summitFlag: { name: "Zach's Flag", desc: 'An acorn on a blue field. "Every great expedition needs a flag," says Zach.' },
@@ -27,7 +27,8 @@ const V = (text) => ({ who: 'vivienne', name: 'Vivienne', text });
 const S = (who, name) => (text) => ({ who, name, text });
 const DE = S('eugeneWinter', 'Donald Eugene');
 const OR = S('christopher', 'Sir Orin');
-const LY = S('michelleWinter', 'Lyra the Wise');
+const LY = S('michelleWinter', 'Lyra');
+const ST = S('michelleWinter', 'Mysterious Stranger'); // (Lyra's echo: nobody knows that yet)
 const ZA = S('zachWinter', 'Zach Tiberious');
 const ME = S('meganWinter', 'Megan the Squirrel');
 const IN = S('ingrid', 'Ingrid the Lamplighter');
@@ -84,24 +85,33 @@ export const MEMORY = [
   YL('Orin... look up. All four rings are coming into line. You and Donald and I waited twenty winters to see this.'),
   YO("Don't talk like the night is over, Lyra. It's 11:59. I have locked the Needle's escapement. If midnight never strikes, this hour never ends, and you stay right here with me."),
   YL('My love, a song only means something because the notes move on. If you hold a single chord forever, it stops being music and turns to stone.'),
-  YL("I slipped my Echo Lens into the valley's clockwork before you sealed the doors. Even if you freeze my body here, my Echo will wait down the mountain for an apprentice who knows how to let tomorrow come."),
+  YL("Even if you hold me here, something of me will find its way down the mountain, to someone who knows how to let tomorrow come."),
   N('The memory flickers, loops back to 11:59, and begins again—the way it has for fifty years.'),
-  V("Lyra... The wise woman who guided me in Hollowmere and Saltwick was her living Echo all along."),
+  V("That voice... I've heard it before. I'm sure I have. But where?"),
 ];
 
 /** At the summit: Sir Orin, at the Needle. */
 export const SUMMIT = [
   OR('You climbed the whole mountain. In those boots. Donald always did pick the stubborn ones.'),
-  V("Lyra sent me, Orin. Her living Echo guided me through Hollowmere and Saltwick, and up this mountain. She doesn't want the world frozen in her name."),
-  OR("Her Echo... She was always cleverer with lenses than I was. But if I let the Needle turn, the Borrowed Hour ends, midnight strikes, and she is gone!"),
+  V("Donald Eugene told me about Lyra. Do you really think she'd want the whole world frozen in her name?"),
+  OR("You never knew her! If I let the Needle turn, the Borrowed Hour ends, midnight strikes, and she is gone!"),
   V("And if you don't, the Stopped Age swallows everything—Ingrid, Tobin, the valley, and even your memory of Lyra—in silent ice."),
   OR('Stand back from the Needle, apprentice! I will not let midnight take her!'),
-  N('Sir Orin strikes the stone with his staff! Rolling waves of frost surge eastward from the Needle as an icy containment ring locks around its base.'),
+  N('Sir Orin strikes the Needle with his staff. The summit cracks across like a dropped plate, and everything falls away into the dark.'),
+];
+
+/** Where he takes her: the End of Time. */
+export const ARRIVE = [
+  N('A great hall of black marble, broken into a thousand pieces, and every crack filled with gold. There is no sky. Shards of the world drift past in the dark.'),
+  OR('Welcome to the End of Time, apprentice. This is where every hour goes when it is over. Every one of them, mended and kept.'),
+  OR('I have spent fifty years making sure hers never comes here.'),
+  V('...You built a throne at the end of the world. Out of broken things.'),
+  OR('Out of MENDED things. My Frost-Anchor holds this hall together. You will not reach me.'),
 ];
 
 /** Shown the Stopped Age through the Lantern, he lets the hours go. */
 export const RELEASE = [
-  N("Inside the Lantern's Stopped Age light, the summit freezes dead still. The prayer flags hang like iron. Far below on the Lantern Road, Ingrid stands frozen mid-step, and inside the Observatory even the memory under the orrery turns to silent, sightless frost."),
+  N("Inside the Lantern's light, Sir Orin sees the Stopped Age: the summit hung with ice, the prayer flags like iron, Ingrid frozen mid-step far below on the Lantern Road. In the dome, even the memory under the orrery has turned to silent, sightless frost."),
   OR("That's... Ingrid. And in the dome... even Lyra's memory is frozen solid. She isn't breathing in that light at all."),
   V('That is where the Borrowed Hour ends, Orin. When nothing is allowed to end, nothing is allowed to live, either.'),
   OR('...She told me a chord held forever turns to stone. Fifty years I kept her at 11:59, and I never let her finish her sentence.'),
@@ -109,12 +119,15 @@ export const RELEASE = [
   OR('...One real hour.'),
   N('Sir Orin looks out over the sea of clouds for a long moment. Then he draws off one white glove, and lays his bare hand on the Needle.'),
   OR('Forgive me, my love. Let the night move on.'),
+  N('The gold in every crack blazes up at once, and the End of Time comes apart like mist in the morning.'),
 ];
 
 /** Long after dark: Donald Eugene reaches the top, and Lyra wakes for one final, real Midwinter hour. */
 export const REUNION = [
   N('As the fifty years of borrowed hours rush back into the valley, the frozen Golden Hour softens into a clear, starlit Midwinter Night.'),
-  N('From the warm doorway of the Observatory, a figure in a winter shawl steps out onto the snow—no longer a blue Echo, but Lyra herself, awake in the real, un-looped hour before midnight.'),
+  N('From the warm doorway of the Observatory, a figure in a winter shawl steps out onto the snow, awake in the real, un-looped hour before midnight. Vivienne knows her at once.'),
+  V("You... you're the stranger! By the river in Hollowmere. On the quay in Saltwick. On the Lantern Road!"),
+  LY("Echoes of me, dear. Fifty years ago I sent what I could of myself out across the years, to find someone who could help Orin let go. You only ever met the echoes. This is really me."),
   OR('...Lyra? You are warm.'),
   LY('Of course I am, you stubborn velvet goose. You finally let the clock tick.'),
   N('A lantern comes bobbing up the last switchback, followed by two small, determined squirrels.'),
@@ -241,19 +254,20 @@ export function npcLines(game, id) {
         V('(The First Clockmaker will bring them the drawings...)'),
       ];
     case 'michelle':
-      if (!f.hasLantern) return [LY('You came up the mountain, Vivienne. Mind the cold up here—it is my husband Orin\'s grief, frozen into the rock.'), LY('Ingrid the lamplighter has a lantern that never agreed with the clock. Ask her for it. You will need it before the ravine.')];
-      return [LY('A light that holds an hour. Use it kindly.'), LY("Where Orin's frost lies on the road, the ages are frozen together and the Chronoheart cannot shift. Light the Lantern instead, and turn it back or forward.")];
+      if (!f.hasLantern) return [ST('You came up the mountain after all, Vivienne. Mind the cold up here. It is an old man\'s grief, frozen into the rock.'), ST('Ingrid the lamplighter has a lantern that never agreed with the clock. Ask her for it. You will need it before the ravine.')];
+      return [ST('A light that holds an hour. Use it kindly.'), ST("Where the frost lies on the road, the ages are frozen together and the Chronoheart cannot shift. Light the Lantern instead, and turn it back or forward.")];
     case 'michelleDome':
       if (!f.hasEcho) return [
-        LY('He recognized your goggles from the margin of our old drawings. I thought he might.'),
-        V("He said he's keeping his wife Lyra alive in a Borrowed Hour under the orrery... Wait. You're Lyra!"),
-        LY("I am what my Echo Lens could send down the mountain, Vivienne. My real body is sitting beside Orin under the Observatory's orrery at 11:59 on Midwinter Night, fifty years ago."),
-        LY('Take my Echo Lens. I borrowed it back from the Clocktower for you.'),
+        ST('He knew your goggles. I thought he might.'),
+        V("He said he's keeping his wife Lyra alive in a Borrowed Hour under the orrery. Do you know them? You seem to know everybody."),
+        ST("I knew them both, once. A long time ago. Before the frost."),
+        V('...Who ARE you?'),
+        ST('Someone who would like that old man to hear midnight strike. Here. Take this.'),
         { give: 'lens', unlock: 'echo' },
-        LY('Your Echo will walk where you walked, over and over—and if your Lantern is lit while you record, your Echo will carry that age\'s light too!'),
-        LY('One of the three Clockworks plates ahead is crusted in frost: light the First Age in your Lantern while you or an Echo stand on it. And inside the Clockworks, look for our Master Drawings—Sela in the First Age has been waiting six hundred years for them.'),
+        ST('An Echo Lens, borrowed back from the Clocktower. Through it, the Chronoheart remembers you, and something of you can stay behind. Your echo walks where you walked, over and over. And if your Lantern is lit while you record, it carries that light too.'),
+        ST('One of the three Clockworks plates ahead is crusted in frost: light the First Age in your Lantern while you or an echo stand on it. And inside the Clockworks, look for the Master Drawings. Sela, in the First Age, has been waiting six hundred years for them.'),
       ];
-      return [LY('The clockworks door wants all three green plates held at once, and the third plate needs the First Age Lantern light to melt its frost.'), LY('Don\'t forget the Master Drawings inside the hall—Sela in the First Age can build a stone bridge across the upper crevasse with them.')];
+      return [ST('The clockworks door wants all three green plates held at once, and the third plate needs the First Age light to melt its frost.'), ST('Don\'t forget the Master Drawings inside the hall. Sela, in the First Age, can build a stone bridge across the upper crevasse with them.')];
     case 'anwen':
       if (f.hoursReturned) return [AN("Every clock in the valley right on time, and a midwinter night as clear as glass. Best season we've ever had.")];
       return [
@@ -275,7 +289,7 @@ export function npcLines(game, id) {
     case 'porterHigh':
       if (f.hoursReturned) return [BR('Heard the bells ring all the way up. Every clock on the mountain at once. Never heard the like.')];
       return id === 'porterHigh'
-        ? [BR("Bram. Highest porter on Highcrest. Well, second highest, now you're up here."), BR("The rockfall's been blocking this road for weeks. You can freeze the falls into a stair with the Stopped Age—or if you're in the First Age, smash the ice off the old thermal sluice with your wrench!")]
+        ? [BR("Bram. Highest porter on Highcrest. Well, second highest, now you're up here."), BR("The rockfall's been blocking this road for weeks. The old songs say there was a warm spring up there once, before the ice got into it, and that in the hardest winters the falls froze solid into a stair."), BR("Not this winter, more's the pity. Not in any winter I've seen.")]
         : [BR("Bram. If you're going all the way up: the observatory's at the east end of the summit, and the Needle's at the west."), BR("And don't lick the railings.")];
     case 'zach':
       return [ZA('Ahem. Zach Tiberious, alpine expert. We did NOT stow away in your rucksack. We conducted a vertical inspection of it.')];
@@ -307,8 +321,8 @@ export function npcLines(game, id) {
     case 'christopher':
       if (f.hoursReturned) return [OR("She got to see the four rings align, Don's cocoa was warm, and the valley is breathing again. Thank you, Vivienne."), OR("Every Midwinter, we'll climb back up here together and tell her what we've built.")];
       if (!f.summitTalk) return SUMMIT;
-      if (!f.orinPhase1) return [OR("Stand back! My Frost-Anchor holds the Needle fast—you'll never reach it through the gale!")];
-      if (!f.orinPhase2) return [OR("Even with the anchor broken, the Needle's twin Frost-Locks and gnomon beam will keep midnight at bay!")];
+      if (!f.orinPhase1) return [OR("Stand back! My Frost-Anchor holds this hall together. You will never reach it through the waves!")];
+      if (!f.orinPhase2) return [OR("Even with the anchor broken, my twin Frost-Locks and the gnomon's shadow will keep midnight at bay!")];
       return [OR("...I have no strength left to fight you, apprentice. Show me, then. Show me why I should let this hour end.")];
     case 'lyraEnd':
       return [

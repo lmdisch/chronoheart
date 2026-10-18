@@ -40,7 +40,7 @@ This chapter **climbs**, the way real mountain roads do: in switchbacks. The roa
 | Power | From | How it works |
 | --- | --- | --- |
 | **The Lantern** | Ingrid the Lamplighter, on the Lantern Road | Press `R` to light it. A circle of another age opens around you, and inside it **that age is real**: its floors, its bridges, its ice. It always lights on the First Age; while it's lit, `Q` and `E` swing it back and forth between the ages, just like the time lens. `R` again puts it out (not while it's the only thing holding you up). |
-| **Echo** | Lyra the Wise, in the Clockworks | Press `V` to record yourself, `V` again to stop. Your echo walks it over and over—and **remembers your Lantern's light** if it was lit while recording! **Up to three at once** (or **four** with Vivienne's Pocketwatch); a new one replaces the oldest. |
+| **Echo** | The Mysterious Stranger, in the Clockworks | Press `V` to record yourself, `V` again to stop. Your echo walks it over and over—and **remembers your Lantern's light** if it was lit while recording! **Up to three at once** (or **four** with Vivienne's Pocketwatch); a new one replaces the oldest. |
 
 ---
 
@@ -87,7 +87,7 @@ On touch, the **Lantern** and **Echo** buttons appear once you have them.
 
 ### 4. The Clockworks (walk west)
 
-- **Lyra the Wise** reveals she is a living Echo sent down the mountain through her **Echo Lens**, and gives the lens to you (**Echo**).
+- The **Mysterious Stranger** is waiting here, the same old woman you met by the river and on the quay. She knew Orin and Lyra once, she says, and won't say more; she gives you an **Echo Lens** (**Echo**). (Look at her through the time lens, in any chapter, and she flickers blue, like an echo.)
 - **The clockworks door** wants all three green plates held at once, and the third plate is crusted in frost (requiring **First Age** Lantern light). Leave echoes on the first two plates (`V`), then light the Lantern (`R`) on the First Age and stand on the third plate yourself (or record an Echo with the Lantern lit!). The door opens for good.
 - Inside the hall, pick up **The Master Drawings** (`masterDrawings`).
 - **The gold gate** opens while its gold plate is held (leave an echo on it), OR strike the brass **resonance chime** three times with your wrench (`X`) to hold the gate open for 9 seconds.
@@ -104,11 +104,11 @@ On touch, the **Lantern** and **Echo** buttons appear once you have them.
 - **The observatory's doors are frozen shut.** In the First Age there were no doors at all: `R` at the ice, and walk through.
 - **Tobin the Stargazer** keeps the star-books. **Under the orrery** (or by ringing the **Orrery alignment chime** with `X`), a memory is replaying: **Sir Orin and Lyra** fifty years ago on Midwinter Night.
 - **The overlook & brass telescope:** walk out past the Needle to the rail at the north edge and examine the **brass telescope** (`F`) to look down through the clouds at Hollowmere and Saltwick.
-- **Sir Orin & The Borrowed Hour (3-phase confrontation at the Needle):**
-  1. **Phase 1 (Frost Waves & East Anchor):** Light the **Lantern** (`R`) on the **First Age** so its warm bubble dissolves Orin's rolling Frost Waves, then strike the **East Frost-Anchor** three times with your wrench (`X`).
-  2. **Phase 2 (Twin Frost-Locks & Gnomon Beam):** Record an **Echo** (`V`) on one of the two blue Frost-Lock plates beside the Needle, then stand on the other plate yourself while jumping/stepping clear of the sweeping gnomon beam.
-  3. **Phase 3 (The Stopped Age):** Stand beside an exhausted Sir Orin, light the **Lantern** (`R`), swing it to **the Stopped Age** (`E`), and talk to him (`F`). Seeing that freezing time has turned even Lyra's memory into silent stone, he releases the Needle.
-- **One Final Real Hour:** As the fifty years of borrowed hours return home, **Lyra** wakes for one real, un-looped Midwinter hour alongside **Sir Orin**, **Donald Eugene**, and **Vivienne** under the four aligned rings before midnight strikes.
+- **Sir Orin & The Borrowed Hour.** At the Needle, Orin strikes the stone with his staff and takes you to **the End of Time**: a ruined throne room of black marble, every crack filled with gold, with nothing outside it but drifting shards. There are no ages to step between here (the Lantern still works). Orin sits on his throne against the far wall. A shrine stands by the door, so a fall puts you back here; and if you do leave, the crack he opened at the Needle still leads to him.
+  1. **Phase 1 (Frost Waves & the Frost-Anchor):** Waves of frost roll down the hall from the throne. Light the **Lantern** (`R`) on the **First Age** and its warmth carries you through them (or jump them), then strike the **Frost-Anchor** by the back wall three times with your wrench (`X`).
+  2. **Phase 2 (Twin Frost-Locks & the Gnomon's Shadow):** Record an **Echo** (`V`) on one of the two blue Frost-Lock plates, then stand on the other plate yourself, jumping the gnomon's shadow as it sweeps round. The barrier before the throne falls.
+  3. **Phase 3 (The Stopped Age):** Climb the dais, stand beside Orin, light the **Lantern** (`R`), swing it to **the Stopped Age** (`E`), and talk to him (`F`). Seeing that freezing time has turned even Lyra's memory into silent stone, he lets the hour end, and the End of Time comes apart.
+- **One Final Real Hour:** As the fifty years of borrowed hours return home, **Lyra** wakes for one real, un-looped Midwinter hour alongside **Sir Orin**, **Donald Eugene**, and **Vivienne**, and Vivienne recognizes her at last: the stranger by the river, on the quay and on the Lantern Road were all echoes of Lyra.
 
 ---
 
@@ -117,7 +117,7 @@ On touch, the **Lantern** and **Echo** buttons appear once you have them.
 | # | Where | Age |
 | --- | --- | --- |
 | 1 | Base Camp, beside the sapling, at the front | First Age |
-| 2 | Base Camp, on top of the fallen pine | Stopped Age |
+| 2 | Base Camp, on top of the fallen pine (frozen drifts make a stair up its west side) | Stopped Age |
 | 3 | Base Camp, at the front, just east of the supply crates | Golden Hour |
 | 4 | The Lantern Road, at the back, west of the stonecutters' camp | First Age |
 | 5 | The Lantern Road, at the back, near the west turn | Golden Hour |

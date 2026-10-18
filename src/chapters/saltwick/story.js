@@ -41,7 +41,7 @@ export const INTRO = [
   DE('Lyra made me swear to carry it down the mountain so he could not. What I never knew is that this watch was the Tide Clock\'s heart all along—and for fifty years, only the broken resonance of Hollowmere\'s dying tower kept the sea moving without it.'),
   DE('The moment you mended the Clocktower, that false resonance broke, and the watch woke up pulling toward the headland. The Tide Well, they call it. Take it, Vivienne. Put back what I stole.'),
   Wr("A clock that keeps the tide, and its heart has been hiding in your waistcoat for fifty years. All right, Master. Let's bring the sea home."),
-  DE('One thing first. The harbor children have a rhyme: "Dawn and Noon and Dusk must ring, before the Well lets anything in." Three bells, apprentice. I would start by asking where they hang.'),
+  DE('One thing first. The harbor children have a rhyme: "Dawn and Noon and Dusk must chime, before the Well gives back the time." Three bells, apprentice. I would start by asking where they hang.'),
 ];
 
 /** After the climb out of the Well: Donald Eugene has come up the stair. */
@@ -237,16 +237,16 @@ function npcLines(game, id) {
       ];
     }
     case 'michelle': {
-      const m = S('michelle', 'Lyra the Wise');
-      if (f.tideRestored) return [m('Some things are only ever lent to us. You gave yours back with good grace, Vivienne. I knew you would.'), m('And you were kind along the way. Even from Highcrest, my Echo can tell.')];
+      const m = S('michelle', 'Mysterious Stranger');
+      if (f.tideRestored) return [m('Some things are only ever lent to us. You gave yours back with good grace, Vivienne. I knew you would.'), m('And you were kind along the way. Even from very far away, I could tell.')];
       if (f.hasRewind) {
         if (!f.tideGatePassed) return [m('Stand at the gate first. Then go down to the lever. The watch remembers the way back, even up a drop that your legs would not.')];
         return [m('Spend your time wisely, Vivienne. Even the time you get to spend twice.')];
       }
       return [
-        m("Ah. Donald's apprentice. Keeper of the Chronoheart now, I see. You are early. Or my Echo is late. Across the years it is hard to say."),
+        m("Ah. Donald's apprentice. Keeper of the Chronoheart now, I see. You are early. Or I am late. Across the years it is hard to say."),
         m('You did well in Hollowmere. And you were kind while you did it, which is rarer.'),
-        m('That watch in your pocket was made for the sea, and it still runs backward. Fifty years ago I made Donald swear to carry it down from Highcrest so my husband Orin could not use it to rewind the world. Hold it tight, think of where you have just been... and let it carry you.'),
+        m('That watch in your pocket was made for the sea. Does it still run backward? It did, once. Someone who loved a grieving man made your master carry it down from the mountain, so it could never be used to wind the world back. Hold it tight, think of where you have just been... and let it carry you.'),
         N("The pocketwatch shivers in Vivienne's hand. For a heartbeat she is standing where she stood three steps ago."),
         { unlock: 'rewind' },
         m('There. It only ever takes you. The world keeps walking forward without you: gates go on closing, tides go on turning. Remember that, when you are tempted to lean on it.'),
@@ -551,7 +551,7 @@ export async function interact(game, ent) {
         N("In Vivienne's pocket the watch is pulling so hard that it hums."),
         Wr("It was never a watch. It's this clock's heart. Master carried it down Highcrest fifty years ago to stop Sir Orin from rewinding the world, and it has been trying to get home ever since."),
         Wr("...If I put it back, I can't take it out again. No more running myself backward."),
-        Wr('Lyra said it. The world keeps walking forward. So should I.'),
+        Wr('The stranger on the quay said it. The world keeps walking forward. So should I.'),
         N('Vivienne sets the watch in the cradle. It fits as though it had only just been lifted out.'),
       ]);
       return game.placeHeart();

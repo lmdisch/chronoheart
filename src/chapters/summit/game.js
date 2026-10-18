@@ -14,12 +14,21 @@ import { touchActive } from '../../ui/touch.js';
 import { Game, baseState, wait } from '../../game.js';
 import { progress } from '../../chapter.js';
 import theme, { ATMOS_GOLDEN, ATMOS_STOPPED, ATMOS_NIGHT, ATMOS_WAKING, GRADE_GOLDEN, GRADE_STOPPED, GRADE_NIGHT, GRADE_WAKING } from './theme.js';
-import { buildLevel, SPAWNS, CHECKPOINTS, AREAS, L, COG_TOTAL, SPINNERS, inFrost, tierAt, gy, zb } from './level.js';
-import { talk, interact, struck, runCommand, ITEMS, INTRO, FAVORS, MEET, RELEASE, SUMMIT, REUNION, COGS_ENDING, CHOICE, CHOICES, ENDINGS, VIEW } from './story.js';
+import { buildLevel, SPAWNS, CHECKPOINTS, AREAS, L, COG_TOTAL, SPINNERS, inFrost, tierAt, gy, zb, ARENA, inArena } from './level.js';
+import { talk, interact, struck, runCommand, ITEMS, INTRO, FAVORS, MEET, RELEASE, SUMMIT, ARRIVE, REUNION, COGS_ENDING, CHOICE, CHOICES, ENDINGS, VIEW } from './story.js';
 import { currentGoal } from './objectives.js';
 import { Powers, BUBBLE_R } from './powers.js';
 
 const M = ERA.PRESENT, F = ERA.FUTURE;
+
+/** The End of Time's light: a dark with no sky in it, and gold coming up out of the cracks. */
+const ATMOS_END = {
+  skyTop: 0x07050c, skyHorizon: 0x3a2412, fog: 0x120c16, fogNear: 50, fogFar: 130,
+  sun: 0xffe2b8, sunI: 2.2, sunDir: [-0.45, 0.85, 0.55],
+  hemiSky: 0xd8c8f0, hemiGround: 0x4a3a2a, hemiI: 1.9, exposure: 1.1, emissive: 1.4, glow: 1.5, bloom: 0.45, stars: 0.8, twinkle: 0,
+  cloudTop: 0x1a1420, cloudShade: 0x050308, cloudGlow: 0xffb040, cloudGlowAmt: 0.05, cloudSpeed: 0, handSpeed: 0, handShadow: 0,
+};
+const GRADE_END = { tint: [1.06, 1.0, 0.92], shadowTint: [0.86, 0.82, 1.0], saturation: 1.1, contrast: 1.12, vignette: 0.5, rays: 0.0, rayColor: [1.0, 0.8, 0.5] };
 const key = (k, touch) => (touchActive() ? `<b>${touch}</b>` : `<kbd>${k}</kbd>`);
 
 export class SummitGame extends Game {
@@ -47,6 +56,8 @@ export class SummitGame extends Game {
   }
   attach() {
     this.powers.attach();
+    this.inArenaMood = false;
+    this.placeOrin();
     // the statue of the first Clockmaker, on the terrace (in stone; and frosted, in the Stopped Age)
     this.statues = [M, F].map((era) => {
       const a = new Actor('statue', 2.1);
@@ -66,24 +77,24 @@ export class SummitGame extends Game {
   setupOrinBossMeshes() {
     if (this.bossGroup) this.scene.remove(this.bossGroup);
     this.bossGroup = new THREE.Group();
-    const ny = gy(5, L.needle.x);
-    // Containment ring around the Needle
+    const A = ARENA, ny = A.y, cz = (A.z0 + A.z1 + 1) / 2;
+    // a ring of frost turning round Sir Orin on his throne, until his locks are broken
     this.bossRing = new THREE.Mesh(
-      new THREE.TorusGeometry(2.6, 0.09, 10, 36),
+      new THREE.TorusGeometry(1.6, 0.09, 10, 36),
       new THREE.MeshBasicMaterial({ color: 0x6ce2ff, transparent: true, opacity: 0.75 }),
     );
     this.bossRing.rotation.x = Math.PI / 2;
-    this.bossRing.position.set(L.christopherX, ny + 0.35, L.ZS + 2.2);
-    // Rolling Frost Wave (Phase 1)
+    this.bossRing.position.set(A.orinX, ny + 2.35, cz);
+    // Phase 1: waves of frost, rolling off the dais and down the hall
     this.frostWave = new THREE.Mesh(
-      new THREE.BoxGeometry(0.45, 1.35, 6.2),
+      new THREE.BoxGeometry(0.45, 1.35, A.z1 - A.z0 + 1),
       new THREE.MeshBasicMaterial({ color: 0x8ae8ff, transparent: true, opacity: 0.65 }),
     );
-    this.frostWave.position.set(L.christopherX + 1, ny + 0.68, L.ZS + 3);
-    this.frostWaveX = L.christopherX + 1;
-    // Sweeping Gnomon Beam (Phase 2)
+    this.frostWaveX = A.shieldX - 0.5;
+    this.frostWave.position.set(this.frostWaveX, ny + 0.68, cz);
+    // Phase 2: the shadow of a gnomon, sweeping round between the two Frost-Lock plates
     this.gnomonPivot = new THREE.Group();
-    this.gnomonPivot.position.set(L.OX + 25.5, ny + 0.32, L.ZS + 3.5);
+    this.gnomonPivot.position.set(A.platesX + 0.5, ny + 0.32, cz);
     const beam = new THREE.Mesh(
       new THREE.BoxGeometry(7.2, 0.18, 0.28),
       new THREE.MeshBasicMaterial({ color: 0x6ce2ff, transparent: true, opacity: 0.8 }),
@@ -93,15 +104,72 @@ export class SummitGame extends Game {
     this.scene.add(this.bossGroup);
   }
   startOrinBoss() {
-    this.frostWaveX = L.christopherX + 1;
+    this.frostWaveX = ARENA.shieldX - 0.5;
     this.hud.toast(
-      `<b>Phase 1/3:</b> Light the <b>Lantern</b> (${key('R', 'Lantern')}) on the <b>First Age</b> to dissolve Orin's Frost Waves, then strike the <b>East Frost-Anchor</b> (${key('X', 'Attack')})!`,
+      `<b>Phase 1/3:</b> Light the <b>Lantern</b> (${key('R', 'Lantern')}) on the <b>First Age</b> to walk through Orin's Frost Waves (or jump them), then strike the <b>Frost-Anchor</b> three times (${key('X', 'Attack')})!`,
       7000,
     );
   }
+
+  /** Sir Orin pulls Vivienne to the End of Time (see ARENA). first: the first time, with words. */
+  async enterArena(first) {
+    const f = this.state.flags;
+    this.mode = 'cutscene';
+    this.hud.showPrompt(null);
+    this.powers.clearEchoes?.();
+    setFade(1, '#fff2d0');
+    audio.sfx('shift', { era: M });
+    this.renderer.shake = 1.2;
+    await wait(700);
+    this.refreshWorld(); // (the hall only exists while the fight is on)
+    this.applyEra(M, true);
+    this.player.place(ARENA.startX, ARENA.y, (ARENA.z0 + ARENA.z1) / 2);
+    this.player.facing = 1;
+    this.state.checkpoint = 6;
+    this.arenaMood(true);
+    this.placeOrin();
+    setFade(0);
+    this.mode = 'play';
+    if (first) {
+      await this.cutscene(ARRIVE);
+      this.startOrinBoss();
+    }
+    this.lockT = 0.3;
+    this.save();
+  }
+
+  /** The End of Time has a light of its own; anywhere else, the chapter's usual one. */
+  arenaMood(on) {
+    if (this.inArenaMood === on) return;
+    this.inArenaMood = on;
+    if (on) {
+      for (const k of ['aurora', 'auroraA', 'auroraB', 'moon', 'moonDir', 'moonSize', 'moonCol', 'rings', 'ringCol', 'sunSky']) delete ATMOS[M][k];
+      Object.assign(ATMOS[M], ATMOS_END);
+      GRADES[M] = GRADE_END;
+    } else this.setMood();
+    this.renderer.setEra(this.era, true);
+    this.post.setGrade(this.era);
+    this.hideMountain(on);
+  }
+
+  /** At the End of Time there is nothing else: the mountain, its features and its far views aren't drawn. */
+  hideMountain(on) {
+    for (const g of this.world.groups) for (const c of g.children) if (c.userData.scenery) c.visible = !on;
+    for (const f of this.world.features) if (f.id !== 'endOfTime') for (const ms of f.meshes) for (const m of ms || []) m.visible = !on;
+  }
+
+  /** Sir Orin: on his throne at the End of Time while the fight is on; at the Needle otherwise. */
+  placeOrin() {
+    const o = this.npcs.find((n) => n.id === 'christopher'), f = this.state.flags;
+    if (!o) return;
+    const fight = f.summitTalk && !f.hoursReturned;
+    o.x = fight ? ARENA.orinX : o.spec.x;
+    o.y = fight ? ARENA.y + 2 : o.spec.y;
+    o.z = fight ? (ARENA.z0 + ARENA.z1 + 1) / 2 : o.spec.z;
+  }
   onOrinPhase1Done() {
     this.hud.toast(
-      `<b>Phase 2/3 — Frost-Anchor shattered!</b> Record an <b>Echo</b> (${key('V', 'Echo')}) on one blue Frost-Lock plate and stand on the other while dodging the sweeping gnomon beam!`,
+      `<b>Phase 2/3: the Frost-Anchor is shattered!</b> Record an <b>Echo</b> (${key('V', 'Echo')}) on one blue Frost-Lock plate and stand on the other while dodging the sweeping gnomon beam!`,
       7500,
     );
   }
@@ -112,7 +180,7 @@ export class SummitGame extends Game {
       life: 0.9,
     });
     this.hud.toast(
-      `<b>Phase 3/3 — The Needle's lock is broken!</b> Stand beside Sir Orin, light the <b>Lantern</b> (${key('R', 'Lantern')}), swing it to <b>the Stopped Age</b> (${key('E', 'Future')}), and talk to him!`,
+      `<b>Phase 3/3: his locks are broken!</b> Stand beside Sir Orin, light the <b>Lantern</b> (${key('R', 'Lantern')}), swing it to <b>the Stopped Age</b> (${key('E', 'Future')}), and talk to him!`,
       8000,
     );
   }
@@ -161,9 +229,32 @@ export class SummitGame extends Game {
     if (age !== undefined) this.applyEra(age, true);
   }
 
+  /** Further forward than the Stopped Age, there is nothing to go to: Vivienne says so. */
+  tryShift(target) {
+    const f = this.state.flags;
+    if (target > ERA.FUTURE && !f.hoursReturned && this.post.trans > 0.9) {
+      audio.sfx('blocked');
+      this.hud.toast('<b>Vivienne:</b> "I can\'t go any further forward. After this, everything is frozen. There isn\'t any future to go to."', 4500);
+      return;
+    }
+    super.tryShift(target);
+  }
+
+  /** The first time in the Stopped Age, Vivienne sees what it means. */
+  noticeStoppedAge(f) {
+    if (f.stoppedSeen || f.hoursReturned || this.era !== ERA.FUTURE || this.post.trans < 0.95 || this.mode !== 'play') return;
+    f.stoppedSeen = true;
+    this.hud.toast('<b>Vivienne:</b> "This is as far forward as the Chronoheart will go. Nothing moves. If the hour never ends, this is all the future there is."', 7000);
+  }
+
   /** Not after the last shift (unless you forged the Master's Key!); not in the frost. */
   canShift() {
     const f = this.state.flags, b = this.player.body;
+    if (inArena(b.x, b.y, b.z)) {
+      audio.sfx('blocked');
+      this.hud.toast('There are no ages here to step between. Only the end of all of them. (The Lantern still works.)', 4000);
+      return false;
+    }
     if (f.endingAge !== undefined && !f.masterKey && !this.state.inventory.includes('masterKey')) {
       this.hud.toast("The Chronoheart's last shift is spent. Find all ten Lost Cogs to forge the Master's Key!", 4000);
       return false;
@@ -271,6 +362,14 @@ export class SummitGame extends Game {
     this.hud.showPrompt(null);
     await this.cutscene(RELEASE);
     this.mode = 'ending';
+    // the End of Time comes apart, and the summit is all there is again
+    setFade(1, '#fff2d0');
+    await wait(600);
+    this.arenaMood(false);
+    f.hoursReturned = true;
+    this.placeOrin();
+    this.player.place(L.OX + 26, gy(5, L.OX + 26), zb(5) + 3.5);
+    setFade(0);
     // the Lantern goes out; the frost melts; the Golden Hour ends
     this.powers.clearEchoes();
     this.powers.lit = false;
@@ -359,29 +458,29 @@ export class SummitGame extends Game {
   /** Step the 3-phase Needle encounter with Sir Orin. */
   updateOrinBoss(dt, ctl) {
     const f = this.state.flags, b = this.player.body;
-    const active = this.era === M && f.summitTalk && !f.hoursReturned;
+    const active = f.summitTalk && !f.hoursReturned && inArena(b.x, b.y, b.z);
     if (!this.bossGroup) return;
     this.bossRing.visible = active && !f.orinPhase2;
     this.frostWave.visible = active && !f.orinPhase1;
     this.gnomonPivot.visible = active && !!f.orinPhase1 && !f.orinPhase2;
     if (!active) return;
 
-    const ny = gy(5, L.needle.x);
+    const ny = ARENA.y;
     this.bossRing.rotation.z += dt * 1.4;
 
-    // Phase 1: Rolling Frost Wave from the Needle eastward to U(36)
+    // Phase 1: waves of frost roll off the dais and down the hall, one after another
     if (!f.orinPhase1) {
-      this.frostWaveX += dt * 5.2;
-      if (this.frostWaveX > L.OX + 35) this.frostWaveX = L.christopherX + 1;
-      this.frostWave.position.set(this.frostWaveX, ny + 0.68, L.ZS + 3);
-      if (ctl && tierAt(b.z) === 5 && Math.abs(b.x - this.frostWaveX) < 0.65 && b.y < ny + 1.3) {
+      this.frostWaveX -= dt * 5.2;
+      if (this.frostWaveX < ARENA.x0 + 0.5) this.frostWaveX = ARENA.shieldX - 0.5;
+      this.frostWave.position.x = this.frostWaveX;
+      if (ctl && Math.abs(b.x - this.frostWaveX) < 0.65 && b.y < ny + 1.3) {
         const shielded = this.powers.lit && this.powers.age === ERA.PAST;
         if (shielded) {
           if (Math.random() < dt * 15) {
             this.bursts.emit(this.frostWaveX, b.y + 0.8, b.z, 4, { color: [0xffb84a, 0x9fe8ff], speed: 2, life: 0.4 });
           }
         } else {
-          this.player.hurt(1, this.frostWaveX - 1);
+          this.player.hurt(1, this.frostWaveX + 1);
           if (!f.waveHint) {
             f.waveHint = true;
             this.hud.toast(`<b>Frost Wave!</b> Light your <b>Lantern</b> (${key('R', 'Lantern')}) on the <b>First Age</b> to walk right through it!`, 5500);
@@ -393,7 +492,7 @@ export class SummitGame extends Game {
     // Phase 2: Sweeping Gnomon Shadow-Beam between the two Frost-Lock plates
     if (f.orinPhase1 && !f.orinPhase2) {
       this.gnomonPivot.rotation.y += dt * 1.65;
-      if (ctl && tierAt(b.z) === 5 && b.y < ny + 0.45) {
+      if (ctl && b.y < ny + 0.45) {
         const dx = b.x - this.gnomonPivot.position.x;
         const dz = b.z - this.gnomonPivot.position.z;
         const dist = Math.hypot(dx, dz);
@@ -439,6 +538,9 @@ export class SummitGame extends Game {
     this.player.update(dt);
     this.updateEntities(dt);
     this.updateOrinBoss(dt, ctl);
+    this.arenaMood(f.summitTalk && !f.hoursReturned && inArena(b.x, b.y, b.z));
+    if (this.inArenaMood) this.hideMountain(true); // (a feature rebuilt mid-fight comes back visible)
+    this.noticeStoppedAge(f);
     for (const st of this.statues || []) st.update(0);
     // the orrery's rings, the clockworks' gears, the lighthouse beam far below: turning where time runs
     for (const sp of SPINNERS) if (sp.era === this.era) sp.obj.rotation[sp.axis] += (sp.speed || (f.hoursReturned ? 0.12 : 0)) * dt;
@@ -461,11 +563,10 @@ export class SummitGame extends Game {
     if (ctl && this.era === M && !f.christopherMet && b.x >= L.metX && b.x < L.metX + 12 && tierAt(b.z) === 2) this.meetChristopher();
     else if (ctl && this.era === M && !f.summitTalk && f.christopherMet && tierAt(b.z) === 5 && b.x < L.christopherX + 8) {
       f.summitTalk = true;
-      this.cutscene(SUMMIT).then(() => {
-        this.startOrinBoss();
-        this.save();
-      });
+      this.cutscene(SUMMIT).then(() => this.enterArena(true));
     }
+    // (back on the summit mid-fight: the crack he opened at the Needle still leads to him)
+    else if (ctl && f.summitTalk && !f.hoursReturned && tierAt(b.z) === 5 && !inArena(b.x, b.y, b.z) && b.x < L.christopherX + 4) this.enterArena(false);
     // the overlook, the first time: the whole world, far below
     else if (ctl && !f.sawView && tierAt(b.z) === 5 && b.x <= L.overlookX1 && b.z < L.ZS - 4) {
       f.sawView = true;

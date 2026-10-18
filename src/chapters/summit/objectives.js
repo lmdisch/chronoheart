@@ -1,6 +1,6 @@
 // The goal and hint for wherever you are on the mountain (the Menu shows them; the hint stays
 // hidden behind a button until asked for).
-import { L, tierAt } from './level.js';
+import { L, tierAt, inArena } from './level.js';
 
 const step = (goal, hint) => ({ goal, hint });
 
@@ -15,7 +15,7 @@ const up = (k, end) => `Keep climbing: at the ${end} end, where the flags are, t
 
 export function currentGoal(game) {
   const s = game.state, f = s.flags, inv = s.inventory, b = game.player.body, x = b.x;
-  const k = keys(), tier = tierAt(b.z);
+  const k = keys(), tier = inArena(b.x, b.y, b.z) ? 5 : tierAt(b.z); // (the End of Time counts as the summit)
   const lantern = (age) => `Light the Lantern (${k.lantern}): it always lights on the First Age.${age === 'the First Age' ? '' : ` Swing it forward to <b>${age}</b> with ${k.future}.`} Inside its light, that age is real. Walk across with it lit.`;
 
   if (f.endingAge !== undefined) {
@@ -39,7 +39,7 @@ export function currentGoal(game) {
       if (!f.christopherMet) return step('Cross the Sundial Terrace.', 'Someone is standing by the statue.');
       return step('Climb Highcrest.', up(k, 'east'));
     case 3:
-      if (!f.hasEcho) return step('Talk to Lyra the Wise.', 'Her shimmering Echo is waiting at the east end of the Clockworks.');
+      if (!f.hasEcho) return step('Talk to the stranger.', 'The old woman in the winter shawl is waiting at the east end of the Clockworks.');
       if (!f.clockworksOpen) {
         return step(
           'Open the clockworks door.',
@@ -77,14 +77,14 @@ export function currentGoal(game) {
       if (!f.summitTalk) return step('Find Sir Orin.', 'He is at the Needle, at the west end of the summit.');
       if (!f.orinPhase1) {
         return step(
-          "Shatter the Needle's Frost-Anchor (1/3).",
-          `Light the Lantern (${k.lantern}) on the <b>First Age</b> so its warm bubble dissolves Sir Orin's rolling Frost Waves, then strike the East Frost-Anchor three times with your wrench (${k.attack}).`,
+          'Shatter the Frost-Anchor (1/3).',
+          `At the End of Time, Sir Orin's waves of frost roll down the hall. Light the Lantern (${k.lantern}) on the <b>First Age</b> and its warmth carries you through them (or jump them), then strike the Frost-Anchor by the back wall three times with your wrench (${k.attack}).`,
         );
       }
       if (!f.orinPhase2) {
         return step(
-          "Hold the Needle's Twin Frost-Locks (2/3).",
-          `Record an <b>Echo</b> (${k.echo}) on one of the two blue Frost-Lock plates beside the Needle, then stand on the other plate yourself while jumping/stepping clear of the sweeping gnomon beam.`,
+          'Hold the Twin Frost-Locks (2/3).',
+          `Record an <b>Echo</b> (${k.echo}) standing on one of the two blue Frost-Lock plates, then stand on the other plate yourself. Jump the gnomon's sweeping shadow as it comes round. The barrier in front of the throne falls.`,
         );
       }
       return step(

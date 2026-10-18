@@ -1,7 +1,7 @@
 // Chapter Three, Highcrest: the whole climb, every puzzle solved the way it's meant to be, with real
 // key presses: up the switchbacks (walking up each turn), the Lantern at the ravine, the falls, the crevasse, the rockfall
 // and the observatory doors; three echoes on the clockworks plates and one on the gold gate's;
-// the Master Drawings to Sela; the favors; Sir Orin's three phases at the Needle, the hours going home, the last shift, and the age you chose after
+// the Master Drawings to Sela; the favors; Sir Orin's three phases at the End of Time, the hours going home, the last shift, and the age you chose after
 // the credits. Teleports only skip plain walking between them.
 import { boot, newGame, sleep, driver, autoplay } from './lib.mjs';
 
@@ -162,31 +162,27 @@ await walkTo(U(70.2), Z(5, 3.4), { t: 4000 });
 await interactNow();
 await check('the Borrowed Hour, replaying under the orrery', (s) => s.f.memorySeen);
 
-// ---- Sir Orin, at the Needle: the Frost-Anchor, the twin Frost-Locks; the view from the top; and Zach's flag
+// ---- Sir Orin, at the Needle: he takes you to the End of Time. The Frost-Anchor, the twin Frost-Locks, the Stopped Age
 await walkTo(U(28), Z(5), { t: 12000 });
 await d.settle();
-await check('Sir Orin tells you his story', (s) => s.f.summitTalk);
+await sleep(1500);
+await d.settle();
+const A = await page.evaluate(async () => (await import('/src/chapters/summit/level.js')).ARENA);
+await check('Sir Orin tells you his story, and takes you to the End of Time', (s) => s.f.summitTalk && s.y >= A.y - 0.1 && s.x < A.x0 + 10);
 await R();
-await walkTo(U(27.6), Z(5, 2.5), { t: 4000 });
-await tap(d.K.right, 60);
+await walkTo(A.anchorX + 0.3, A.z0 + 1.8, { t: 9000 });
 await d.strike(3);
 await check("phase 1: the Lantern's First Age through the frost waves, and the Frost-Anchor shattered", (s) => s.f.orinPhase1);
 await R();
-await walkTo(U(25.5), Z(5, 1.5), { t: 4000 });
+await walkTo(A.platesX + 0.5, A.z0 + 0.5, { t: 6000 });
 await echoHere();
 for (let i = 0; i < 4; i++) {
-  await walkTo(U(25.5), Z(5, 5.5), { t: 4000, tol: 0.15 });
+  await walkTo(A.platesX + 0.5, A.z1 - 0.5, { t: 4000, tol: 0.15 });
   await sleep(300);
   if ((await d.st()).f.orinPhase2) break;
 }
 await check('phase 2: an echo on one Frost-Lock, you on the other', (s) => s.f.orinPhase2);
-await walkTo(U(9.5), ZB[5] - 7, { t: 6000 });
-await d.settle();
-await check('out on the overlook: the whole world, far below', (s) => s.f.sawView);
-await walkTo(U(9.5), ZB[5] - 7, { t: 2000 });
-await interactNow();
-await check("Zach's flag, planted at the top of the world", (s) => s.f.flagPlanted && s.kind.includes('flag'));
-await walkTo(U(22.6), Z(5, 2.2), { t: 6000 });
+await walkTo(A.orinX - 1.2, (A.z0 + A.z1 + 1) / 2, { t: 9000 });
 await R();
 await tap('KeyE');
 await check('the Lantern shows him the Stopped Age', async () => (await lantern()).bubble === F);
@@ -208,6 +204,13 @@ await check('Continue: back on the mountain, in the age you chose', (s) => s.era
 await tap('KeyQ');
 await sleep(500);
 await check('the last shift is spent: no more shifting', (s) => s.era === M);
+await walkTo(U(30), Z(5), { t: 20000 }); // (along the road, clear of the dome)
+await walkTo(U(9.5), ZB[5] - 7, { t: 8000 });
+await d.settle();
+await check('out on the overlook: the whole world, far below', (s) => s.f.sawView);
+await walkTo(U(9.5), ZB[5] - 7, { t: 2000 });
+await interactNow();
+await check("Zach's flag, planted at the top of the world", (s) => s.f.flagPlanted && s.kind.includes('flag'));
 
 console.log('failures:', d.failures(), 'errors:', errors);
 await browser.close();

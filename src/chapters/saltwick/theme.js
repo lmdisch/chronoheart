@@ -65,12 +65,13 @@ const MUSIC = {
 /** The Future as first found, and as it becomes once the tide comes home (see SaltwickGame.setMood). */
 export const ATMOS_DRY = JSON.parse(JSON.stringify(ATMOS[2]));
 export const ATMOS_HEALED = {
-  skyTop: 0x0c1840, skyHorizon: 0x3fa6b8, fog: 0x245a78, fogNear: 26, fogFar: 125,
-  sun: 0xbfe0ff, sunI: 1.3, sunDir: [-0.3, 1.0, 0.6],
-  hemiSky: 0x7ac8ff, hemiGround: 0x2a4a5a, hemiI: 1.3, exposure: 1.02, emissive: 1.4, glow: 1.5, bloom: 0.3, stars: 1,
+  // the Age of Lights: a green harbor town in a long gold evening, its lamps coming on
+  skyTop: 0x3a78b8, skyHorizon: 0xffd2a0, fog: 0xb8d4c8, fogNear: 30, fogFar: 135,
+  sun: 0xffe2b0, sunI: 2.2, sunDir: [-0.55, 0.7, 0.7],
+  hemiSky: 0xdcefff, hemiGround: 0x4a7a52, hemiI: 1.05, exposure: 0.98, emissive: 1.5, glow: 2.2, bloom: 0.45, stars: 0,
 };
 export const GRADE_DRY = GRADES[2];
-export const GRADE_HEALED = { tint: [0.95, 1.0, 1.06], shadowTint: [0.8, 0.9, 1.1], saturation: 1.14, contrast: 1.05, vignette: 0.36, rays: 0.0, rayColor: [0.6, 0.8, 1.0] };
+export const GRADE_HEALED = { tint: [1.03, 1.01, 0.95], shadowTint: [0.82, 0.94, 1.04], saturation: 1.16, contrast: 1.05, vignette: 0.34, rays: 0.45, rayColor: [1.0, 0.9, 0.7] };
 
 export default {
   width: 300, // level length (x): the shore road, then the Tide Well
