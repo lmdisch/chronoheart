@@ -62,11 +62,11 @@ export const ENDING = [
   N('Across three ages at once, the Clocktower shudders... and begins to tick.'),
   DE("Vivienne! I knew you'd find your way. I've been stuck between the ages for days. You pulled me back through."),
   Wr('Master Donald Eugene! You\'re all right! And the amulet... look, the crack is gone!'),
-  DE("Mended by the Tower's heart. That means it's yours now, apprentice. Time always needs someone to look after it."),
-  DE("And let me tell you what all my years among the clocks have taught me. Time is the most precious thing any of us will ever have."),
-  DE("Not the hours on a clock face. The hours you spend with the people you love. Those are the ones you can never wind back, not even with a Chronoheart."),
-  DE('So spend your time well, Vivienne. Spend it on them.'),
-  Wr('I will. I promise. ...Master, why did the mainspring snap? Something was pulling on it from outside.'),
+  DE("Mended by the Tower's heart. Which makes it yours now, apprentice."),
+  DE("I could hear the Tower the whole time I was stuck, you know. Every key going home. I'd know your hands anywhere: you have never once fitted anything gently."),
+  Wr('It worked, though.'),
+  DE('It did. ...It did, Vivienne.'),
+  Wr('...Master, why did the mainspring snap? Something was pulling on it from outside.'),
   DE("...You felt it too. For fifty years, someone up on the mountain has been borrowing little slivers of our hours, hoping the valley wouldn't notice."),
   DE("And now that we've locked Hollowmere's heart forward again, I can already feel the pull shifting toward the sea—and a pocketwatch I hid away a very long time ago."),
   Wr('A pocketwatch? And another clock by the sea?'),
@@ -176,17 +176,16 @@ function npcLines(game, id) {
       ];
     case 'michelle': {
       const m = S('michelle', 'Mysterious Stranger');
-      if (f.finished) return [m('I heard it from here: the first tick. Like an old friend breathing easy again.'), m('Spend your time well, Vivienne. The valley has its heartbeat back, though the mountain above us is still holding its breath.')];
+      if (f.finished) return [m('I heard it from here: the first tick. Like an old friend breathing easy again.'), m('The valley has its heartbeat back. The mountain is still holding its breath.')];
       if (f.metMichelle && game.state.kindness.length >= FAVORS.length)
-        return [m("You have the look of someone who has been busy being kind, Vivienne. I can always tell."), m('People remember a kindness far longer than you would think. And so do I.')];
+        return [m("You have the look of someone who has been busy being kind, Vivienne. I can always tell."), m('People remember a kindness far longer than you would think. So do I.')];
       if (f.metMichelle)
-        return [m('Spend your time wisely, Vivienne. And wherever you find yourself, always remember to help others.')];
+        return [m('The river is cold this time of year. Mind your boots.')];
       f.metMichelle = true;
       return [
-        m('Ah. The clockmaker\'s apprentice, right on time. The river has been expecting you.'),
-        m('A little advice before you cross. Time is the one thing none of us gets back, and it is very easy to waste—or to cling to until it turns to stone. Spend it wisely.'),
+        m('Ah. The clockmaker\'s apprentice, right on time. Or a little early. The river has been expecting you.'),
+        m('A little advice before you cross. Mind how tightly you hold on to things. Some people hold an hour so tightly that it freezes.'),
         m('Your master used to vanish for days at a time, you know. When we were young, he told me he kept a room "in the oldest age, behind a door with a brass gear where no one would ever think to knock."'),
-        m('And wherever you find yourself, always remember to help others. A kindness echoes across the years far longer than you would think.'),
         Wr("I'll remember. Thank you... um. I didn't catch your name."),
         m('No. You didn\'t.'),
       ];
@@ -485,6 +484,7 @@ export async function interact(game, ent) {
         N("There's a note folded underneath it:"),
         N('"Vivienne. The Tower\'s heart is failing and the ages are coming loose. The Chronoheart is cracked, but it will carry you for a little while."'),
         N('"Find the three Era Keys: the Sun Disc of the first age, the Bell Hammer of ours, and the Fusion Core of the last. Restart the Tower. ~D.E."'),
+        N('"P.S. There is bread in the tin. Eat something first. You never do."'),
         Wr('The first age... and the last? He means the PAST and the FUTURE?!'),
       ]);
       f.hasAmulet = true;
@@ -759,9 +759,9 @@ export async function interact(game, ent) {
         N('A hidden room: a cot, a lantern, maps of the valley in three different ages, and the Clocktower chalked on the wall, covered in notes.'),
         N('On the workbench lies a letter, held down by a coil of bright star-iron, beside a faded charcoal sketch of three young clockmakers marked "D., O., & L."'),
         N('"Vivienne. If you found this room, you\'ve been paying attention—or somebody pointed you here. Fifty years ago, there were three of us who kept the valley\'s clocks: Orin, Lyra, and I."'),
-        N('"On the night Lyra fell ill, Orin locked the mountain observatory in a single borrowed hour so she would never slip away from him. That fifty-year pull is what finally snapped our Tower\'s mainspring."'),
+        N('"One Midwinter Night on the mountain, something ended that Orin would not let end. I came down. He stayed. I think it is his pull on the hours that has finally snapped our Tower\'s mainspring."'),
         N('"This is the Everspring: a mainspring of star-iron that never runs down. Fit it to the Chronoheart and it will never need to recharge again. ~D.E."'),
-        Wr('Three clockmakers... Donald Eugene, Orin, and Lyra. And someone up on the mountain has been holding onto a single hour for fifty years...'),
+        Wr('Three clockmakers... Donald Eugene, Orin, and Lyra. He has never once said either of those names.'),
         N("You fit the Everspring into the Chronoheart. A slow warmth spreads from your chest, and the amulet's ring settles into a steady gold glow."),
       ]);
       f.steadyHeart = true;

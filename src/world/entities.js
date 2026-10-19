@@ -995,6 +995,15 @@ export class Interactable extends EraEntity {
       const face = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.34, 0.06), this.knobMat);
       face.position.set(this.x, this.y + 0.12, this.z + 0.16);
       this.group.add(cable, box, face);
+    } else if (v === 'cup') {
+      // a tin cup, cracked and mended with gold
+      const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.11, 0.26, 10), std(0x9aa0a8, { metalness: 0.6, roughness: 0.4 }));
+      cup.position.set(this.x, this.y + 0.13, this.z);
+      const seam = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.27, 0.27), glowOf(0xffc850, 2.2));
+      seam.position.set(this.x + 0.02, this.y + 0.13, this.z);
+      seam.rotation.x = 0.35;
+      this.cup = true;
+      this.group.add(cup, seam);
     }
     if (this.spec.icon) {
       // something to pick up from it: floats above until its flag is set
@@ -1019,6 +1028,7 @@ export class Interactable extends EraEntity {
   }
   update(dt) {
     const g = this.game, s = g.state, t = g.time;
+    if (this.cup) this.group.visible = this.available();
     if (this.handle) {
       // a gate's lever swings back as its gate runs out of time; a flag's lever stays thrown
       const frac = this.spec.gate ? g.craft.gateFrac(this.spec.gate) : s.flags[this.spec.flag] ? 1 : 0;

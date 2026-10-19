@@ -82,12 +82,12 @@ On touch, the **Lantern** and **Echo** buttons appear once you have them.
 ### 3. The Icefall and the Sundial Terrace (walk east)
 
 - **The falls** cascade down the mountain and right through the road. Only in the Stopped Age are they frozen over. At the edge: `R`, then `E` to swing the Lantern forward to the Stopped Age. Walk across on the ice.
-- **Sir Orin** is at the statue of the First Clockmaker. He recognizes your goggles from the margin of the old drawings, reveals he is keeping his dying wife **Lyra** frozen at 11:59 on Midwinter Night, and seals the observatory doors in ice. Zach gives you his flag.
+- **Sir Orin** is at the statue of the First Clockmaker. He recognizes your goggles from the margin of the old drawings, refuses to say what he is keeping up on the mountain, and seals the observatory doors in ice. Zach gives you his flag.
 - The road turns at the **east end**.
 
 ### 4. The Clockworks (walk west)
 
-- The **Mysterious Stranger** is waiting here, the same old woman you met by the river and on the quay. She knew Orin and Lyra once, she says, and won't say more; she gives you an **Echo Lens** (**Echo**). (Look at her through the time lens, in any chapter, and she flickers blue, like an echo.)
+- The **Mysterious Stranger** is waiting here, the same old woman you met by the river and on the quay. She knows what Orin is keeping, she says, but it isn't hers to tell; she gives you an **Echo Lens** (**Echo**). (Look at her through the time lens, in any chapter, and she flickers blue, like an echo.)
 - **The clockworks door** wants all three green plates held at once, and the third plate is crusted in frost (requiring **First Age** Lantern light). Leave echoes on the first two plates (`V`), then light the Lantern (`R`) on the First Age and stand on the third plate yourself (or record an Echo with the Lantern lit!). The door opens for good.
 - Inside the hall, pick up **The Master Drawings** (`masterDrawings`).
 - **The gold gate** opens while its gold plate is held (leave an echo on it), OR strike the brass **resonance chime** three times with your wrench (`X`) to hold the gate open for 9 seconds.
@@ -102,13 +102,13 @@ On touch, the **Lantern** and **Echo** buttons appear once you have them.
 ### 6. The Summit (walk west)
 
 - **The observatory's doors are frozen shut.** In the First Age there were no doors at all: `R` at the ice, and walk through.
-- **Tobin the Stargazer** keeps the star-books. **Under the orrery** (or by ringing the **Orrery alignment chime** with `X`), a memory is replaying: **Sir Orin and Lyra** fifty years ago on Midwinter Night.
+- **Tobin the Stargazer** keeps the star-books. **Under the orrery** a memory is replaying, and it plays the first time you walk past it (or ring the **Orrery alignment chime** with `X`): **Sir Orin and Lyra**, fifty years ago, at one minute to midnight on Midwinter Night. Lyra is very ill. Every time she starts to tell Orin something, her cup slips and cracks, and the hour starts again.
 - **The overlook & brass telescope:** walk out past the Needle to the rail at the north edge and examine the **brass telescope** (`F`) to look down through the clouds at Hollowmere and Saltwick.
 - **Sir Orin & The Borrowed Hour.** At the Needle, Orin strikes the stone with his staff and takes you to **the End of Time**: a ruined throne room of black marble, every crack filled with gold, with nothing outside it but drifting shards. There are no ages to step between here (the Lantern still works). Orin sits on his throne against the far wall. A shrine stands by the door, so a fall puts you back here; and if you do leave, the crack he opened at the Needle still leads to him.
   1. **Phase 1 (Frost Waves & the Frost-Anchor):** Waves of frost roll down the hall from the throne. Light the **Lantern** (`R`) on the **First Age** and its warmth carries you through them (or jump them), then strike the **Frost-Anchor** by the back wall three times with your wrench (`X`).
   2. **Phase 2 (Twin Frost-Locks & the Gnomon's Shadow):** Record an **Echo** (`V`) on one of the two blue Frost-Lock plates, then stand on the other plate yourself, jumping the gnomon's shadow as it sweeps round. The barrier before the throne falls.
-  3. **Phase 3 (The Stopped Age):** Climb the dais, stand beside Orin, light the **Lantern** (`R`), swing it to **the Stopped Age** (`E`), and talk to him (`F`). Seeing that freezing time has turned even Lyra's memory into silent stone, he lets the hour end, and the End of Time comes apart.
-- **One Final Real Hour:** As the fifty years of borrowed hours return home, **Lyra** wakes for one real, un-looped Midwinter hour alongside **Sir Orin**, **Donald Eugene**, and **Vivienne**, and Vivienne recognizes her at last: the stranger by the river, on the quay and on the Lantern Road were all echoes of Lyra.
+  3. **Phase 3 (The Stopped Age):** Climb the dais, stand beside Orin, light the **Lantern** (`R`), swing it to **the Stopped Age** (`E`), and talk to him (`F`). Vivienne tells him she would have done the same to get Donald Eugene back. Then he sees the Stopped Age: even Lyra's memory frozen, her cup hanging in the air. He lets midnight strike, and the End of Time lets them go.
+- **One Final Real Hour:** As the fifty years of borrowed hours return home, **Lyra** comes out of the Observatory on Orin's arm for one real hour. Her first words give her away: the stranger by the river, on the quay and on the Lantern Road were all echoes of her. Donald Eugene arrives, and he and Orin finally have it out. At midnight Lyra finishes the sentence she started fifty years ago, and rests. Her cup stays at the foot of the Needle, its crack filled with gold.
 
 ---
 
@@ -143,9 +143,11 @@ On touch, the **Lantern** and **Echo** buttons appear once you have them.
 
 At the summit the Chronoheart is ready for its long shift, and Vivienne chooses which age to call home. Because she already delivered the **Master Drawings** to Sela during the climb, **all three endings are completely paradox-free:**
 
-- **The First Age:** she stays to help Sela's builders raise the Observatory and tune the first clocks.
-- **Home, in Midwinter:** she walks home to Hollowmere with Donald Eugene and Sir Orin, climbing Highcrest every Midwinter after to drink cocoa under the stars and remember Lyra.
-- **The Waking Age:** she steps forward into the Stopped Age as it thaws, and stays to help it start again.
+Each one costs her something, and each has a goodbye.
+
+- **The First Age:** she says goodbye to Donald Eugene, who gives her his wrench to keep ("I want it back in six hundred years"), and becomes the First Clockmaker. The wrench is handed down, keeper to keeper, until it comes back to her on her first day as an apprentice.
+- **Home, in Midwinter:** she walks home to Hollowmere with Donald Eugene and Sir Orin, and every Midwinter after the three of them climb Highcrest to sit by Lyra's cup and tell her what grew.
+- **The Waking Age:** she leaves everyone she knows and steps forward into the Stopped Age as it thaws, to help it start again.
 
 **The Master's Key (All 10 Cogs):** Find all ten Lost Cogs on Highcrest and Donald Eugene and Sir Orin forge **The Master's Key**, which rekindles the Chronoheart so you can shift freely between all three healed ages on Highcrest—and unlocks the **Astral Clock-Door** in Hollowmere Square (**The Starlit Garden, 10,000 Years On**)!
 

@@ -859,7 +859,7 @@ export const SPAWNS = [
   { type: 'npc', id: 'youngLyra', era: M, ...on(5, U(68.2), 2.4), sheet: 'lyraYoung', name: 'Lyra (Memory)', needs: 'christopherMet', unless: 'hoursReturned', memory: true },
   { type: 'npc', id: 'youngChristopher', era: M, ...on(5, U(69.6), 2.4), sheet: 'christopherYoung', name: 'Sir Orin (Memory)', needs: 'christopherMet', unless: 'hoursReturned', memory: true },
   { type: 'npc', id: 'christopher', era: M, ...on(5, L.christopherX, 2.2), sheet: 'christopher', name: 'Sir Orin', needs: 'christopherMet', reach: 2.4 }, // (on his throne during the fight: see SummitGame.placeOrin)
-  { type: 'npc', id: 'lyraEnd', era: M, ...on(5, U(23.2), 2.4), sheet: 'michelleWinter', name: 'Lyra', needs: 'hoursReturned' },
+  { type: 'npc', id: 'lyraEnd', era: M, ...on(5, U(23.2), 2.4), sheet: 'michelleWinter', name: 'Lyra', needs: 'hoursReturned', unless: 'lyraAtRest' },
   { type: 'npc', id: 'eugene', era: M, ...on(5, U(28.5), 4.4), sheet: 'eugeneWinter', name: 'Donald Eugene', needs: 'hoursReturned' },
   { type: 'npc', id: 'zachEnd', era: M, ...on(5, U(30.2), 5.6), sheet: 'zachWinter', name: 'Zach Tiberious', small: true, needs: 'hoursReturned' },
   { type: 'npc', id: 'meganEnd', era: M, ...on(5, U(31.4), 6), sheet: 'meganWinter', name: 'Megan the Squirrel', small: true, needs: 'hoursReturned' },
@@ -880,6 +880,7 @@ export const SPAWNS = [
   { type: 'interact', id: 'frostWall', era: M, ...on(5, L.frostWallX + 1.5, 3.5), prompt: 'The frozen doors', unless: 'hoursReturned' },
   { type: 'interact', id: 'starBooks', era: M, ...on(5, U(80.5), 0.6), prompt: "Tobin's star-books" },
   { type: 'interact', id: 'needle', era: M, x: L.needle.x + 0.5, y: gy(5, L.needle.x), z: L.needle.z + 1.6, prompt: 'The Needle' },
+  { type: 'interact', id: 'lyraCup', era: M, ...on(5, U(22.4), 3.2), prompt: 'The cup', visual: 'cup', needs: 'lyraAtRest' },
   { type: 'interact', id: 'telescope', era: M, x: U(24), y: gy(5, U(24)), z: ZS - 8.8, prompt: 'Look through the brass telescope' },
   { type: 'interact', id: 'flagSpot', era: M, x: L.flagSpot.x + 0.5, y: gy(5, L.flagSpot.x), z: L.flagSpot.z, prompt: 'Plant the flag', needs: 'zachQuest', unless: 'flagPlanted' },
   // the last of Donald Eugene's spilled cogs

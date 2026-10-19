@@ -15,7 +15,7 @@ import { Game, baseState, wait } from '../../game.js';
 import { progress } from '../../chapter.js';
 import theme, { ATMOS_GOLDEN, ATMOS_STOPPED, ATMOS_NIGHT, ATMOS_WAKING, GRADE_GOLDEN, GRADE_STOPPED, GRADE_NIGHT, GRADE_WAKING } from './theme.js';
 import { buildLevel, SPAWNS, CHECKPOINTS, AREAS, L, COG_TOTAL, SPINNERS, inFrost, tierAt, gy, zb, ARENA, inArena } from './level.js';
-import { talk, interact, struck, runCommand, ITEMS, INTRO, FAVORS, MEET, RELEASE, SUMMIT, ARRIVE, REUNION, COGS_ENDING, CHOICE, CHOICES, ENDINGS, VIEW } from './story.js';
+import { talk, interact, struck, runCommand, ITEMS, INTRO, FAVORS, MEET, MEMORY, RELEASE, summitLines, ARRIVE, REUNION, AFTER, COGS_ENDING, CHOICE, CHOICES, ENDINGS, VIEW } from './story.js';
 import { currentGoal } from './objectives.js';
 import { Powers, BUBBLE_R } from './powers.js';
 
@@ -224,6 +224,7 @@ export class SummitGame extends Game {
     return this.state.flags.endingAge !== undefined ? 'Welcome back, Vivienne. The hours are home.' : 'Welcome back, Vivienne.';
   }
   continueGame() {
+    if (this.state.flags.endingAge !== undefined) this.state.flags.lyraAtRest = true; // (saves from before she rested)
     super.continueGame();
     const age = this.state.flags.endingAge;
     if (age !== undefined) this.applyEra(age, true);
@@ -392,7 +393,15 @@ export class SummitGame extends Game {
     letterbox(true);
     await wait(500);
     const allCogs = this.state.cogs.length >= COG_TOTAL;
-    await this.dialogue.run([...REUNION, ...(allCogs ? COGS_ENDING : []), ...CHOICE]);
+    await this.dialogue.run(REUNION);
+    // midnight: Lyra is at rest, and her cup stays by the Needle
+    setFade(1, '#05040a');
+    await wait(1400);
+    f.lyraAtRest = true;
+    this.save();
+    setFade(0);
+    await wait(700);
+    await this.dialogue.run([...AFTER, ...(allCogs ? COGS_ENDING : []), ...CHOICE]);
     if (allCogs) this.grantMasterKey();
     letterbox(false);
     const age = await this.chooseAge();
@@ -453,6 +462,12 @@ export class SummitGame extends Game {
     this.hud.show(false);
     this.player.mesh.visible = this.player.shadow.visible = false;
     this.onCredits?.(this.state);
+  }
+
+  /** Walking under the orrery, where the memory replays. */
+  nearMemory(b) {
+    const m = this.npcs.find((n) => n.id === 'youngLyra');
+    return !!m && Math.abs(b.x - m.x - 0.7) < 2.5;
   }
 
   /** Step the 3-phase Needle encounter with Sir Orin. */
@@ -563,7 +578,15 @@ export class SummitGame extends Game {
     if (ctl && this.era === M && !f.christopherMet && b.x >= L.metX && b.x < L.metX + 12 && tierAt(b.z) === 2) this.meetChristopher();
     else if (ctl && this.era === M && !f.summitTalk && f.christopherMet && tierAt(b.z) === 5 && b.x < L.christopherX + 8) {
       f.summitTalk = true;
-      this.cutscene(SUMMIT).then(() => this.enterArena(true));
+      this.cutscene(summitLines(f)).then(() => this.enterArena(true));
+    }
+    // under the orrery, the first time: the Borrowed Hour, replaying
+    else if (ctl && this.era === M && !f.memorySeen && f.christopherMet && !f.hoursReturned && tierAt(b.z) === 5 && this.nearMemory(b)) {
+      f.memorySeen = true;
+      this.cutscene(MEMORY).then(() => {
+        this.hud.toast('A memory, replaying: <b>the Borrowed Hour</b>.', 4000);
+        this.save();
+      });
     }
     // (back on the summit mid-fight: the crack he opened at the Needle still leads to him)
     else if (ctl && f.summitTalk && !f.hoursReturned && tierAt(b.z) === 5 && !inArena(b.x, b.y, b.z) && b.x < L.christopherX + 4) this.enterArena(false);

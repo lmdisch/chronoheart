@@ -38,6 +38,20 @@ Answers to the questions Chapters One and Two leave open. Chapter Three tells th
 - **Nobody up the mountain knows about time travel.** Townsfolk like Bram only know old songs (a warm spring before the ice, falls that froze into a stair).
 - **Hearts carry between chapters:** each favor's heart from an earlier chapter is added in the later ones.
 
+### Decided on 2026-10-19 (the story pass)
+
+Logan asked for a critical read of the story ("real emotional resonance, not cheesy") and then for all of it to be done. The rules the rewrite follows:
+
+- **Say the theme out loud once.** Lyra says it, in the memory: "If you hold an hour too tightly, it freezes." Everyone else acts it out. Donald Eugene's "time is precious" speech, the Stranger's "spend it wisely / help others", and Vivienne's speeches at the Needle are gone.
+- **Withhold Orin's story until you see it.** Chapters One and Two only say that something ended on the mountain one Midwinter Night, that Orin wanted to wind the world back with the watch, and that Lyra sent Donald Eugene down with it. Orin won't explain himself when you meet him. The memory under the orrery (now played automatically as you walk under it) is the first time you learn Lyra was dying.
+- **Lyra's unfinished sentence.** In the memory she begins "Orin. When the hour is over, I want you to—", her cup slips and cracks, and the hour starts again. At midnight in the reunion she finishes it: "...come up here every Midwinter. All of you. Look out at the valley, not back at me, and tell me what grew."
+- **The cup.** Her tin cup comes back from the End of Time cracked and mended with gold (the hall's kintsugi), and stays at the foot of the Needle. Every Midwinter the three clockmakers sit by it.
+- **Orin is Vivienne's mirror.** At the End of Time he tempts her: stay, and Donald Eugene never gets a day older. She turns him not by arguing but by admitting she would have done the same to get her master back. Then the Lantern shows him the Stopped Age.
+- **Donald Eugene and Orin have it out:** "You took the watch and ran, Don." / "She asked me to." / "I know. That was the worst of it."
+- **The Stranger is recognized by a phrase,** not an explanation: "You are early. Or I am late." (Chapter One: "right on time. Or a little early"; Chapter Three: "Late, or early"). Lyra's first words in the reunion are "You're late, Vivienne. Or I'm early."
+- **Lyra rests at midnight.** She does not stand about afterward; her cup does.
+- **Every ending costs something.** The First Age: Donald Eugene gives Vivienne his wrench ("I want it back in six hundred years"), and it is handed down keeper to keeper until it comes back to her. Home: the Midwinter climbs. The Waking Age: she leaves everyone. At the choice Donald Eugene says he can't choose for her: "I'd choose the one with me in it."
+
 **Note on the Chapter Three pitch below:** its main power, Echoes, already exists in Chapter One (the Echo Gallery). A Chapter Three echo has to be clearly more than that, or the main power should be something else.
 
 ## Chapter Three
