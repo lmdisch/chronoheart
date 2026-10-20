@@ -21,7 +21,8 @@ import { touchActive } from '../../ui/touch.js';
 export const REWIND_MAX = 8; // seconds of your own movement the watch remembers
 const REWIND_RATE = 2.6; // how much faster than life it runs you back
 const TRAIL_PTS = 56;
-const FLOOD_RATE = 0.55; // cells a second
+const FLOOD_RATE = 0.75; // cells a second
+const FLOOD_PULL = 1.1; // how hard the inrushing water drags a swimmer back toward the heart (cells a second)
 const GATE_H = 3;
 
 const M = ERA.PRESENT;
@@ -350,7 +351,13 @@ export class Timecraft {
     }
     if (fl.y < WELL.floodTop && g.era === M && g.player.body.x > L.wellX0) {
       if (Math.floor(before * 2) !== Math.floor(fl.y * 2)) audio.sfx('splash');
-      g.renderer.shake = Math.max(g.renderer.shake, 0.12);
+      g.renderer.shake = Math.max(g.renderer.shake, 0.18);
+      // the water rushes in from the west: a swimmer is dragged back east, toward the heart
+      const b = g.player.body;
+      if (w.cell(M, Math.floor(b.x), Math.floor(b.y + 0.5), Math.floor(b.z)) === T.WATER) {
+        const nx = b.x + FLOOD_PULL * dt;
+        if (!w.solidAt(M, nx + 0.3, b.y + 0.1, b.z) && !w.solidAt(M, nx + 0.3, b.y + 0.9, b.z)) b.x = nx;
+      }
     }
   }
 

@@ -1,5 +1,7 @@
 # The story, and ideas for it
 
+> **The story was rewritten on 2026-10-20: see [docs/story.md](docs/story.md).** Donald Eugene is the antagonist, the Chronoheart is the only thing that touches time, and there is one ending. Everything below is the history of how the earlier versions were decided; where it disagrees with docs/story.md, docs/story.md wins.
+
 Notes from 2026-10-11 on. **Chapter Three, The Borrowed Hour, was built on 2026-10-16** (see docs/chapter-3-highcrest.md); what's below is the record of how the story was decided, and the ideas that weren't used.
 
 ## One game, three chapters

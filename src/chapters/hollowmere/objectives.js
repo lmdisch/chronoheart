@@ -102,7 +102,7 @@ export function currentGoal(game) {
       return step('Find a way across the gorge.', 'In the <b>Past</b>, a ropewright named Tamsin is planning a bridge here. Talk to her.');
     }
     if (!f.bridgeSealed) return step('Make the bridge last.', `Tamsin's bridge rots away within a century. Stand by it in the <b>Past</b> and use the Stasis Seal (${keys.seal}).`);
-    return step('Cross the gorge.', 'In the <b>Present</b> a city wall blocks the far bank, but in the <b>Future</b> it is only rubble. Cross in the Future, then return to the Present once you are past the wall.');
+    return step('Cross the gorge.', "Tamsin's bridge has stood for six hundred years, and the city on the far bank built its gate onto it. Walk across in the <b>Present</b>.");
   }
   // ---- The Echo Gallery
   if (x < X.yard) {

@@ -148,7 +148,7 @@ The road runs west to east. Each area below lists what you need and how to get i
 - **Past:** **Tamsin the Ropewright** wants to bridge the gorge, but her vine rope always rots.
 - **Future:** a scrapyard on this bank has a spool of **steel cable** (drone nearby). Bring it to Tamsin, and she builds the bridge.
 - The bridge rots away within a century. Stand by it in the **Past** and use the **Stasis Seal**: it now exists, unchanged, in every age.
-- The far bank is a jungle cliff in the Past and a **city wall** in the Present, but only **rubble** in the **Future**. Cross in the Future, hop the rubble, then switch back to the Present once you're past the wall.
+- The far bank is a jungle cliff in the Past and a **city wall** in the Present. Once the bridge has stood for six hundred years, the city's gate stands open onto it: walk straight across in the **Present**. (Before then the gate is barred; in the Future the wall is only rubble.)
 
 ### 10. The Echo Gallery
 

@@ -1077,6 +1077,7 @@ function hideaway(world) {
       b.deco(x0 + 1.05, 0, -3, 0.9, 0.45, 2.0, C.wood[1]);
       b.deco(x0 + 1.1, 0.45, -2.95, 0.8, 0.12, 1.9, 0xd8cca8);
       b.deco(x0 + 1.15, 0.57, -2.9, 0.7, 0.14, 0.45, 0xf0e8d0);
+      b.barrier(x0 + 1, 0, -3, x0 + 1, 0, -2);
       // shelves of jars, gears and bent springs
       for (const y of [1.2, 2.2]) {
         b.deco(x0 + 2.0, y, -3.0, 2.6, 0.1, 0.45, C.wood[0]);
@@ -1283,13 +1284,14 @@ function gatehouse(world) {
   // FUTURE: security corridor + vault
   b = world.staticBuilder(F);
   b.solid(160, 0, 0, 173, 4, 1, jitter(C.metal));
-  // the front (camera-side) wall is kept low so the corridor, its drones and the
-  // vault stay visible; at 2 high it still can't be jumped
-  b.solid(160, 0, 5, 173, 1, 6, jitter(C.metal));
+  // the front (camera-side) side is open, so the laser fence's gap at the floor can be seen:
+  // only a low curb with a red guide line, and an invisible barrier above it
+  b.deco(160, 0, 5, 14, 0.25, 0.9, 0x3a4250);
+  b.barrier(160, 0, 5, 173, 4, 5);
   b.solid(160, 0, ZMIN, 173, 9, -1, jitter(C.metalL));
   for (let x = 160; x <= 173; x += 2) {
     b.glow(x + 0.2, 4.0, 1.9, 0.6, 0.06, 0.1, 0xff3040);
-    b.glow(x + 0.2, 2.0, 5.3, 0.6, 0.04, 0.12, 0xff3040);
+    b.glow(x + 0.2, 0.02, 5.05, 0.6, 0.03, 0.08, 0xff3040);
   }
   b.light(163, 3, 3.5, 0xff3040, 6, 8, 0.1);
   b.light(170, 3, 3.5, 0xff3040, 6, 8, 0.1);
@@ -1610,13 +1612,9 @@ function crossing(world) {
   b.deco(L.gorgeX0 - 0.9, 0, 4.9, 0.25, 1.4, 0.25, C.log[0]);
   filler(b, P, L.crossingX0, L.gorgeX0 - 1, 101);
 
-  // PRESENT: the city wall on the far bank
+  // PRESENT: the city wall on the far bank. Its gate is barred while the gorge has no bridge;
+  // once Tamsin's bridge has stood for centuries, the city's gate stands open onto it.
   b = world.staticBuilder(M);
-  b.solid(L.farWallX0, 0, ZMIN, L.farWallX1, 8, 6, jitter(C.stone));
-  for (let z = ZMIN; z <= 6; z += 2) b.solid(L.farWallX0, 9, z, L.farWallX1, 9, z, jitter(C.stone));
-  b.deco(L.farWallX0 - 0.06, 0, 2.1, 0.08, 2.8, 2.8, 0x4a3420); // barred gate
-  for (let z = 2.3; z < 4.9; z += 0.45) b.deco(L.farWallX0 - 0.12, 0, z, 0.06, 2.8, 0.08, 0x3a3a42);
-  b.deco(L.farWallX0 - 0.04, 4.5, 3.0, 0.06, 1.8, 1.0, 0xb22a2a); // city banner
   for (let i = 0; i < 6; i++) b.deco(208 + hash3(i, 4, 4) * 3, 0, 0.1 + hash3(i, 5, 5) * 0.6, 0.06, 0.6 + hash3(i, 6, 6) * 0.5, 0.06, C.grassM[i % 5]); // reeds
   filler(b, M, L.crossingX0, L.gorgeX0 - 1, 103);
 
@@ -1641,7 +1639,18 @@ function crossing(world) {
   world.addFeature({
     id: 'bridgeM', eras: [M], key: (s) => String(!!s.flags.bridgeSealed),
     build: (b, era, s) => {
-      if (s.flags.bridgeSealed) bridgeDeck(b, M, true);
+      const open = !!s.flags.bridgeSealed;
+      b.solid(L.farWallX0, 0, ZMIN, L.farWallX1, 8, 6, jitter(C.stone));
+      for (let z = ZMIN; z <= 6; z += 2) b.solid(L.farWallX0, 9, z, L.farWallX1, 9, z, jitter(C.stone));
+      b.deco(L.farWallX0 - 0.04, 4.5, 3.0, 0.06, 1.8, 1.0, 0xb22a2a); // city banner
+      if (open) {
+        b.air(L.farWallX0, 0, 2, L.farWallX1, 2, 4); // the gate, open onto the bridge
+        b.deco(L.farWallX0 - 0.1, 0, 1.2, 0.08, 2.8, 0.8, 0x4a3420); // its door, swung back
+      } else {
+        b.deco(L.farWallX0 - 0.06, 0, 2.1, 0.08, 2.8, 2.8, 0x4a3420); // barred gate
+        for (let z = 2.3; z < 4.9; z += 0.45) b.deco(L.farWallX0 - 0.12, 0, z, 0.06, 2.8, 0.08, 0x3a3a42);
+      }
+      if (open) bridgeDeck(b, M, true);
       else for (const x of [L.gorgeX0, L.gorgeX1]) for (const z of [1.85, 4.95]) b.deco(x - 0.1, -0.6, z, 0.2, 0.7, 0.2, 0x4a3a2a); // rotted stumps
     },
   });

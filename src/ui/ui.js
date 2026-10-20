@@ -223,7 +223,7 @@ export function showInventoryPanel(items, open, favors = []) {
   }
   list.innerHTML = items
     .map(
-      (it) => `<div class="inv-item ${content.ITEMS[it]?.key ? 'key' : ''}"><img src="${iconURL(it)}" alt=""><div><h3>${content.ITEMS[it].name}${content.ITEMS[it].key ? ' <span class="badge">${theme.keyBadge}</span>' : ''}</h3><p>${content.ITEMS[it].desc}</p></div></div>`,
+      (it) => `<div class="inv-item ${content.ITEMS[it]?.key ? 'key' : ''}"><img src="${iconURL(it)}" alt=""><div><h3>${content.ITEMS[it].name}${content.ITEMS[it].key ? ` <span class="badge">${theme.keyBadge}</span>` : ''}</h3><p>${content.ITEMS[it].desc}</p></div></div>`,
     )
     .join('');
 }

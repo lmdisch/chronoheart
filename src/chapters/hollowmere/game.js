@@ -186,7 +186,7 @@ export class HollowmereGame extends Game {
     await new Promise((r) => setTimeout(r, 350));
     this.world.pocket = STUDY.pocket;
     this.refreshWorld();
-    this.player.place(STUDY.door - 0.4, 0, -1.4);
+    this.player.place(STUDY.door + 0.8, 0, -1.4); // on the rug, clear of the cot
     this.player.body.vx = this.player.body.vz = 0;
     audio.sfx('lever');
     setFade(0);
