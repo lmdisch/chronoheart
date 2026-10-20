@@ -1,8 +1,8 @@
 // Chapter Three, Highcrest: the whole climb, every puzzle solved the way it's meant to be, with real
 // key presses: up the switchbacks (walking up each turn), the Lantern at the ravine, the falls, the crevasse, the rockfall
 // and the observatory doors; three echoes on the clockworks plates and one on the gold gate's;
-// the Master Drawings to Sela; the favors; Sir Orin's three phases at the End of Time, the hours going home, the last shift, and the age you chose after
-// the credits. Teleports only skip plain walking between them.
+// the Founder's drawings to Sela; the favors; Donald Eugene's notebooks, the shimmer, his three phases at the End of
+// Time (the last one with Stasis waves), the night after, and the credits. Teleports only skip plain walking between them.
 import { boot, newGame, sleep, driver, autoplay } from './lib.mjs';
 
 const { browser, page, errors } = await boot({ chapter: 'summit' });
@@ -34,6 +34,9 @@ async function turn(k) {
 }
 
 await check('Chapter Three begins at Base Camp', (s) => s.x < U(6) && s.y === 0 && s.era === M);
+await page.waitForFunction(() => window.__game.state.flags.donAhead, { timeout: 15000 }).catch(() => {});
+await d.settle();
+await check('Donald Eugene goes on ahead: he is simply not there any more', (s) => s.f.donAhead);
 await walkTo(U(14.5), 4.6, { t: 4000 });
 await interactNow();
 await check('Anwen the Guide explains the switchbacks', (s) => s.mode === 'play');
@@ -160,19 +163,24 @@ await interactNow();
 await check('Tobin has his page back', (s) => s.kind.includes('page'));
 await walkTo(U(70.2), Z(5, 3.4), { t: 4000 });
 await interactNow();
-await check('the Borrowed Hour, replaying under the orrery', (s) => s.f.memorySeen);
+await check('Midwinter Night fifty years ago, left as an echo under the orrery', (s) => s.f.memorySeen);
+await walkTo(U(83), Z(5, 2.2), { t: 6000 }); // (in front of the star-books' shelves)
+await interactNow();
+await check("Donald Eugene's notebooks: Attempt 8,512", (s) => s.f.notebooksRead);
 
-// ---- Sir Orin, at the Needle: he takes you to the End of Time. The Frost-Anchor, the twin Frost-Locks, the Stopped Age
+// ---- the shimmer at the Needle: the End of Time. The Anchor-Clock, his two locks, and the Stasis waves
 await walkTo(U(28), Z(5), { t: 12000 });
+await walkTo(U(21.5) + 0.9, Z(5, 2.2), { t: 4000 });
+await interactNow();
 await d.settle();
 await sleep(1500);
 await d.settle();
 const A = await page.evaluate(async () => (await import('/src/chapters/summit/level.js')).ARENA);
-await check('Sir Orin tells you his story, and takes you to the End of Time', (s) => s.f.summitTalk && s.y >= A.y - 0.1 && s.x < A.x0 + 10);
+await check('through the shimmer, to the End of Time: he asks, and she says no', (s) => s.f.summitTalk && s.y >= A.y - 0.1 && s.x < A.x0 + 10);
 await R();
 await walkTo(A.anchorX + 0.3, A.z0 + 1.8, { t: 9000 });
 await d.strike(3);
-await check("phase 1: the Lantern's First Age through the frost waves, and the Frost-Anchor shattered", (s) => s.f.orinPhase1);
+await check("phase 1: the Lantern's First Age through his waves, and the Anchor-Clock broken", (s) => s.f.orinPhase1);
 await R();
 await walkTo(A.platesX + 0.5, A.z0 + 0.5, { t: 6000 });
 await echoHere();
@@ -181,29 +189,38 @@ for (let i = 0; i < 4; i++) {
   await sleep(300);
   if ((await d.st()).f.orinPhase2) break;
 }
-await check('phase 2: an echo on one Frost-Lock, you on the other', (s) => s.f.orinPhase2);
-await walkTo(A.orinX - 1.2, (A.z0 + A.z1 + 1) / 2, { t: 9000 });
-await R();
-await tap('KeyE');
-await check('the Lantern shows him the Stopped Age', async () => (await lantern()).bubble === F);
-await tap('KeyF');
-await page.waitForSelector('.choice-panel', { timeout: 90000 });
-await check('the hours go home; Donald Eugene climbs up; the last shift', (s) => s.f.hoursReturned);
-await page.click('.choice.era-1');
-await page.waitForFunction(() => !document.getElementById('credits').hidden, { timeout: 60000 });
-await check('home, with your friends: and the credits', (s) => s.f.endingAge === M && s.f.finished);
+await check('phase 2: an echo on one lock, you on the other', (s) => s.f.orinPhase2);
+await d.settle();
+await sleep(500);
+await d.settle();
+const cz = (A.z0 + A.z1 + 1) / 2;
+/** a Stasis wave: hold the swing, and let go */
+const wave = async () => { await d.down('KeyX'); await sleep(700); await d.up('KeyX'); await sleep(500); };
+const held = (s) => (s.f.zachHeld ? 1 : 0) + (s.f.meganHeld ? 1 : 0);
+for (const [n, dz] of [[1, 0.8], [2, -0.9]]) {
+  await walkTo(A.startX + 6.5, cz + dz, { t: 6000 });
+  await walkTo(A.startX + 6.0, cz + dz, { t: 1500 }); // (facing them)
+  await wave();
+  await check(`phase 3: a Stasis wave holds ${n === 1 ? 'one squirrel' : 'the other'} where his rewrites can't reach`, (s) => held(s) >= n);
+}
+await walkTo(A.orinX - 1.6, cz, { t: 9000 });
+await wave();
+await page.waitForFunction(() => !document.getElementById('credits').hidden, { timeout: 120000 });
+await check('held still, he has to listen; Midwinter Night; and the credits', (s) => s.f.hoursReturned && s.f.finished);
 const credits = await page.evaluate(() => ({ chapter: document.getElementById('credits-chapter').textContent, next: !document.getElementById('btn-credits-next').hidden }));
-await check('the credits name the chapter, and offer no chapter after it', () => /Borrowed Hour/.test(credits.chapter) && !credits.next);
+await check('the credits name the chapter, and offer no chapter after it', () => /Other Half/.test(credits.chapter) && !credits.next);
 
-// ---- after the credits: the age you chose, for good
+// ---- after the credits: Midwinter Night, and she keeps the whole Chronoheart
 await page.reload();
 await autoplay(page);
 await page.click('#btn-continue');
 await d.settle();
-await check('Continue: back on the mountain, in the age you chose', (s) => s.era === M && s.f.endingAge === M);
+await check('Continue: back on the mountain, on Midwinter Night', (s) => s.era === M && s.f.finished);
 await tap('KeyQ');
-await sleep(500);
-await check('the last shift is spent: no more shifting', (s) => s.era === M);
+await sleep(1200);
+await check('she can still step between the ages', (s) => s.era === P);
+await tap('KeyE');
+await sleep(1200);
 await walkTo(U(30), Z(5), { t: 20000 }); // (along the road, clear of the dome)
 await walkTo(U(9.5), ZB[5] - 7, { t: 8000 });
 await d.settle();

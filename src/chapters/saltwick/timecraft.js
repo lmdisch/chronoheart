@@ -1,6 +1,6 @@
 // What the Chronoheart learns in Saltwick, and the machinery it's used on.
 //
-// Rewind (Donald Eugene's pocketwatch): hold it, and it runs you backward along the path you
+// Rewind (a backward hairspring in the Chronoheart): hold it, and it runs you backward along the path you
 // just took: up drops, across gaps, back through the era shifts you made. Only you: the rest of
 // the world keeps going. A gate you opened goes on closing while you run back to it.
 //
@@ -18,7 +18,7 @@ import { makeWater } from '../../render/water.js';
 import { GATES, SEALED, WELL, L } from './level.js';
 import { touchActive } from '../../ui/touch.js';
 
-export const REWIND_MAX = 8; // seconds of your own movement the watch remembers
+export const REWIND_MAX = 8; // seconds of your own movement Rewind remembers
 const REWIND_RATE = 2.6; // how much faster than life it runs you back
 const TRAIL_PTS = 56;
 const FLOOD_RATE = 0.75; // cells a second
@@ -120,7 +120,7 @@ export class Timecraft {
     this.clearTrail();
     this.rewinding = false;
     this.gates = GATES.map((spec) => new Gate(this, spec));
-    // the path the watch remembers: a string of faint gold motes behind you
+    // the path Rewind remembers: a string of faint gold motes behind you
     const geo = new THREE.BufferGeometry();
     this.trailPos = new Float32Array(TRAIL_PTS * 3).fill(-999);
     geo.setAttribute('position', new THREE.BufferAttribute(this.trailPos, 3));
@@ -130,7 +130,7 @@ export class Timecraft {
     this.trailPts.frustumCulled = false;
     this.trailPts.renderOrder = 4;
     g.scene.add(this.trailPts);
-    // the Tide Clock's wheels, on the back wall of the Well: they turn the wrong way until its heart comes home
+    // the sluice's wheels, on the back wall of the Wellhead: held still until Donald Eugene's cog comes out
     this.wheels = [];
     const tones = [0x7a8a6a, 0xb8862a, 0x6a4a3a];
     for (let era = 0; era < 3; era++) {
@@ -207,7 +207,7 @@ export class Timecraft {
     const f = g.state.flags;
     if (!f.gateHint) {
       f.gateHint = true;
-      g.hud.toast(`The gate is open... for ${gt.spec.open} seconds.${f.hasRewind ? ' The watch can take you back to where you were.' : ''}`, 5000);
+      g.hud.toast(`The gate is open... for ${gt.spec.open} seconds.${f.hasRewind ? ' Rewind can take you back to where you were.' : ''}`, 5000);
     }
   }
 
@@ -218,7 +218,7 @@ export class Timecraft {
     this.entry = null;
   }
 
-  /** In one of the places with no way out (see SEALED)? The watch must not forget the way in. */
+  /** In one of the places with no way out (see SEALED)? Rewind must not forget the way in. */
   sealedAt(x, y, z, era) {
     const f = this.game.state.flags;
     return SEALED.some((s) => s.era === era && !f[s.until] && x >= s.x0 && x < s.x1 && z >= s.z0 && z < s.z1 && y >= s.y0 && y <= s.y1);
@@ -296,7 +296,7 @@ export class Timecraft {
         this.syncBody();
       }
     }
-    // the ring shows how much of your path the watch is holding
+    // the ring shows how much of your path Rewind is holding
     if (f.hasRewind) g.hud.setMeter(Math.min(1, this.span / REWIND_MAX), ERA.PRESENT, false);
     else g.hud.setMeter(1, ERA.PRESENT, false);
     this.drawTrail();
@@ -317,7 +317,7 @@ export class Timecraft {
   }
 
   // ------------------------------------------------------------------ the flood
-  /** The Tide Clock runs forward again: the sea comes up the Well, and carries you out. */
+  /** The sluice turns again: the river comes up the Wellhead, and carries you out. */
   startFlood(level = 0) {
     const g = this.game;
     this.flood = { y: level, filled: -1 };

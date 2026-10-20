@@ -650,6 +650,33 @@ function hub(world) {
   b.solid(29, 2, 2, 29, 2, 2, jitter(C.metalL));
   for (const [hx, hy] of [[25, 0], [27, 1], [29, 2]]) b.glow(hx + 0.1, hy - 0.05, 2.1, 0.8, 0.06, 0.8, NEON.cyan);
   filler(b, F, 13, 29, 31);
+  // the Gilded Gear Company's crest over the plaza: Donald Eugene's own mark
+  markCog(b, 3.4, 2.6, 0.08, 0.75, NEON.amber);
+  b.light(3.4, 2.6, 1.2, 0xffc040, 5, 6, 0);
+
+  // the bakery's sign, hung out over the street. Marlow's, until somebody changes it.
+  world.addFeature({
+    id: 'bakery', eras: [M], key: (s) => String(!!s.flags.bakeryChanged),
+    build: (b, era, s) => {
+      const hale = !!s.flags.bakeryChanged;
+      b.deco(BAKERY.x - 0.05, 2.75, 0.0, 0.1, 0.1, 0.9, 0x2a1a10); // bracket
+      b.deco(BAKERY.x - 0.65, 1.95, 0.72, 1.3, 0.75, 0.08, hale ? 0x8a2a2a : 0x2f6a3a);
+      b.deco(BAKERY.x - 0.55, 2.05, 0.8, 1.1, 0.55, 0.02, hale ? 0xb84a3a : 0x3f8a4a);
+      if (hale) b.deco(BAKERY.x - 0.2, 2.15, 0.83, 0.4, 0.35, 0.02, 0xf4ecd8); // a white bun
+      else b.deco(BAKERY.x - 0.35, 2.18, 0.83, 0.7, 0.28, 0.02, 0xd8a050); // a golden loaf
+    },
+  });
+}
+
+/** Donald Eugene's maker's mark, a cog with a notch cut in one tooth, as a glowing sign facing the street. */
+function markCog(b, cx, cy, z, r, color) {
+  b.glow(cx - r * 0.6, cy - r * 0.6, z, r * 1.2, r * 1.2, 0.04, color);
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2, t = r * 0.32;
+    b.glow(cx + Math.cos(a) * r * 0.82 - t / 2, cy + Math.sin(a) * r * 0.82 - t / 2, z, t, t, 0.04, color);
+  }
+  b.deco(cx - r * 0.22, cy - r * 0.22, z + 0.03, r * 0.44, r * 0.44, 0.03, 0x1a1408); // the hub
+  b.deco(cx + r * 0.82 - r * 0.06, cy - r * 0.16, z + 0.05, r * 0.12, r * 0.32, 0.03, 0x1a1408); // the notch
 }
 
 // Sun-lilies: golden flowers that grew in the square in the oldest days (Karen Louise's favor).
@@ -668,6 +695,15 @@ const LILY_BED = { x0: 22, x1: 25, z: 5 }; // in the square, by the road
 
 // What Vivienne does for people in one age is remembered in the ages after it.
 export const STATUE = { x: 13.7, z: 1.0, xF: 19.6 };
+/**
+ * Small things the Stasis wave can hold (see HollowmereGame.sealTargets): a bowl of figs in the
+ * oldest age, Elder Karen Louise's tea in ours. Held in their moment, they last, and the ages
+ * after make exhibits of them.
+ */
+export const CURIOS = [
+  { id: 'figs', era: P, x: 31.5, z: 4.5, name: 'the bowl of figs', flag: 'figsSealed' },
+  { id: 'tea', era: M, x: 22.5, z: 0.5, name: "Karen Louise's tea", flag: 'teaSealed' }, // (clear of Karen herself, so she can still be talked to)
+];
 // carved stone: plain colors (not the wall palettes, which would texture it like masonry)
 const CARVED = [0xcfc9ba, 0xaaa496, 0xe0dbcf], CARVED_DARK = 0x5f5a50; // "the Stranger", in the square (Present) and the plaza (Future)
 const BRIDGE_STONE = { x: 212.3, z: 1.3 };
@@ -686,6 +722,50 @@ function strangerFigure(b, x, z, y0, pal, dark, k = 1.5) {
   d(-0.19, 1.02, 0.14, 0.38, 0.09, 0.04, dark); // goggles
   d(-0.19, 1.18, -0.17, 0.38, 0.08, 0.34, pal[1]); // hair
   d(-0.09, 1.24, -0.2, 0.18, 0.16, 0.18, pal[1]); // bun
+}
+
+function curios(world) {
+  const fig = (b, x, y, z, glass) => {
+    b.deco(x - 0.3, y, z - 0.3, 0.6, 0.18, 0.6, 0x9a5a3a); // the clay bowl
+    for (const [ox, oz] of [[-0.12, -0.08], [0.1, -0.1], [0, 0.1], [0.12, 0.08], [-0.1, 0.1]]) b.deco(x + ox - 0.08, y + 0.16, z + oz - 0.08, 0.16, 0.16, 0.16, 0x5a2a5a);
+    if (glass) b.glow(x - 0.36, y, z - 0.36, 0.72, 0.6, 0.72, 0xbff6ff);
+  };
+  const tea = (b, x, y, z, held) => {
+    b.deco(x - 0.12, y, z - 0.12, 0.24, 0.2, 0.24, 0xf0ece4); // the cup
+    b.deco(x - 0.1, y + 0.17, z - 0.1, 0.2, 0.03, 0.2, 0x8a4a22); // the tea
+    if (held) {
+      b.glow(x - 0.05, y + 0.25, z - 0.02, 0.1, 0.5, 0.04, 0xffffff); // its steam, held still
+      b.glow(x - 0.3, y - 0.05, z - 0.3, 0.6, 0.65, 0.6, 0xbff6ff);
+    }
+  };
+  world.addFeature({
+    id: 'curios', eras: [P, M, F], key: (s, era) => `${era},${!!s.flags.figsSealed},${!!s.flags.teaSealed}`,
+    build: (b, era, s) => {
+      const f = s.flags, [figs, cup] = CURIOS;
+      // the figs: on a stone in the oldest square, then on a plinth, then in a museum case
+      if (era === P) {
+        b.deco(figs.x - 0.45, 0, figs.z - 0.45, 0.9, 0.55, 0.9, C.sandDark[1]);
+        b.barrier(Math.floor(figs.x), 0, Math.floor(figs.z), Math.floor(figs.x), 0, Math.floor(figs.z));
+        fig(b, figs.x, 0.55, figs.z, !!f.figsSealed);
+      } else if (f.figsSealed) {
+        b.deco(figs.x - 0.45, 0, figs.z - 0.45, 0.9, 0.8, 0.9, era === M ? C.stone[2] : 0x3a404c);
+        b.barrier(Math.floor(figs.x), 0, Math.floor(figs.z), Math.floor(figs.x), 0, Math.floor(figs.z));
+        if (era === F) b.glow(figs.x - 0.45, 0.8, figs.z - 0.45, 0.9, 0.04, 0.9, NEON.cyan);
+        fig(b, figs.x, 0.84, figs.z, true);
+      }
+      // the tea: on a little table by the road, then in a museum case
+      if (era === M) {
+        b.deco(cup.x - 0.35, 0, cup.z - 0.35, 0.7, 0.75, 0.7, C.wood[0]);
+        b.barrier(Math.floor(cup.x), 0, Math.floor(cup.z), Math.floor(cup.x), 0, Math.floor(cup.z));
+        tea(b, cup.x, 0.75, cup.z, !!f.teaSealed);
+      } else if (era === F && f.teaSealed) {
+        b.deco(cup.x - 0.35, 0, cup.z - 0.35, 0.7, 0.85, 0.7, 0x3a404c);
+        b.barrier(Math.floor(cup.x), 0, Math.floor(cup.z), Math.floor(cup.x), 0, Math.floor(cup.z));
+        b.glow(cup.x - 0.35, 0.85, cup.z - 0.35, 0.7, 0.04, 0.7, NEON.cyan);
+        tea(b, cup.x, 0.9, cup.z, true);
+      }
+    },
+  });
 }
 
 function legacies(world) {
@@ -994,6 +1074,16 @@ function rampart(world) {
       b.canopy(96.5, 10.2, -1.2, 2.6, cols, { maxZ: 1.2, seed: 79 });
     },
   });
+  // a ladder against the town wall, put there by somebody else while you were stuck
+  world.addFeature({
+    id: 'donLadder', eras: [M], key: (s) => String(!!s.flags.donLadder),
+    build: (b, era, s) => {
+      if (!s.flags.donLadder) return;
+      b.ladder(L.wallX0 - 1, 0, 5, L.wallX0 - 1, 8, 5);
+      for (const z of [5.08, 5.8]) b.deco(L.wallX0 - 0.55, 0, z, 0.12, 8.8, 0.12, C.wood[1]);
+      for (let y = 0.4; y < 8.6; y += 0.6) b.deco(L.wallX0 - 0.55, y, 5.08, 0.1, 0.08, 0.84, C.wood[2]);
+    },
+  });
   // Present-day planter: plant the acorn here instead and it has 300 years to grow by the Future
   world.addFeature({
     id: 'planter', eras: [M], key: (s) => `${!!s.flags.acornPlanted},${!!s.flags.acornPlantedM}`,
@@ -1044,6 +1134,7 @@ function rampart(world) {
 // hopped between the ages. The Everspring waits on his workbench: the Chronoheart never runs
 // down again. (The Mysterious Stranger mentions it, very quietly.)
 // While the player is inside, the front wall is cut away and the room joins the playable strip.
+export const BAKERY = { x: 32 };
 export const STUDY = { x0: 87, x1: 92, h: 4, door: 89, pocket: { id: 'study', era: P, x0: 87, x1: 92, z0: -4 } };
 export const GARDEN = { x0: 30, x1: 36, h: 5, door: 11.9, entryX: 33, pocket: { id: 'garden', era: F, x0: 30, x1: 36, z0: -4 } };
 function hideaway(world) {
@@ -1183,6 +1274,7 @@ function smithy(world) {
   for (let i = 0; i < 6; i++) b.glow(118.6 + i * 1.05, 3.5, 0.18, 0.7, 0.5, 0.02, i % 2 ? NEON.cyan : NEON.amber);
   b.light(121, 3, 1.4, NEON.magenta, 8, 10, 0);
   b.deco(118, 0, 0.1, 1.4, 1.0, 0.8, 0x4a5468);
+  b.barrier(118, 0, 0, 119, 0, 0); // (so you can't walk through it)
   b.deco(118.1, 1.0, 0.15, 1.2, 0.05, 0.7, 0x1a1e28); // display case where the hammer rests
   for (const oz of [0.15, 0.79]) b.glow(118.1, 1.02, oz, 1.2, 0.04, 0.06, NEON.amber);
   filler(b, F, 126, 129, 64);
@@ -1688,6 +1780,7 @@ function echoGallery(world) {
   // PRESENT: Donald Eugene's lectern by the entrance, and the sockets the steps rise out of
   b = world.staticBuilder(M);
   b.deco(230.15, 0, 0.1, 0.7, 1.0, 0.6, C.wood[1]);
+  b.barrier(230, 0, 0, 230, 0, 0);
   b.deco(230.05, 1.0, 0.05, 0.9, 0.08, 0.7, C.wood[2]);
   for (const g of ECHO_GATES) b.deco(g.x + 0.3, 0, 0, 0.4, 0.03, 7, 0x1a1a20); // slots the gates rise out of
   for (const s of ECHO_STEPS) b.deco(s.x0 + 0.05, 0, s.z0 + 0.05, s.x1 - s.x0 + 0.9, 0.04, s.z1 - s.z0 + 0.9, 0x3a3a42);
@@ -1792,6 +1885,30 @@ function wardenYard(world) {
   });
 }
 
+/**
+ * The Clocktower's face, inside the Tower's west wall. Stopped, it is dim, with its hands stuck
+ * where they stopped. Once the Tower runs again it glows warm gold (as it does far below, seen
+ * from Highcrest), and its hands turn (see HollowmereGame.towerHands).
+ */
+export const TOWER_FACE = { x: 190.5 + TO, y: 18.4, z: 0.14, r: 3.4 };
+function towerFace(world) {
+  world.addFeature({
+    id: 'towerFace', eras: [M], key: (s) => String(!!s.flags.towerLit),
+    build: (b, era, s) => {
+      const F_ = TOWER_FACE;
+      const r = F_.r;
+      if (s.flags.towerLit) {
+        b.glow(F_.x - r, F_.y - r, 0.04, 2 * r, 2 * r, 0.04, 0xb08a48); // warm gold, but still a face you can read
+        b.light(F_.x, F_.y, 2.5, 0xffd890, 3, 10, 0);
+        return;
+      }
+      b.glow(F_.x - r, F_.y - r, 0.04, 2 * r, 2 * r, 0.04, 0x8a7a58); // lit, but not blinding
+      b.deco(F_.x - 0.1, F_.y, 0.12, 0.2, r - 0.7, 0.04, 0x2a2014); // stuck at a quarter past twelve
+      b.deco(F_.x - 0.1, F_.y - 0.1, 0.12, r - 1.4, 0.2, 0.04, 0x2a2014);
+    },
+  });
+}
+
 // ---------------------------------------------------------------------------
 // The Clocktower: the finale climb
 // ---------------------------------------------------------------------------
@@ -1834,14 +1951,13 @@ function tower(world) {
       b.solid(T.ledge.x0 + 1, T.ledge.top, 1, T.ledge.x0 + 1, T.ledge.top, 1, jitter(C.sandDark));
       b.glow(T.ledge.x0 + 1.1, T.ledge.top + 1.0, 1.1, 0.8, 0.05, 0.8, 0xffcf5a);
     } else if (era === M) {
-      b.deco(X(186), 6, 0.0, 9, 9, 0.06, 0x6a4a1a);
-      b.glow(X(186.3), 6.3, 0.04, 8.4, 8.4, 0.04, 0x8a7a58); // the clock face: lit, but not blinding
+      // the clock face, high on the west wall above the belfry (lit, and its hands: see towerFace)
+      const F_ = TOWER_FACE;
+      b.deco(F_.x - F_.r - 0.4, F_.y - F_.r - 0.4, 0.0, 2 * F_.r + 0.8, 2 * F_.r + 0.8, 0.06, 0x6a4a1a);
       for (let i = 0; i < 12; i++) {
         const a = (i / 12) * Math.PI * 2;
-        b.deco(X(190.5) + Math.cos(a) * 3.5 - 0.2, 10.5 + Math.sin(a) * 3.5 - 0.2, 0.1, 0.4, 0.4, 0.04, 0x2a2014);
+        b.deco(F_.x + Math.cos(a) * (F_.r - 0.6) - 0.18, F_.y + Math.sin(a) * (F_.r - 0.6) - 0.18, 0.1, 0.36, 0.36, 0.04, 0x2a2014);
       }
-      b.deco(X(190.4), 10.5, 0.12, 0.2, 3, 0.04, 0x2a2014);
-      b.deco(X(190.4), 10.4, 0.12, 2.2, 0.2, 0.04, 0x2a2014);
       // the stair that collapsed long ago
       for (let i = 0; i < 6; i++) b.deco(T.stairX0 + hash3(i, 3, 3) * 4, 0, 0.1 + hash3(i, 4, 3) * 1.6, 0.6, 0.3, 0.5, C.stone[i % 5]);
       // the belfry: a timber floor high up, the great bell hanging over it
@@ -2019,6 +2135,13 @@ export const SPAWNS = [
   { type: 'interact', id: 'workbench', era: M, x: 9.0, y: 1, z: 0.5, prompt: 'Examine workbench' },
   { type: 'interact', id: 'astralDoor', era: M, x: GARDEN.door, y: 0, z: 0.15, prompt: 'Star-iron door', reach: 1.05 },
   { type: 'interact', id: 'gardenPlinth', era: F, x: (GARDEN.x0 + GARDEN.x1 + 1) / 2, y: 0, z: -2.0, prompt: 'Memorial of the Four Clockmakers', reach: 1.3 },
+  { type: 'interact', id: 'bakerySign', era: M, x: BAKERY.x, y: 0, z: 0.7, prompt: 'Bakery sign' },
+  { type: 'interact', id: 'figsP', era: P, x: CURIOS[0].x, y: 0, z: CURIOS[0].z + 0.6, prompt: 'A bowl of figs' },
+  { type: 'interact', id: 'figsM', era: M, x: CURIOS[0].x, y: 0, z: CURIOS[0].z + 0.6, prompt: 'Ancient figs', needs: 'figsSealed' },
+  { type: 'interact', id: 'figsF', era: F, x: CURIOS[0].x, y: 0, z: CURIOS[0].z + 0.6, prompt: 'Museum exhibit', needs: 'figsSealed' },
+  { type: 'interact', id: 'teaM', era: M, x: CURIOS[1].x, y: 0, z: CURIOS[1].z + 0.6, prompt: 'A cup of tea' },
+  { type: 'interact', id: 'teaF', era: F, x: CURIOS[1].x, y: 0, z: CURIOS[1].z + 0.6, prompt: 'Museum exhibit', needs: 'teaSealed' },
+  { type: 'interact', id: 'gildedCrest', era: F, x: 3.4, y: 0, z: 0.6, prompt: 'Company crest' },
   { type: 'interact', id: 'wildLilies', era: P, x: 23.5, y: 0, z: 5.5, prompt: 'Wild flowers' },
   { type: 'interact', id: 'lilyBed', era: M, x: 23.5, y: 0, z: 5.5, prompt: 'Flower bed' },
   { type: 'interact', id: 'lever', era: P, x: 63.4, y: 0, z: 0.35, prompt: 'Spring lever', needs: 'springOpen' },
@@ -2061,7 +2184,7 @@ export const SPAWNS = [
   { type: 'pickup', id: 'disc', era: P, x: 151.5, y: 4.7, z: 1.0, item: 'disc' },
   { type: 'pickup', id: 'core', era: F, x: 178.5, y: 1.8, z: 3.5, item: 'core' },
   // the Bell Hammer, tempered for three centuries, waits on Lillian's display case
-  { type: 'pickup', id: 'hammerGift', era: F, x: 118.7, y: 1.8, z: 0.5, item: 'hammer', needs: 'hammerLeft' },
+  { type: 'pickup', id: 'hammerGift', era: F, x: 118.7, y: 1.8, z: 0.62, item: 'hammer', needs: 'hammerLeft' },
   { type: 'pickup', id: 'wheel', era: F, x: 185.05, y: 1.5, z: 4.05, item: 'wheel' },
   { type: 'pickup', id: 'cable', era: F, x: 210.5, y: 1.3, z: 5.2, item: 'cable' },
   { type: 'pickup', id: 'clockKey', era: F, x: L.keySpot.x, y: 1.3, z: L.keySpot.z, item: 'clockKey' },
@@ -2123,6 +2246,8 @@ export function buildLevel(world, state) {
   river(world);
   cliffs(world);
   rampart(world);
+  towerFace(world);
+  curios(world);
   smithy(world);
   hideaway(world);
   starlitGarden(world);

@@ -77,14 +77,14 @@ export const L = {
   lockX0: 168, walkX0: 171, chanX0: 178, chanX1: 190, jettyX1: 184,
   // The Warden's Wharf
   wharfX0: 198, duskBell: { x: 216.5, z: 3.0 },
-  // Gull's Head: the long stair up to the mouth of the Tide Well
+  // Gull's Head: the long stair up to the mouth of the Wellhead
   headX0: 232, stairX0: 238, plateauX0: 250, headTop: 12,
-  // The Tide Well
+  // The Wellhead (Donald Eugene's sluice, over the spring where the river rises)
   wellX0: 256,
   cameraBounds: [10, W - 8],
 };
 
-/** Inside the Tide Well: four terraces stepping down to the clock's heart, a gate at each edge. */
+/** Inside the Wellhead: four terraces stepping down to the sluice's great wheel, a gate at each edge. */
 export const WELL = {
   x0: L.wellX0, x1: W - 1,
   terraces: [
@@ -115,7 +115,7 @@ export const GATES = [
 ];
 
 /**
- * Places with no way out on foot. The pocketwatch never forgets the way you came into one of
+ * Places with no way out on foot. Rewind never forgets the way you came into one of
  * these, however long you spend inside (see Timecraft.record), until `until` is set.
  */
 export const SEALED = [
@@ -132,7 +132,7 @@ export const AREAS = [
   { x: L.lockX0, name: 'The Dry Lock' },
   { x: L.wharfX0, name: "The Warden's Wharf" },
   { x: L.headX0, name: "Gull's Head" },
-  { x: L.wellX0, name: 'The Tide Well', subtitle: 'Where the sea keeps its time' },
+  { x: L.wellX0, name: 'The Wellhead', subtitle: 'Where the river rises' },
 ];
 
 export const CHECKPOINTS = [
@@ -222,7 +222,7 @@ function buildGround(world) {
   b.hazard(L.chanX0, -3, ZMIN, L.chanX1, -1, ZMAX - 1, 0x1f6f9a, false, 0.15);
   for (let i = 0; i < 16; i++) b.glow(L.chanX0 + 0.5 + hash3(i, 1, 2) * 12, -0.12, hash3(i, 3, 4) * 6.5, 0.9 + hash3(i, 5, 6), 0.03, 0.12, 0xe8fbff); // white water
 
-  // PRESENT and FUTURE: the sea is a feature. Out, until the Tide Clock runs forward again.
+  // PRESENT and FUTURE: the sea is a feature. Out, until the river comes home.
   world.addFeature({
     id: 'seaM', eras: [M], key: (s) => String(!!s.flags.tideRestored),
     build: (b, era, s) => {
@@ -753,6 +753,7 @@ function longPier(world) {
   b = world.staticBuilder(F);
   b.solid(89, 4, -5, 96, 5, -1, jitter(C.salt));
   b.deco(91.8, 4, 0.9, 1.2, 0.8, 1.0, 0x8a6a3a);
+  b.barrier(92, 4, 1, 92, 4, 1);
   b.deco(92.0, 4.8, 1.0, 0.8, 0.3, 0.8, 0x7a5a30);
   b.deco(92.3, 4, 0.88, 0.08, 0.9, 0.04, 0x1a1410); // the crack
 }
@@ -896,6 +897,8 @@ function keepersLight(world) {
   b.solid(149, 5, -3, 152, 6, 0, jitter(C.whitewash));
   b.deco(153.2, 0, 4.2, 3.6, 1.6, 1.6, C.whitewash[1]);
   b.deco(156.9, 0, 4.4, 1.6, 1.2, 1.2, C.roof[0]);
+  b.barrier(153, 0, 4, 156, 1, 5);
+  b.barrier(157, 0, 4, 158, 0, 5);
 
   // the fossil clam on the dry pool bed, and what three lifetimes made inside it
   world.addFeature({
@@ -968,6 +971,7 @@ function dryLock(world) {
   b = world.staticBuilder(P);
   for (const x of [L.chanX0 - 1.4, L.chanX1 + 1.3]) {
     b.deco(x, 0, 0.3, 0.6, 1.6, 0.6, C.seaRock[1]);
+    b.barrier(Math.floor(x), 0, 0, Math.floor(x), 1, 0);
     b.glow(x + 0.15, 1.0, 0.92, 0.3, 0.3, 0.03, NEON.sea);
   }
   // FUTURE: the walkway and the bridge at deck height, the door between them, steps down the far side
@@ -1091,13 +1095,13 @@ function gullsHead(world) {
 // ---------------------------------------------------------------------------
 // The Tide Well
 // ---------------------------------------------------------------------------
-// Four terraces stepping down east to the heart of the Tide Clock, a gate on the edge of each.
+// Four terraces stepping down east to the wheel of Donald Eugene's sluice, a gate on the edge of each.
 // In the Past and the Future the gates are blank wall; only the Present's still move.
 //   Gate A: its lever is up on a Past scaffold. Only the Future's fallen masonry climbs that high,
 //           and a stub of the scaffold in the Present is the step between the two.
 //   Gate B: its winch is walled into a Past alcove, its crank locked in a Future cage. Reach.
 //   Gate C: its lever is in a Future pit with no way out, and it holds the gate for seconds.
-// At the bottom, the watch goes back where it came from, and the tide comes in to carry you out.
+// At the bottom, Donald Eugene's cog comes out of the wheel, and the river comes home to carry you out.
 function tideWell(world) {
   const G = WELL;
   const dark = [0x2a4046, 0x30484e];
@@ -1119,6 +1123,7 @@ function tideWell(world) {
     // the heart's cradle at the bottom of everything
     const h = G.heart;
     b.deco(h.x - 0.5, 0, h.z - 0.5, 1.0, 0.8, 1.0, dark[1]);
+    b.barrier(Math.floor(h.x - 0.5), 0, Math.floor(h.z), Math.floor(h.x - 0.5), 0, Math.floor(h.z));
     b.deco(h.x - 0.4, 0.8, h.z - 0.4, 0.8, 0.06, 0.8, 0x1a2a2e);
   }
   // PRESENT: frames for the three gates. The first stands under a solid arch, so nothing gets
@@ -1196,8 +1201,14 @@ function tideWell(world) {
     build: (b, era, s) => {
       const h = G.heart;
       if (s.flags.heartPlaced) {
-        b.glow(h.x - 0.25, 0.9, h.z - 0.25, 0.5, 0.5, 0.5, 0xffe9a0);
-        b.light(h.x, 1.6, h.z + 0.6, 0xffe0a0, 9, 10, 0);
+        // the wheel runs free, and the river runs home beneath it
+        b.glow(h.x - 0.3, 0.86, h.z - 0.3, 0.6, 0.04, 0.6, 0x9fe8ff);
+        b.light(h.x, 1.6, h.z + 0.6, 0x9fe8ff, 9, 10, 0);
+      } else {
+        // one small brass cog, jammed into the works: notched in one tooth
+        b.glow(h.x - 0.18, 0.86, h.z - 0.18, 0.36, 0.36, 0.08, 0xffc040);
+        b.deco(h.x + 0.1, 0.95, h.z - 0.2, 0.08, 0.12, 0.1, 0x2a1a08);
+        b.light(h.x, 1.4, h.z + 0.5, 0xffc060, 5, 6, 0);
       }
       if (s.flags.wellFull) {
         for (const t of G.terraces.slice(1)) b.water(t.x0, t.top, 0, t.x1, 11, 6, SEA[M], 0.15);
@@ -1220,6 +1231,7 @@ export const SPAWNS = [
   { type: 'npc', id: 'isha', era: P, x: 18.5, z: 2.0, sheet: 'isha', name: 'Isha the Shell-Singer' },
   { type: 'npc', id: 'pim', era: P, x: 33.5, z: 4.6, sheet: 'pim', name: 'Pim', small: true },
   { type: 'npc', id: 'digby', era: F, x: 12.5, z: 2.0, sheet: 'digby', name: 'DIGBY (Salvage Unit)' },
+  { type: 'npc', id: 'pell', era: M, x: 36.8, z: 1.7, sheet: 'pell', name: 'Dr. Pell' },
   { type: 'npc', id: 'michelle', era: M, x: 67.5, z: 1.6, sheet: 'michelle', name: 'Mysterious Stranger', stranger: true },
   { type: 'npc', id: 'odalys', era: M, x: 145.5, z: 4.4, sheet: 'odalys', name: 'Odalys the Lightkeeper' },
   { type: 'npc', id: 'fenwick', era: M, x: 176.5, z: 1.6, sheet: 'fenwick', name: 'Old Fenwick' },
@@ -1254,10 +1266,10 @@ export const SPAWNS = [
   // The Warden's Wharf
   { type: 'interact', id: 'duskBellFit', era: F, x: L.duskBell.x, y: 0, z: L.duskBell.z, prompt: 'The Dusk Bell', hideIf: 'clapperFitted', reach: 1.5 },
   { type: 'strike', id: 'duskBell', era: F, x: L.duskBell.x, y: 0, z: L.duskBell.z, flag: 'duskRung', needs: 'clapperFitted', prompt: 'Ring the Dusk Bell', visual: 'bell', color: 0xb8a0ff, freq: 196, hang: 2.9, hx: 1.2, hz: 1.4 },
-  { type: 'strike', id: 'wardenKey', era: F, x: 216.5, y: 0, z: 5.3, hits: 1, flag: 'wardenKeyStruck', needs: 'duskStroke1', prompt: "Strike the Warden's wind-up key", visual: 'key', color: 0xffd070, hx: 1.4, hz: 1.5, lens: true, lensOnly: true },
+  { type: 'strike', id: 'wardenKey', era: F, x: 216.5, y: 0, z: 5.3, hits: 1, flag: 'wardenKeyStruck', needs: 'duskStroke1', prompt: "Strike the Warden's wind-up key", visual: 'key', color: 0xffd070, hx: 1.4, hz: 2.0, lens: true, lensOnly: true },
   { type: 'interact', id: 'boathouse', era: M, x: 216.8, y: 0, z: 5.4, prompt: 'Boathouse door' },
   // Gull's Head
-  { type: 'interact', id: 'wellDoorM', era: M, x: L.wellX0 - 0.6, y: HT, z: 3.5, prompt: 'The Well door', hideIf: 'wellOpen' },
+  { type: 'interact', id: 'wellDoorM', era: M, x: L.wellX0 - 0.6, y: HT, z: 3.5, prompt: 'The Wellhead door', hideIf: 'wellOpen' },
   { type: 'interact', id: 'wellDoorP', era: P, x: L.wellX0 - 0.6, y: HT, z: 3.5, prompt: 'Unfinished door' },
   { type: 'interact', id: 'wellDoorF', era: F, x: L.wellX0 - 2.4, y: HT, z: 3.5, prompt: 'Salt-crusted door' },
   // The Tide Well
@@ -1265,7 +1277,7 @@ export const SPAWNS = [
   { type: 'interact', id: 'crankCage', era: F, x: 278, y: 8, z: 5.3, prompt: 'Caged crank', icon: 'crank', goneFlag: 'crankTaken', hideIf: 'crankTaken', lens: true, lensOnly: true },
   { type: 'interact', id: 'winchB', era: P, x: 275.5, y: 8, z: 1.3, prompt: 'Walled-in winch', lens: true, lensOnly: true },
   { type: 'interact', id: 'leverC', era: F, x: 284.5, y: WELL.pit.floor, z: 3.5, prompt: 'Pit lever', visual: 'lever', gate: 'gateC', color: 0xff9a4a },
-  { type: 'interact', id: 'heart', era: M, x: WELL.heart.x, y: 0, z: WELL.heart.z + 0.4, prompt: "The Tide Clock's heart" },
+  { type: 'interact', id: 'heart', era: M, x: WELL.heart.x, y: 0, z: WELL.heart.z + 0.4, prompt: 'The great wheel' },
 
   // Lost cogs
   { type: 'cog', id: 'cogP1', era: P, x: 24.5, y: 3.7, z: 1.5 },

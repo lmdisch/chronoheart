@@ -1,6 +1,7 @@
-// Chapter Three, Highcrest: the Lantern and the Echo, the frost, Sir Christopher, the hours going
-// home, and the last shift, that decides which age Vivienne lives in. Everything every chapter
-// shares is in src/game.js.
+// Chapter Three, Highcrest: the Lantern and the Echo, the frost (Donald Eugene's seals), the
+// shimmer at the Needle, the fight at the End of Time, and the night after. Everything every
+// chapter shares is in src/game.js. (Some names here are older than the story: 'christopher' is
+// Donald Eugene on his throne, and the 'orin' phases are the fight against him.)
 import * as THREE from 'three';
 import { input } from '../../core/input.js';
 import { ERA } from '../../core/util.js';
@@ -15,9 +16,9 @@ import { Game, baseState, wait } from '../../game.js';
 import { progress } from '../../chapter.js';
 import theme, { ATMOS_GOLDEN, ATMOS_STOPPED, ATMOS_NIGHT, ATMOS_WAKING, GRADE_GOLDEN, GRADE_STOPPED, GRADE_NIGHT, GRADE_WAKING } from './theme.js';
 import { buildLevel, SPAWNS, CHECKPOINTS, AREAS, L, COG_TOTAL, SPINNERS, inFrost, tierAt, gy, zb, ARENA, inArena } from './level.js';
-import { talk, interact, struck, runCommand, ITEMS, INTRO, FAVORS, MEET, MEMORY, RELEASE, summitLines, ARRIVE, REUNION, AFTER, COGS_ENDING, CHOICE, CHOICES, ENDINGS, VIEW } from './story.js';
+import { talk, interact, struck, runCommand, ITEMS, INTRO, FAVORS, MEET, MEMORY, RELEASE, summitLines, ARRIVE, REUNION, AFTER, COGS_ENDING, VIEW, GONE, SQUIRRELS } from './story.js';
 import { currentGoal } from './objectives.js';
-import { Powers, BUBBLE_R } from './powers.js';
+import { Powers } from './powers.js';
 
 const M = ERA.PRESENT, F = ERA.FUTURE;
 
@@ -58,9 +59,11 @@ export class SummitGame extends Game {
     this.powers.attach();
     this.inArenaMood = false;
     this.placeOrin();
-    // the statue of the first Clockmaker, on the terrace (in stone; and frosted, in the Stopped Age)
+    this.hallSquirrels = null;
+    this.placeSquirrels();
+    // the statue of the Founder, on the terrace (in stone; and frosted, in the Stopped Age)
     this.statues = [M, F].map((era) => {
-      const a = new Actor('statue', 2.1);
+      const a = new Actor('statueDon', 2.1);
       if (era === F) a.mat.color.setHex(0xd8e4ff); // frosted
       a.mesh.scale.setScalar(1.45);
       a.mesh.position.set(L.statueX + 0.5, gy(2, L.statueX) + 2, zb(2) - 3);
@@ -73,12 +76,12 @@ export class SummitGame extends Game {
   syncBody() {
     this.powers.syncBody();
   }
-  /** Visuals for the 3-phase confrontation with Sir Orin at the Needle. */
+  /** Visuals for the three phases of the fight at the End of Time. */
   setupOrinBossMeshes() {
     if (this.bossGroup) this.scene.remove(this.bossGroup);
     this.bossGroup = new THREE.Group();
     const A = ARENA, ny = A.y, cz = (A.z0 + A.z1 + 1) / 2;
-    // a ring of frost turning round Sir Orin on his throne, until his locks are broken
+    // a ring of frost turning round Donald Eugene on his throne, until his locks are broken
     this.bossRing = new THREE.Mesh(
       new THREE.TorusGeometry(1.6, 0.09, 10, 36),
       new THREE.MeshBasicMaterial({ color: 0x6ce2ff, transparent: true, opacity: 0.75 }),
@@ -106,12 +109,12 @@ export class SummitGame extends Game {
   startOrinBoss() {
     this.frostWaveX = ARENA.shieldX - 0.5;
     this.hud.toast(
-      `<b>Phase 1/3:</b> Light the <b>Lantern</b> (${key('R', 'Lantern')}) on the <b>First Age</b> to walk through Orin's Frost Waves (or jump them), then strike the <b>Frost-Anchor</b> three times (${key('X', 'Attack')})!`,
+      `<b>Phase 1/3:</b> Waves of rewritten time roll down the hall. Light the <b>Lantern</b> (${key('R', 'Lantern')}) on the <b>First Age</b>: its old light carries you through them (or jump them). Then strike the <b>Anchor-Clock</b> three times (${key('X', 'Attack')})!`,
       7000,
     );
   }
 
-  /** Sir Orin pulls Vivienne to the End of Time (see ARENA). first: the first time, with words. */
+  /** Through the shimmer at the Needle, to the End of Time (see ARENA). first: the first time, with words. */
   async enterArena(first) {
     const f = this.state.flags;
     this.mode = 'cutscene';
@@ -158,7 +161,7 @@ export class SummitGame extends Game {
     for (const f of this.world.features) if (f.id !== 'endOfTime') for (const ms of f.meshes) for (const m of ms || []) m.visible = !on;
   }
 
-  /** Sir Orin: on his throne at the End of Time while the fight is on; at the Needle otherwise. */
+  /** Donald Eugene: on his throne at the End of Time while the fight is on. */
   placeOrin() {
     const o = this.npcs.find((n) => n.id === 'christopher'), f = this.state.flags;
     if (!o) return;
@@ -169,20 +172,69 @@ export class SummitGame extends Game {
   }
   onOrinPhase1Done() {
     this.hud.toast(
-      `<b>Phase 2/3: the Frost-Anchor is shattered!</b> Record an <b>Echo</b> (${key('V', 'Echo')}) on one blue Frost-Lock plate and stand on the other while dodging the sweeping gnomon beam!`,
+      `<b>Phase 2/3: the Anchor-Clock is broken!</b> Record an <b>Echo</b> (${key('V', 'Echo')}) on one of his blue lock plates and stand on the other yourself, jumping the gnomon's sweeping shadow!`,
       7500,
     );
   }
-  onOrinPhase2Done() {
-    this.bursts.emit(L.christopherX, gy(5, L.christopherX) + 1.2, L.ZS + 2.2, 45, {
-      color: [0x6ce2ff, 0xffe08a, 0xffffff],
-      speed: 4.5,
-      life: 0.9,
-    });
+  async onOrinPhase2Done() {
+    this.bursts.emit(ARENA.orinX, ARENA.y + 2.2, (ARENA.z0 + ARENA.z1 + 1) / 2, 45, { color: [0x6ce2ff, 0xffe08a, 0xffffff], speed: 4.5, life: 0.9 });
+    this.placeSquirrels();
+    await this.cutscene(SQUIRRELS);
     this.hud.toast(
-      `<b>Phase 3/3: his locks are broken!</b> Stand beside Sir Orin, light the <b>Lantern</b> (${key('R', 'Lantern')}), swing it to <b>the Stopped Age</b> (${key('E', 'Future')}), and talk to him!`,
+      `<b>Phase 3/3:</b> He is rewriting Zach and Megan! Hold them in their moment with a <b>Stasis wave</b>: hold ${key('X', 'Attack')}, then let go. Then hold <b>him</b>.`,
       8000,
     );
+  }
+
+  /** Zach and Megan, flickering by the door as he rubs them out (phase three). */
+  placeSquirrels() {
+    const f = this.state.flags;
+    if (!f.orinPhase2 || f.hoursReturned || this.hallSquirrels) return;
+    const cz = (ARENA.z0 + ARENA.z1 + 1) / 2;
+    this.hallSquirrels = [['zachHall', 'zachWinter', 'Zach Tiberious', 'zachHeld', 0.8], ['meganHall', 'meganWinter', 'Megan the Squirrel', 'meganHeld', -0.9]].map(([id, sheet, name, flag, dz]) => {
+      const n = new NPC(this, { type: 'npc', id, era: M, x: ARENA.startX + 3 + (dz > 0 ? 0 : 1.2), y: ARENA.y, z: cz + dz, sheet, name, small: true, noSeal: true });
+      n.flag = flag;
+      if (f[flag]) n.stasis(1e6);
+      this.npcs.push(n);
+      this.entities.push(n);
+      return n;
+    });
+  }
+
+  /** What a Stasis wave can hold here, beyond the usual (see src/kit.js): the squirrels, and then him. */
+  sealTargets() {
+    const f = this.state.flags, b = this.player.body;
+    if (!f.orinPhase2 || f.hoursReturned || !inArena(b.x, b.y, b.z) || this.mode !== 'play') return [];
+    const left = (this.hallSquirrels || []).filter((n) => !f[n.flag]);
+    if (left.length) {
+      return left.map((n) => ({
+        x: n.x, y: n.y, z: n.z, name: n.spec.name,
+        seal: () => {
+          f[n.flag] = true;
+          n.stasis(1e6);
+          this.save();
+          const still = (this.hallSquirrels || []).filter((q) => !f[q.flag]).length;
+          this.hud.toast(still ? `${n.spec.name} is held in the moment: his rewrites slide right off. One more!` : 'Both held! His rewrites slide right off them. Now hold <b>him</b>.', 4500);
+        },
+      }));
+    }
+    const don = this.npcs.find((n) => n.id === 'christopher');
+    return don ? [{ x: don.x, y: don.y - 2, z: don.z, name: 'Donald Eugene', seal: () => { don.stasis(1e6); this.runFinale(); } }] : [];
+  }
+
+  /** At the End of Time, once his locks are broken, the wave is always on her wrench. */
+  forceWave() {
+    const f = this.state.flags, b = this.player.body;
+    return !!(f.orinPhase2 && !f.hoursReturned && inArena(b.x, b.y, b.z));
+  }
+
+  /** The shimmer at the foot of the Needle: through it, the first time with words. */
+  async enterShimmer() {
+    const f = this.state.flags;
+    if (f.summitTalk) return this.enterArena(false);
+    f.summitTalk = true;
+    await this.cutscene(summitLines(f));
+    return this.enterArena(true);
   }
   grantMasterKey() {
     const f = this.state.flags;
@@ -213,6 +265,15 @@ export class SummitGame extends Game {
     return super.eraLabel(era);
   }
   afterIntro() {
+    // he is right there at Base Camp... and then he simply isn't
+    if (!this.state.flags.donAhead) {
+      const d = this.npcs.find((n) => n.id === 'eugeneCamp');
+      setTimeout(() => this.ripple({ at: [d?.x ?? L.start.x + 2, (d?.y ?? 0) + 1, d?.z ?? 3], apply: () => (this.state.flags.donAhead = true), lines: GONE }).then(() => this.firstToasts()), 400);
+      return;
+    }
+    this.firstToasts();
+  }
+  firstToasts() {
     if (touchActive()) this.hud.toast('Drag the left side to move. Swipe to change age: left for the Future, right for the Past.', 7000);
     else {
       this.hud.toast('Move <kbd>WASD</kbd> · Jump <kbd>Space</kbd> · Interact <kbd>F</kbd> · All controls <kbd>H</kbd>. Where the road turns back, <kbd>W</kbd> walks up it.', 6000);
@@ -221,13 +282,11 @@ export class SummitGame extends Game {
     this.save();
   }
   welcomeBack() {
-    return this.state.flags.endingAge !== undefined ? 'Welcome back, Vivienne. The hours are home.' : 'Welcome back, Vivienne.';
+    return this.state.flags.finished ? 'Welcome back, Vivienne. It is Midwinter Night on Highcrest.' : 'Welcome back, Vivienne.';
   }
   continueGame() {
-    if (this.state.flags.endingAge !== undefined) this.state.flags.lyraAtRest = true; // (saves from before she rested)
+    if (this.state.flags.finished) this.state.flags.lyraAtRest = true;
     super.continueGame();
-    const age = this.state.flags.endingAge;
-    if (age !== undefined) this.applyEra(age, true);
   }
 
   /** Further forward than the Stopped Age, there is nothing to go to: Vivienne says so. */
@@ -245,10 +304,10 @@ export class SummitGame extends Game {
   noticeStoppedAge(f) {
     if (f.stoppedSeen || f.hoursReturned || this.era !== ERA.FUTURE || this.post.trans < 0.95 || this.mode !== 'play') return;
     f.stoppedSeen = true;
-    this.hud.toast('<b>Vivienne:</b> "This is as far forward as the Chronoheart will go. Nothing moves. If the hour never ends, this is all the future there is."', 7000);
+    this.hud.toast('<b>Vivienne:</b> "This is as far forward as the Chronoheart will go. Nothing moves. Nothing will ever go wrong again, because nothing will ever happen again."', 7000);
   }
 
-  /** Not after the last shift (unless you forged the Master's Key!); not in the frost. */
+  /** Not in the frost (his seals), and not at the End of Time. */
   canShift() {
     const f = this.state.flags, b = this.player.body;
     if (inArena(b.x, b.y, b.z)) {
@@ -256,13 +315,9 @@ export class SummitGame extends Game {
       this.hud.toast('There are no ages here to step between. Only the end of all of them. (The Lantern still works.)', 4000);
       return false;
     }
-    if (f.endingAge !== undefined && !f.masterKey && !this.state.inventory.includes('masterKey')) {
-      this.hud.toast("The Chronoheart's last shift is spent. Find all ten Lost Cogs to forge the Master's Key!", 4000);
-      return false;
-    }
     if (inFrost(b.x, b.y, b.z) && !f.hoursReturned) {
       audio.sfx('blocked');
-      this.hud.toast(`The frost holds the ages still here: the Chronoheart can't shift. The Lantern still works (${key('R', 'Lantern')}).`, 4000);
+      this.hud.toast(`Somebody has sealed the ages still here: the Chronoheart can't shift. The Lantern still works (${key('R', 'Lantern')}).`, 4000);
       return false;
     }
     return true;
@@ -298,12 +353,7 @@ export class SummitGame extends Game {
   }
   onCog() {
     if (this.state.cogs.length >= COG_TOTAL) {
-      if (this.state.flags.hoursReturned && !this.state.flags.masterKey) {
-        this.grantMasterKey();
-        setTimeout(() => this.hud.toast("<b>All ten Lost Cogs!</b> You forged <b>The Master's Key</b>—you can now shift freely across all ages and open Hollowmere's Astral Clock-Door!", 7000), 2200);
-      } else {
-        setTimeout(() => this.hud.toast("That's all ten Lost Cogs! Donald Eugene and Sir Orin can forge the <b>Master's Key</b> with these.", 5500), 2500);
-      }
+      setTimeout(() => this.hud.toast("That's all ten Lost Cogs! Orin, at the summit, could make something of these.", 5500), 2500);
     }
   }
 
@@ -323,22 +373,13 @@ export class SummitGame extends Game {
     }
   }
 
-  /** Talking to Sir Orin with the Stopped Age lit beside him after breaking the Needle's locks: the hours go home. */
-  use(target) {
-    const f = this.state.flags, bb = this.world.bubble;
-    if (target.id === 'christopher' && f.summitTalk && f.orinPhase2 && !f.hoursReturned) {
-      const near = bb && bb.age === F && Math.hypot(bb.x - target.x, bb.y - (target.y + 1)) < BUBBLE_R + 1.8;
-      if (near) return void this.runFinale();
-    }
-    super.use(target);
-  }
 
   // ------------------------------------------------------------------ story set pieces
-  /** On the terrace: Sir Orin, in front of the statue. */
+  /** On the terrace: Orin, in front of the Founder's statue. */
   async meetChristopher() {
     const f = this.state.flags;
     f.christopherMet = true;
-    const ch = new NPC(this, { type: 'npc', id: 'christopherMeet', era: M, x: L.statueX + 1.6, y: gy(2, L.statueX + 1.6), z: zb(2) + 2.4, sheet: 'christopher', name: 'Sir Orin' });
+    const ch = new NPC(this, { type: 'npc', id: 'christopherMeet', era: M, x: L.statueX + 1.6, y: gy(2, L.statueX + 1.6), z: zb(2) + 2.4, sheet: 'orinOld', name: 'Orin' });
     this.npcs.push(ch);
     this.entities.push(ch);
     letterbox(true);
@@ -355,7 +396,7 @@ export class SummitGame extends Game {
     this.save();
   }
 
-  /** The hours go home: a sunset fifty years late, Lyra waking for one final real hour, Donald Eugene up the last switchback, and the last shift. */
+  /** Held in his moment, he has to listen. Then the mountain lets go, and an old friend is waiting. */
   async runFinale() {
     if (this.mode === 'ending') return;
     const f = this.state.flags;
@@ -366,25 +407,28 @@ export class SummitGame extends Game {
     // the End of Time comes apart, and the summit is all there is again
     setFade(1, '#fff2d0');
     await wait(600);
+    for (const n of this.hallSquirrels || []) n.remove();
+    this.npcs = this.npcs.filter((n) => !(this.hallSquirrels || []).includes(n));
+    this.hallSquirrels = null;
     this.arenaMood(false);
     f.hoursReturned = true;
     this.placeOrin();
     this.player.place(L.OX + 26, gy(5, L.OX + 26), zb(5) + 3.5);
     setFade(0);
-    // the Lantern goes out; the frost melts; the Golden Hour ends
+    // the Lantern goes out; his seals let go; the golden evening ends
     this.powers.clearEchoes();
     this.powers.lit = false;
-    f.hoursReturned = true;
     this.save();
     this.mode = 'play';
     this.applyEra(M, true);
-    await this.timelapse({ to: M, focus: [L.needle.x + 0.5, gy(5, L.needle.x) + 2, L.needle.z + 4], years: 50, caption: 'Fifty years of borrowed hours go home...', effect: 'shine' });
+    await this.timelapse({ to: M, focus: [L.needle.x + 0.5, gy(5, L.needle.x) + 2, L.needle.z + 4], years: 50, caption: 'Everything he held still lets go...', effect: 'shine' });
     this.mode = 'ending';
     setFade(1, '#05040a');
     await wait(600);
     this.setMood();
     this.renderer.setEra(M, true);
     this.post.setGrade(M);
+    f.lyraAtRest = true; // (her cup, at the foot of the Needle)
     this.refreshWorld();
     this.player.place(L.OX + 26, gy(5, L.OX + 26), zb(5) + 3.5);
     this.player.facing = -1;
@@ -392,59 +436,18 @@ export class SummitGame extends Game {
     setFade(0);
     letterbox(true);
     await wait(500);
-    const allCogs = this.state.cogs.length >= COG_TOTAL;
     await this.dialogue.run(REUNION);
-    // midnight: Lyra is at rest, and her cup stays by the Needle
-    setFade(1, '#05040a');
-    await wait(1400);
-    f.lyraAtRest = true;
-    this.save();
-    setFade(0);
-    await wait(700);
-    await this.dialogue.run([...AFTER, ...(allCogs ? COGS_ENDING : []), ...CHOICE]);
-    if (allCogs) this.grantMasterKey();
+    if (this.state.cogs.length >= COG_TOTAL) {
+      await this.dialogue.run(COGS_ENDING);
+      this.grantMasterKey();
+    }
+    await this.dialogue.run(AFTER);
     letterbox(false);
-    const age = await this.chooseAge();
-    await this.runEnding(age);
+    await this.runEnding();
   }
 
-  /** The last shift: three ages, one choice. */
-  chooseAge() {
-    return new Promise((res) => {
-      const panel = document.createElement('div');
-      panel.className = 'glass panel choice-panel';
-      panel.setAttribute('role', 'dialog');
-      panel.setAttribute('aria-label', 'Where will Vivienne stay?');
-      const h = document.createElement('h2');
-      h.textContent = 'Where will Vivienne stay?';
-      panel.append(h);
-      for (const c of CHOICES) {
-        const btn = document.createElement('button');
-        btn.className = `btn choice era-${c.era}`;
-        btn.type = 'button';
-        btn.innerHTML = `<span class="choice-title">${c.title}</span><span class="choice-text">${c.text}</span>`;
-        btn.addEventListener('click', () => {
-          audio.sfx('ui');
-          panel.remove();
-          res(c.era);
-        });
-        panel.append(btn);
-      }
-      document.body.append(panel);
-      panel.querySelector('button')?.focus();
-    });
-  }
-
-  async runEnding(age) {
-    const f = this.state.flags;
+  async runEnding() {
     this.mode = 'ending';
-    f.endingAge = age;
-    audio.sfx('shift', { era: age });
-    this.shiftEra(age, new THREE.Vector3(this.player.body.x, this.player.body.y + 1, this.player.body.z));
-    await wait(1500);
-    letterbox(true);
-    await this.dialogue.run(ENDINGS[age]);
-    letterbox(false);
     audio.sfx('fanfare');
     this.state.checkpoint = 5;
     this.finishStory();
@@ -470,7 +473,7 @@ export class SummitGame extends Game {
     return !!m && Math.abs(b.x - m.x - 0.7) < 2.5;
   }
 
-  /** Step the 3-phase Needle encounter with Sir Orin. */
+  /** Step the three phases of the fight at the End of Time. */
   updateOrinBoss(dt, ctl) {
     const f = this.state.flags, b = this.player.body;
     const active = f.summitTalk && !f.hoursReturned && inArena(b.x, b.y, b.z);
@@ -553,6 +556,12 @@ export class SummitGame extends Game {
     this.player.update(dt);
     this.updateEntities(dt);
     this.updateOrinBoss(dt, ctl);
+    // Zach and Megan, half rubbed out, until a wave holds them
+    for (const n of this.hallSquirrels || []) {
+      const m = n.actor.mat;
+      m.transparent = !f[n.flag];
+      m.opacity = f[n.flag] ? 1 : 0.4 + Math.random() * 0.45;
+    }
     this.arenaMood(f.summitTalk && !f.hoursReturned && inArena(b.x, b.y, b.z));
     if (this.inArenaMood) this.hideMountain(true); // (a feature rebuilt mid-fight comes back visible)
     this.noticeStoppedAge(f);
@@ -576,20 +585,14 @@ export class SummitGame extends Game {
 
     // the story, where you walk into it
     if (ctl && this.era === M && !f.christopherMet && b.x >= L.metX && b.x < L.metX + 12 && tierAt(b.z) === 2) this.meetChristopher();
-    else if (ctl && this.era === M && !f.summitTalk && f.christopherMet && tierAt(b.z) === 5 && b.x < L.christopherX + 8) {
-      f.summitTalk = true;
-      this.cutscene(summitLines(f)).then(() => this.enterArena(true));
-    }
-    // under the orrery, the first time: the Borrowed Hour, replaying
+    // under the orrery, the first time: the echo Lyra left, of Midwinter Night fifty years ago
     else if (ctl && this.era === M && !f.memorySeen && f.christopherMet && !f.hoursReturned && tierAt(b.z) === 5 && this.nearMemory(b)) {
       f.memorySeen = true;
       this.cutscene(MEMORY).then(() => {
-        this.hud.toast('A memory, replaying: <b>the Borrowed Hour</b>.', 4000);
+        this.hud.toast('An echo, left behind: <b>Midwinter Night, fifty years ago</b>.', 4000);
         this.save();
       });
     }
-    // (back on the summit mid-fight: the crack he opened at the Needle still leads to him)
-    else if (ctl && f.summitTalk && !f.hoursReturned && tierAt(b.z) === 5 && !inArena(b.x, b.y, b.z) && b.x < L.christopherX + 4) this.enterArena(false);
     // the overlook, the first time: the whole world, far below
     else if (ctl && !f.sawView && tierAt(b.z) === 5 && b.x <= L.overlookX1 && b.z < L.ZS - 4) {
       f.sawView = true;

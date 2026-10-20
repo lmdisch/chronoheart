@@ -74,7 +74,7 @@ export const GRADE_DRY = GRADES[2];
 export const GRADE_HEALED = { tint: [1.03, 1.01, 0.95], shadowTint: [0.82, 0.94, 1.04], saturation: 1.16, contrast: 1.05, vignette: 0.34, rays: 0.45, rayColor: [1.0, 0.9, 0.7] };
 
 export default {
-  width: 300, // level length (x): the shore road, then the Tide Well
+  width: 300, // level length (x): the shore road, then the Wellhead
   eraNames: ['Age of Tides', 'Medieval Age', 'The Dry Age'],
   eraCss: ['#5fe6c8', '#bff6ff', '#ff9a4a'],
   eraRing: [0x5fe6c8, 0xbff6ff, 0xff9a4a],
@@ -86,8 +86,8 @@ export default {
   playerSheet: 'vivienneCoast',
   shrine: [[0x9a917e, 0xb8ae96], [0x8a8378, 0x9a958a], [0x8a5a44, 0xa87a5a]],
   enemyBurst: { drone: [0xffb03a, 0xff5a3a], rat: [0xaaaaaa, 0xffffff], other: [0xe0786a, 0xffd0b0] },
-  voices: { michelle: 20, zach: 420, vivienne: 140, eugene: -20, megan: 500, brannoch: -90, odalys: 60, fenwick: -50, isha: 110, pim: 380, maren: 30, digby: 280 },
-  keyBadge: 'Tide Note',
+  voices: { michelle: 20, zach: 420, vivienne: 140, eugene: -20, megan: 500, brannoch: -90, odalys: 60, fenwick: -50, isha: 110, pim: 380, maren: 30, digby: 280, pell: 10 },
+  keyBadge: 'Bell Note',
   lapse: { shine: [0xffd8f0, 0xffffff, 0xffe9a0], splash: [0x9fe8ff, 0xffffff], motes: [0xffe6a0, 0xe8dcc0], motesDrop: 1 }, // sparkle during a time-lapse
   camFloor: -2, // the camera follows you down onto the sea bed
   titleCam: { x: 20, sway: 12 },

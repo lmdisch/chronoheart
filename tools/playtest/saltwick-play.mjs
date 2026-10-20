@@ -282,11 +282,11 @@ await check('rewound to gate C', (s) => s.era === 1 && s.x > 288.5 && Math.abs(s
 await walkTo(292.5, 3.5, { t: 3000 }); await sleep(700);
 await check('through gate C to the bottom', (s) => s.f.gateCPassed && s.y < 0.1);
 
-// --- the heart, and the tide
+// --- the great wheel, and the river
 await walkTo(295.5, 2.2, { t: 3000 });
-await check('heart prompt', (s) => /heart/i.test(s.prompt || ''));
+await check('wheel prompt', (s) => /wheel/i.test(s.prompt || ''));
 await interactNow();
-await check('heart placed, Rewind given up', (s) => s.f.heartPlaced && !s.f.hasRewind && !s.inv.includes('watch'));
+await check("Donald Eugene's cog pulled from the wheel (Rewind kept)", (s) => s.f.heartPlaced && s.f.hasRewind && s.inv.includes('donCog'));
 await sleep(3000);
 
 await down('Space');

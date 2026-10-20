@@ -19,7 +19,7 @@ export const ITEMS = {
   cable: { name: 'Steel Cable', desc: 'A spool of cable from the scrapyard. It will not fray or rot for a very, very long time.' },
   snorkel: { name: 'Snorkel', desc: 'Borrowed from the aqueduct pool, three hundred years from now. With it you can stay under for as long as you like.' },
   clockKey: { name: 'Escapement Key', desc: "The key to the Clocktower's great lock. Only a lock that still turns will take it.", showcase: true },
-  finder: { name: 'Cog Finder', desc: "Ten of Donald Eugene's lost cogs, meshed round the Chronoheart's rim. Hold the time lens open and they turn toward anything of his still lost in another age." },
+  finder: { name: 'Cog Finder', desc: "Ten of Donald Eugene's cogs, meshed round the Chronoheart's rim. Under your hearts, they point the way to the nearest Lost Cog, and say which age it is in. Through the time lens, it sends up gold." },
 };
 
 /** Kindness side quests. `start` is the flag set when the favor is asked. */
@@ -61,25 +61,36 @@ const DE = (text) => ({ who: 'eugene', name: 'Donald Eugene', text });
 export const ENDING = [
   N('Across three ages at once, the Clocktower shudders... and begins to tick.'),
   DE("Vivienne! I knew you'd find your way. I've been stuck between the ages for days. You pulled me back through."),
-  Wr('Master Donald Eugene! You\'re all right! And the amulet... look, the crack is gone!'),
-  DE("Mended by the Tower's heart. Which makes it yours now, apprentice."),
+  Wr("Master Donald Eugene! You're all right!"),
+  DE('Never better. Now, let me see that amulet.'),
+  N('He turns the Chronoheart over once in his fingers, presses a thumbnail to the rim, and gives it back. The crack is gone.'),
+  Wr('...You mended it. Just like that.'),
+  DE('It was only ever a hairline. It is yours now, apprentice.'),
   DE("I could hear the Tower the whole time I was stuck, you know. Every key going home. I'd know your hands anywhere: you have never once fitted anything gently."),
   Wr('It worked, though.'),
-  DE('It did. ...It did, Vivienne.'),
-  Wr('...Master, why did the mainspring snap? Something was pulling on it from outside.'),
-  DE("...You felt it too. For fifty years, someone up on the mountain has been borrowing little slivers of our hours, hoping the valley wouldn't notice."),
-  DE("And now that we've locked Hollowmere's heart forward again, I can already feel the pull shifting toward the sea—and a pocketwatch I hid away a very long time ago."),
-  Wr('A pocketwatch? And another clock by the sea?'),
-  DE("That, apprentice, is a confession for tomorrow. Our work isn't finished, not by a long way. And I have a feeling you'll be the one to finish it."),
+  DE('It did. Splendidly.'),
+  { slip: true },
   DE('Now then... I believe we are both late for supper. Shall we go home?'),
 ];
 
+/** The thing he lets slip: something he cannot know about, unless he was watching. */
+export function endingSlip(f) {
+  const oak = f.acornPlanted || f.acornPlantedM;
+  return [
+    oak ? DE('And that oak tree came up really well. What a great idea!') : DE("And Tamsin's bridge, strung with steel cable! What a great idea!"),
+    Wr(oak ? '...I never told you about the oak.' : "...I never told you about the bridge."),
+    DE("Didn't you? You must have. You tell me everything, apprentice."),
+  ];
+}
+
 // All ten Lost Cogs: in the ending, or brought to him in his workshop afterward.
 export const ENDING_COGS = [
-  DE('And what is that rattling in your apron? ...Cogs. Ten of MY cogs! My parts tray emptied itself the day the Tower stopped. I thought I was going mad.'),
+  DE('And what is that rattling in your apron? ...Cogs. Ten of MY cogs!'),
+  Wr("They've all got your mark on them: the notch in one tooth. I found them in every age. Some of them were six hundred years old."),
+  DE('Were they? Well. I do get about.'),
   DE('Hold the Chronoheart still a moment.'),
   N("He fits the ten cogs round the amulet's rim, one by one, until they mesh and turn together."),
-  DE('There. Hold the time lens open, and they will turn toward anything of mine still lost in another age. I suspect there is more of it about than ten.'),
+  DE('There. They will point you to anything of mine still lost, in whatever age it is. I suspect there is more of it about than ten.'),
   Wr('Cogs that find cogs.'),
   DE('Clockmakers are very practical people, apprentice.'),
 ];
@@ -94,7 +105,7 @@ function npcLines(game, id) {
   switch (id) {
     case 'louise': {
       const m = S('louise', 'Elder Karen Louise');
-      if (!f.hasAmulet) return [m("Vivienne, dear. The Tower's stopped and Donald Eugene's vanished. People say the old ages are bleeding through. I saw a lizard the size of a dog in the square at dawn!"), m('Have you looked in his workshop? He always kept his secrets on that bench.')];
+      if (!f.hasAmulet) return [m("Vivienne, dear. The Tower's stopped and Donald Eugene's vanished, and the whole valley feels wrong. I saw a lizard the size of a dog in the square at dawn!"), m('Have you looked in his workshop? He always kept his secrets on that bench.')];
       if (f.chartReturned && !f.louiseStatue) {
         f.louiseStatue = true;
         return [
@@ -102,6 +113,10 @@ function npcLines(game, id) {
           m('Callie the carver made her, in the oldest days. Nobody remembers who she was. Somebody kind, the plaque says.'),
           Wr('...Somebody kind. I can live with that.'),
         ];
+      }
+      if (f.teaSealed && !f.louiseTea) {
+        f.louiseTea = true;
+        return [m("My tea! It's still hot. It has been hot for an hour, and it won't cool, and it won't pour."), m("Vivienne, dear, is this you? No, don't tell me. You'll only say something clever.")];
       }
       if (inv.includes('lilySeeds')) return [m("Are those... sun-lily seeds? But they died out centuries ago! Wherever did you find them? No, don't tell me, you'll only say something clever. Plant them in my old flower bed by the road, would you?")];
       if (f.finished) {
@@ -157,8 +172,17 @@ function npcLines(game, id) {
           t('YOU MAY BORROW IT. PLEASE RETURN IT TO ITS OWNER, "SAMARIA, SUN-KEEPER". OWNER STATUS: DECEASED, APPROXIMATELY NINE HUNDRED YEARS. ...I WILL MARK THE LOAN "OPEN-ENDED".'),
           { give: 'starChart' },
         ];
+      if (f.stillness && !f.tickStillness) {
+        f.tickStillness = true;
+        const who = (game.state.sealedNpcs || []).map((id) => ({ samaria: 'THE SUN-KEEPER', callie: 'CALLIE THE CARVER', tamsin: 'TAMSIN THE ROPEWRIGHT', oren: 'OREN THE MASON', louise: 'ELDER KAREN LOUISE', aria: 'ARIA THE SMITH', sheng: 'SHENG THE GATEKEEPER', hobb: 'HOBB THE MILLER', zach: 'A SQUIRREL OF NOTE', megan: 'A SECOND SQUIRREL' })[id]).filter(Boolean);
+        return [
+          t(`ARCHIVE NOTE: EVERY SPRING, HOLLOWMERE OBSERVES THE GREAT STILLNESS, IN MEMORY OF ${who[0] || 'A CITIZEN'}, WHO ONCE STOOD PERFECTLY STILL FOR SIX SECONDS FOR NO KNOWN REASON.`),
+          t('THE WHOLE CITY FREEZES IN PLACE. IT IS VERY POPULAR. THE PIGEONS FIND IT UNSETTLING.'),
+          Wr("...That was me. I'm so sorry."),
+        ];
+      }
       if (f.finished) return [t('GREETINGS AGAIN, VISITOR. ARCHIVE NOTE: THE GREAT TOWER HAS KEPT PERFECT TIME FOR THREE HUNDRED YEARS. I HAVE CHECKED. TWICE.'), t('...I ENJOY CHECKING.')];
-      return [t('GREETINGS, VISITOR. WELCOME TO HOLLOWMERE MEMORIAL PLAZA.'), t('COSTUME DETECTED: "MEDIEVAL APPRENTICE". VERY AUTHENTIC. PLEASE NOTE THE HERITAGE FESTIVAL IS NOT UNTIL SPRING.'), t('ARCHIVE NOTE: AN AQUEDUCT LIES BENEATH THE SANDSTONE CLIFFS. IT WAS CARVED BY A SPRING THAT DRIPPED FOR CENTURIES.')];
+      return [t('GREETINGS, VISITOR. WELCOME TO HOLLOWMERE MEMORIAL PLAZA, A GIFT OF THE GILDED GEAR COMPANY.'), t('COSTUME DETECTED: "MEDIEVAL APPRENTICE". VERY AUTHENTIC. PLEASE NOTE THE HERITAGE FESTIVAL IS NOT UNTIL SPRING.'), t('ARCHIVE NOTE: AN AQUEDUCT LIES BENEATH THE SANDSTONE CLIFFS. IT WAS CARVED BY A SPRING THAT DRIPPED FOR CENTURIES.')];
     }
     case 'holo':
       // once the Tower ticks again, the Future remembers it differently
@@ -176,7 +200,7 @@ function npcLines(game, id) {
       ];
     case 'michelle': {
       const m = S('michelle', 'Mysterious Stranger');
-      if (f.finished) return [m('I heard it from here: the first tick. Like an old friend breathing easy again.'), m('The valley has its heartbeat back. The mountain is still holding its breath.')];
+      if (f.finished) return [m('I heard it from here: the first tick. Like an old friend breathing easy again.'), m('Keep your eyes open, Vivienne. Things will go on changing. And you will go on noticing.')];
       if (f.metMichelle && game.state.kindness.length >= FAVORS.length)
         return [m("You have the look of someone who has been busy being kind, Vivienne. I can always tell."), m('People remember a kindness far longer than you would think. So do I.')];
       if (f.metMichelle)
@@ -184,7 +208,7 @@ function npcLines(game, id) {
       f.metMichelle = true;
       return [
         m('Ah. The clockmaker\'s apprentice, right on time. Or a little early. The river has been expecting you.'),
-        m('A little advice before you cross. Mind how tightly you hold on to things. Some people hold an hour so tightly that it freezes.'),
+        m('A little advice before you cross. When the world changes around you, remember how it was. Somebody ought to.'),
         m('Your master used to vanish for days at a time, you know. When we were young, he told me he kept a room "in the oldest age, behind a door with a brass gear where no one would ever think to knock."'),
         Wr("I'll remember. Thank you... um. I didn't catch your name."),
         m('No. You didn\'t.'),
@@ -277,19 +301,38 @@ function npcLines(game, id) {
       return [{ who: 'brn', name: 'BR-4N', text: 'BZZT. BR-4N ONLINE. LILLIAN SAYS I AM NOT ALLOWED TO HUG CUSTOMERS.' }];
     case 'sheng': {
       const g = S('sheng', 'Sheng the Gatekeeper');
-      return [g('The road past this gate collapsed in the quake a hundred years ago. Nothing but rubble now.'), g("My grandsire always said the future's wide open. Ha! Whatever that means.")];
+      if (f.shengKind) {
+        const lines = [g("Vivienne! Lovely day for it. The road past this gate collapsed in the quake a hundred years ago, more's the pity. Mind how you go!"), g("My grandsire always said the future's wide open. Isn't that a nice thought?")];
+        if (!f.shengAsked) {
+          f.shengAsked = true;
+          lines.unshift(Wr("Sheng... weren't you cross with me, just now?"), g('Cross? Me? I have never been cross a day in my life, girl.'));
+        }
+        return lines;
+      }
+      f.metSheng = true;
+      return [g('What do you want? The road past this gate collapsed in the quake a hundred years ago. Nothing but rubble. Go home, apprentice.'), g("My grandsire always said the future's wide open. Ha! Whatever that means. Off with you.")];
     }
     case 'hobb': {
       const h = S('hobb', 'Hobb the Miller');
       if (f.finished) return [h("Wheel's turning, Tower's ticking, and the whole valley on time for once. I hardly know myself.")];
-      if (f.sluiceClosed) return [h('A full millpond! The wheel turns again, and the old log boom floats like it did in Grandsire\'s day.'), h("You're a marvel, girl. Swim it if you like: it's clean spring water, top to bottom. Or hop the logs and keep your boots dry.")];
+      if (f.sluiceClosed) return [h('Brim-full! The wheel turns again, and the old log boom floats like it did in Grandsire\'s day.'), h("You're a marvel, girl. Swim it if you like: it's clean spring water, top to bottom. Or hop the logs and keep your boots dry.")];
       if (f.millDammed) {
-        return [
-          h("The pond came back, just like Grandsire said it once was! But look at it. It runs straight out through the sluice."),
+        const lines = [
+          h('Morning, girl! Fine pond, eh? Been in this hollow since my great-grandsire\'s day. Pity it runs straight out through the sluice.'),
           h('The wheel that winds the gate shut was sold for scrap before I was born. Some fool thought it belonged in a museum.'),
-          h("Fill this pond to the brim and that old log boom lying in the mud would float again. You could walk clear across."),
+          h("Fill it to the brim and that old log boom lying in the shallows would float again. You could walk clear across."),
         ];
+        if (!f.hobbForgot) {
+          f.hobbForgot = true;
+          lines.push(
+            Wr(f.metHobb ? "Since your great-grandsire's day? A minute ago this hollow was mud, and you were telling me about it." : "Since your great-grandsire's day? When I came down here, this hollow was nothing but mud."),
+            h('Mud? I\'ve fished this pond since I was in short trousers. You want to get more sleep, apprentice.'),
+            Wr("...He doesn't remember. To him it has always been here. I'm the only one who knows it changed."),
+          );
+        }
+        return lines;
       }
+      f.metHobb = true;
       return [
         h('Hobb, miller. Or I would be, if this hollow held a drop of water.'),
         h('My great-grandsire swore a spring once ran down that cliff. Then one day it wandered off into the hills, and the pond with it.'),
@@ -299,18 +342,18 @@ function npcLines(game, id) {
     }
     case 'oren': {
       // He has met Donald Eugene, without knowing who (or when) he is: the old man came back to
-      // the first age to fit the iron gears into the tower first laid out by the First Clockmaker.
+      // the first age to have the tower built, and paid for it in gold stamped with his mark.
       const o = S('oren', 'Oren the Mason');
       if (f.metOren) return [o('Still dressing stone for the "clock" tower. If you see the old man, tell him the walls are up. And ask him again what a clock is.')];
       f.metOren = true;
       return [
-        o("Ho, stranger. More odd clothes! And round glass over your eyes, just like the First Clockmaker our elders speak of."),
-        o('She left the mountain stonecutters the first drawings on skins so thin the sun shone through them. And this season, an old man—bald as a river stone on top, with white hair all round the sides—walked out of the trees with a cart of iron wheels.'),
-        o('He wanted a tower raised here, on this very spot, to match the mountain clock. A "clock tower", he called it. He was very excited. He would not stop talking, and he would not hear no.'),
-        Wr('A clock tower... did he say what a clock was?'),
-        o('Something that counts the day, he said. I told him we have the sun for that. He laughed, and said the sun was a fine start.'),
-        o('So we are building it. The walls are up already. He says the part that matters goes inside, later. He paid in iron, and iron is iron. But between us, stranger: not one of us knows what it is for.'),
-        Wr('Bald, white hair, would not hear no... Master Donald Eugene. He came back here to make sure Hollowmere\'s Tower was built.'),
+        o('Ho, stranger. More odd clothes! You are the second this season.'),
+        o('The first was an old man in a fine coat, bald as a river stone on top, with white hair all round the sides. He walked out of the trees with a cart of iron wheels, and drew every stone of this tower himself.'),
+        o('A "clock tower", he called it. Something that counts the day. I told him we have the sun for that. He laughed, and said a valley ought to have a clock, so it knows who keeps its time.'),
+        o('And he paid in gold. Look at this: every coin stamped with a little wheel, with a nick cut in one tooth. I never saw gold like it.'),
+        Wr("A cog with a notch in one tooth... that's Master's mark. He stamps it on everything he makes."),
+        Wr("He came all the way back here, six hundred years, to build Hollowmere's Tower? ...Why would he pay in gold?"),
+        o('He would not hear no, stranger. Gold is a very good way of not hearing no.'),
       ];
     }
     case 'tamsin': {
@@ -346,7 +389,7 @@ function npcLines(game, id) {
       if (f.cogFinder) return [home, DE('How is the finder turning? If it ever points somewhere I have never been, do tell me.')];
       const n = game.state.cogs.length;
       if (n >= game.ch.COG_TOTAL) return [...ENDING_COGS, { finder: true }];
-      return [home, DE(`My parts tray emptied itself the day the Tower stopped: ten cogs, all over the valley, and into every age of it. You have found ${n}. Bring me the lot, and I will make the Chronoheart something useful.`)];
+      return [home, DE(`Ten cogs of mine, scattered over the valley and into every age of it? You have found ${n}. Bring me the lot, and I will make the Chronoheart something useful.`)];
     }
     default:
       return [N('...')];
@@ -482,9 +525,10 @@ export async function interact(game, ent) {
       await say([
         Wr("Donald Eugene's amulet, the Chronoheart! He never let me touch it."),
         N("There's a note folded underneath it:"),
-        N('"Vivienne. The Tower\'s heart is failing and the ages are coming loose. The Chronoheart is cracked, but it will carry you for a little while."'),
+        N('"Vivienne. The Tower has stopped, and I cannot come back to mend it. Not yet. The Chronoheart is cracked, but it will carry you a little while: to the first age, and the last, and home again."'),
         N('"Find the three Era Keys: the Sun Disc of the first age, the Bell Hammer of ours, and the Fusion Core of the last. Restart the Tower. ~D.E."'),
         N('"P.S. There is bread in the tin. Eat something first. You never do."'),
+        Wr("He left the Chronoheart behind. He never takes it off, not even to sleep. He must be in real trouble."),
         Wr('The first age... and the last? He means the PAST and the FUTURE?!'),
       ]);
       f.hasAmulet = true;
@@ -699,6 +743,27 @@ export async function interact(game, ent) {
       return say([N('A sealed slab of stone. There is no lock, no handle: the door has not been made yet.'), Wr("The lock doesn't exist in this age. It has to be the Present.")]);
     case 'lockF':
       return say([N('The great lock has rusted into one solid lump. It will never turn again.'), Wr("No key will open this one. It has to be the Present.")]);
+    case 'figsP':
+      return say(f.figsSealed ? N('The figs sit in their bowl, held in their moment, as glossy as the day they were picked.') : [N('A clay bowl of ripe figs on a stone, left out for whoever passes. They smell wonderful.'), ...(f.hasSeal ? [Wr('...They would keep, if I held them in their moment. For a very long time.')] : [])]);
+    case 'figsM':
+      return say([
+        N('On a plinth in the square, under a glass dome: a clay bowl of figs, plump and purple. The plaque reads: "THE FIGS OF HOLLOWMERE. SIX HUNDRED YEARS OLD. STILL RIPE. DO NOT TOUCH THE FIGS."'),
+        Wr("I've walked past these figs every day of my life. I have also never seen them before."),
+      ]);
+    case 'figsF':
+      return say([N('A museum case, lit from beneath: "EXHIBIT 1: THE FIGS. NINE HUNDRED YEARS OLD. STILL RIPE. SCIENTISTS HAVE ASKED, VERY POLITELY, FOR ONE BITE. THE ANSWER IS NO."'), Wr('I made a fig famous.')]);
+    case 'teaM':
+      return say(f.teaSealed ? N('The tea is held in its moment, steam and all. It will be exactly the right temperature forever.') : N("Elder Karen Louise's cup of tea, steaming on a little table. She has been about to drink it for some time."));
+    case 'teaF':
+      return say([N('A museum case: "ELDER LOUISE\'S TEA. THREE HUNDRED YEARS OLD. STILL HOT. NEVER DRUNK. THE CUP IS INSURED FOR MORE THAN THE BUILDING."'), Wr('She never did get to drink it. Sorry, Karen.')]);
+    case 'bakerySign':
+      return say(f.bakeryChanged ? N("A painted sign over the door: HALE'S BAKERY. Bread since your grandmother's day.") : N("A painted sign over the door: MARLOW'S BAKERY. Bread since your grandmother's day."));
+    case 'gildedCrest':
+      return say([
+        N('A great gold cog glows over the plaza, one tooth with a notch cut in it. Beneath it: "THE GILDED GEAR COMPANY. KEEPING HOLLOWMERE ON TIME."'),
+        Wr("That's Master's mark. He stamps it on everything he makes."),
+        Wr('So what is it doing on a building three hundred years from now?'),
+      ]);
     case 'statueM':
       return say([
         N('A small, weathered statue on a plinth: a girl with her hair in a bun and round glass over her eyes, holding out a star chart. The carving is very old.'),
@@ -747,7 +812,7 @@ export async function interact(game, ent) {
         await say([
           N('You knock on the old door. Silence... and then, from somewhere inside, a faint ticking.'),
           N('The door swings open on its own. Above the latch, a tiny brass gear has been pressed into the wood.'),
-          Wr("That's Master Donald Eugene's mark! What's it doing here, in the oldest age?"),
+          Wr("A cog with a notch in one tooth: that's Master Donald Eugene's mark! What's it doing here, in the oldest age?"),
         ]);
         f.studyFound = true;
         game.save();
@@ -756,12 +821,13 @@ export async function interact(game, ent) {
     case 'everspring':
       if (f.steadyHeart) return say(N('The workbench is tidy now. Above it, the chalk Clocktower is covered in notes, most of them crossed out, beside a faded sketch signed "D., O., & L."'));
       await say([
-        N('A hidden room: a cot, a lantern, maps of the valley in three different ages, and the Clocktower chalked on the wall, covered in notes.'),
-        N('On the workbench lies a letter, held down by a coil of bright star-iron, beside a faded charcoal sketch of three young clockmakers marked "D., O., & L."'),
-        N('"Vivienne. If you found this room, you\'ve been paying attention—or somebody pointed you here. Fifty years ago, there were three of us who kept the valley\'s clocks: Orin, Lyra, and I."'),
-        N('"One Midwinter Night on the mountain, something ended that Orin would not let end. I came down. He stayed. I think it is his pull on the hours that has finally snapped our Tower\'s mainspring."'),
+        N('A hidden room: a cot, a lantern, maps of the valley in three different ages, and the Clocktower chalked on the wall, covered in notes. Most of them are crossed out.'),
+        N('On the workbench lies a letter, held down by a coil of bright star-iron, beside a faded charcoal sketch of three young people marked "D., O., & L."'),
+        N('The paper is brown and brittle, far older than you are. But it is addressed to you, by name.'),
+        N('"Vivienne. Good: you found it. Not everyone thinks to knock."'),
         N('"This is the Everspring: a mainspring of star-iron that never runs down. Fit it to the Chronoheart and it will never need to recharge again. ~D.E."'),
-        Wr('Three clockmakers... Donald Eugene, Orin, and Lyra. He has never once said either of those names.'),
+        Wr("This paper is older than I am. How could he have known my name?"),
+        Wr('And D., O. and L.... D is him. He has never once mentioned an O, or an L.'),
         N("You fit the Everspring into the Chronoheart. A slow warmth spreads from your chest, and the amulet's ring settles into a steady gold glow."),
       ]);
       f.steadyHeart = true;
@@ -791,10 +857,10 @@ export async function interact(game, ent) {
     case 'gardenPlinth':
       return say([
         N('A quiet sanctuary where moss and starlight have reclaimed the old chrome plaza. Above you, four brass astrolabe rings turn gently around the branches of a living tree-observatory.'),
-        N('On the stone plinth at its roots, four names are carved side by side beneath a star-chart and a wrench:'),
-        N('"IN MEMORY OF THE FOUR CLOCKMAKERS OF HOLLOWMERE, SALTWICK, AND HIGHCREST: DONALD EUGENE, SIR ORIN, LYRA THE WISE, AND VIVIENNE."'),
-        N('"THEY MENDED THE HOURS, AND LET THE MORNING COME."'),
-        Wr('All four of us. Ten thousand years on, the valley still remembers... and the sun-lilies are still in bloom.'),
+        N('On the stone plinth at its roots, two names are carved side by side beneath a tin cup and a wrench:'),
+        N('"LYRA, WHO BUILT THE CHRONOHEART. VIVIENNE, WHO KEPT IT."'),
+        N('"SHE REMEMBERED HOW IT WAS, AND LET IT BE."'),
+        Wr('Ten thousand years on... and the sun-lilies are still in bloom.'),
       ]);
     case 'socketSun':
     case 'socketBell':

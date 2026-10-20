@@ -191,8 +191,8 @@ export class Abilities {
     if (which === 'seal') {
       f.hasSeal = true;
       this.game.hud.toast(
-        `<b>Stasis Seal!</b> Stand by something that shimmers (or right up close to a creature) and ${touch ? 'tap <b>Seal</b>' : 'press <kbd>R</kbd>'}.`,
-        6000,
+        `<b>Stasis Seal!</b> Anything you can seal glows white when you're near: ${touch ? 'tap <b>Seal</b>' : 'press <kbd>R</kbd>'}. Or hold ${touch ? '<b>Attack</b>' : '<kbd>X</kbd>'} and let go, to send a Stasis wave at whatever is in front of you.`,
+        8000,
       );
     } else {
       f.hasEcho = true;

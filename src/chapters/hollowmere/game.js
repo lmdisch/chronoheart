@@ -12,11 +12,12 @@ import { setFade, letterbox } from '../../ui/ui.js';
 import { touchActive } from '../../ui/touch.js';
 import { Game, baseState, ERA_RING } from '../../game.js';
 import { progress } from '../../chapter.js';
-import { buildLevel, SPAWNS, CHECKPOINTS, AREAS, L, COG_TOTAL, STUDY, GARDEN, LASER_FENCE, POSTERN_SAG } from './level.js';
-import { talk, interact, struck, ITEMS, INTRO, ENDING, ENDING_COGS, TEMPO_GIFT, TEMPO_LEARN, FAVORS } from './story.js';
+import { buildLevel, SPAWNS, CHECKPOINTS, AREAS, L, COG_TOTAL, STUDY, GARDEN, LASER_FENCE, POSTERN_SAG, BAKERY, TOWER_FACE, CURIOS } from './level.js';
+import { talk, interact, struck, ITEMS, INTRO, ENDING, ENDING_COGS, TEMPO_GIFT, TEMPO_LEARN, FAVORS, endingSlip } from './story.js';
 import { currentGoal } from './objectives.js';
 import { Interactable, Strikeable } from './entities.js';
 import { Abilities } from './abilities.js';
+import { CREATURES } from './entities.js';
 import { Finale } from './finale.js';
 import { Gearworks } from './gearworks.js';
 
@@ -51,6 +52,7 @@ export class HollowmereGame extends Game {
   }
 
   attach() {
+    this.attachTowerHands();
     this.abilities.attach();
     this.finale.attach();
     this.gearworks.attach();
@@ -91,6 +93,10 @@ export class HollowmereGame extends Game {
       f.hasTempo = f.gearworksOpen = true;
       this.state.checkpoint = 11;
     }
+    // a finished save from before the Tower's face lit up: it is ticking, so it is lit
+    if (f.finished) f.towerLit = true;
+    // (and from before the bakery changed: by now it has)
+    if (f.finished) f.bakeryChanged = true;
   }
 
   canShift(target) {
@@ -176,6 +182,42 @@ export class HollowmereGame extends Game {
 
   updateEffects(dt) {
     this.updateTowerGlitch(dt);
+    this.turnTowerHands(dt);
+  }
+
+  /** The Clocktower's two hands: still, until it runs again; then they turn (see TOWER_FACE). */
+  attachTowerHands() {
+    const mat = new THREE.MeshStandardMaterial({ color: 0x2a2014, roughness: 0.6 });
+    const hand = (len, w) => {
+      const pivot = new THREE.Group();
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, len, 0.06), mat);
+      m.position.y = len / 2 - 0.15;
+      pivot.add(m);
+      pivot.position.set(TOWER_FACE.x, TOWER_FACE.y, TOWER_FACE.z + 0.06);
+      return pivot;
+    };
+    this.towerHands = { minute: hand(TOWER_FACE.r - 0.5, 0.18), hour: hand(TOWER_FACE.r - 1.3, 0.24), spin: 0 };
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.1, 12).rotateX(Math.PI / 2), mat);
+    hub.position.set(TOWER_FACE.x, TOWER_FACE.y, TOWER_FACE.z + 0.12);
+    this.towerHands.group = new THREE.Group();
+    this.towerHands.group.add(this.towerHands.minute, this.towerHands.hour, hub);
+    this.world.groups[ERA.PRESENT].add(this.towerHands.group);
+  }
+
+  turnTowerHands(dt) {
+    const h = this.towerHands;
+    if (!h) return;
+    h.group.visible = !!this.state.flags.towerLit;
+    if (!h.group.visible) return;
+    // a whirl as it wakes, settling into a steady tick: one jump of the minute hand a second
+    h.spin = Math.max(0, h.spin - dt * 0.9);
+    h.tickT = (h.tickT || 0) + dt;
+    if (h.spin > 0) h.minute.rotation.z -= dt * h.spin * 9;
+    else if (h.tickT >= 1) {
+      h.tickT = 0;
+      h.minute.rotation.z -= (Math.PI * 2) / 60;
+    }
+    h.hour.rotation.z = h.minute.rotation.z / 12;
   }
 
   // ------------------------------------------------------------------ Donald Eugene's hideaway & The Starlit Garden
@@ -404,7 +446,19 @@ export class HollowmereGame extends Game {
       await new Promise((r) => setTimeout(r, 700));
       this.doShift(e);
     }
-    await new Promise((r) => setTimeout(r, 900));
+    await new Promise((r) => setTimeout(r, 600));
+    // the face: up on the west wall, it lights warm gold, and its hands begin to turn
+    this.camFocus = new THREE.Vector3(TOWER_FACE.x, TOWER_FACE.y - 2.5, 3.5);
+    await new Promise((res) => setTimeout(res, 900));
+    this.state.flags.towerLit = true;
+    this.towerHands.spin = 3;
+    this.refreshWorld();
+    audio.sfx('gate');
+    this.bursts.emit(TOWER_FACE.x, TOWER_FACE.y, 1, 70, { color: [0xffe0a0, 0xfff6e0], speed: 4, life: 1.3, gravity: 0 });
+    [262, 330, 392, 523].forEach((freq, i) => setTimeout(() => audio.sfx('bell', { freq }), 500 + i * 650));
+    await new Promise((res) => setTimeout(res, 3400));
+    this.camFocus = null;
+    await new Promise((res) => setTimeout(res, 700));
     // Donald Eugene appears
     const os = new NPC(this, { type: 'npc', id: 'eugeneEnd', era: ERA.PRESENT, x: b.x + 2.2, z: b.z, sheet: 'eugene', name: 'Donald Eugene' });
     this.npcs.push(os);
@@ -414,7 +468,8 @@ export class HollowmereGame extends Game {
     letterbox(true);
     // all ten Lost Cogs: Donald Eugene fits them to the Chronoheart, before supper
     const allCogs = this.state.cogs.length >= COG_TOTAL;
-    await this.dialogue.run(allCogs ? [...ENDING.slice(0, -1), ...ENDING_COGS, ENDING[ENDING.length - 1]] : ENDING);
+    const ending = ENDING.flatMap((l) => (l.slip ? endingSlip(this.state.flags) : [l]));
+    await this.dialogue.run(allCogs ? [...ending.slice(0, -1), ...ENDING_COGS, ending[ending.length - 1]] : ending);
     letterbox(false);
     if (allCogs) this.grantFinder();
     this.state.checkpoint = 0; // Continue: home, in the square
@@ -433,6 +488,37 @@ export class HollowmereGame extends Game {
     this.mode = 'credits';
     this.hud.show(false);
     this.onCredits?.(this.state);
+  }
+
+  /** A Stasis wave (src/kit.js) holds Hollowmere's creatures for good, as the ring does. */
+  sealEnemy(e) {
+    if (!CREATURES[e.spec.kind]) return false;
+    this.abilities.sealCreature(e);
+    return true;
+  }
+
+  /** Small things a Stasis wave can hold for good (see CURIOS): the figs, and Karen Louise's tea. */
+  sealTargets() {
+    const f = this.state.flags;
+    if (!f.hasSeal) return [];
+    return CURIOS.filter((c) => c.era === this.era && !f[c.flag]).map((c) => ({
+      x: c.x, y: c.id === 'figs' ? 0.55 : 0.75, z: c.z, name: c.name,
+      seal: async () => {
+        f[c.flag] = true;
+        this.refreshWorld();
+        this.save();
+        audio.sfx('shift', { era: this.era });
+        await this.timelapse({ to: ERA.FUTURE, focus: [c.x, 1, c.z + 1], years: c.era === ERA.PAST ? 900 : 300, caption: `Held in its moment, ${c.name} waits out the centuries...`, effect: 'shine', grow: ['curios'] });
+        this.hud.toast(`${c.name[0].toUpperCase() + c.name.slice(1)}: still there in the <b>Future</b>. Somebody has made an exhibit of it.`, 6000);
+      },
+    }));
+  }
+
+  /** Someone held still for a moment in an earlier age: the valley never forgets it. */
+  onNpcSealed(npc) {
+    if (npc.era === ERA.FUTURE) return;
+    if (!this.state.flags.stillness) this.hud.toast('Six seconds of perfect stillness. Somebody is bound to remember that.', 4500);
+    this.state.flags.stillness = true;
   }
 
   /** Ten cogs round the Chronoheart's rim: the lens turns toward lost cogs, in every chapter after. */
@@ -512,6 +598,7 @@ export class HollowmereGame extends Game {
     this.updateEntities(dt);
     this.updateRollSpots(f);
     this.updateClockEntry(f);
+    if (ctl) this.updateRipples(dt, f);
 
     // interaction
     const near = ctl ? this.nearestInteractive() : null;
@@ -526,7 +613,7 @@ export class HollowmereGame extends Game {
         f.strikeHint = true;
         this.hud.toast(`Stuck fast. A few good hits should shift it: ${touchActive() ? '<b>Attack</b>' : '<kbd>X</kbd>'} swings your wrench.`, 5000);
       }
-    } else if (seal) this.hud.showPrompt(`Seal ${seal.name}`, 'seal');
+    } else if (seal) this.hud.showPrompt(null, 'seal'); // (what can be sealed glows white instead)
     else if (echo) this.hud.showPrompt('Dispel echo', 'dispel');
     else this.hud.showPrompt(near ? (near.prompt ? near.prompt() : 'Interact') : null);
     if (echo && input.hit('interact')) this.abilities.dispel(echo);
@@ -567,6 +654,55 @@ export class HollowmereGame extends Game {
    * slices of the tower show another era. Bursts come faster as you get close, and faster
    * still once Era Keys are placed. It stops for good once the Tower is restarted.
    */
+  /**
+   * Donald Eugene, adjusting the valley while his apprentice is out in it (see Game.ripple).
+   * She holds the other half of the Chronoheart, so she sees every change; nobody else does.
+   */
+  updateRipples(dt, f) {
+    if (!f.hasAmulet || this.era !== ERA.PRESENT || this.world.pocket) return;
+    const x = this.player.body.x;
+    const N = (text) => ({ who: null, name: '', text });
+    const V = (text) => ({ who: 'vivienne', name: 'Vivienne', text });
+    // the bakery's sign, as she walks out of the square
+    if (!f.bakeryChanged && x > BAKERY.x - 1.5 && x < BAKERY.x + 2) {
+      this.ripple({
+        at: [BAKERY.x, 2.3, 0.8],
+        apply: () => (f.bakeryChanged = true),
+        lines: [
+          N('The sign over the bakery door shivers, like heat over a road... and settles.'),
+          V("MARLOW'S BAKERY... no. HALE'S BAKERY?"),
+          V("It's been Marlow's my whole life. I've bought bread there every week since I was nine."),
+          N('Nobody else in the square even looks up.'),
+        ],
+      });
+      return;
+    }
+    // Sheng, a moment after he has sent her off
+    if (f.metSheng && !f.shengKind && Math.abs(x - 160.5) > 3 && Math.abs(x - 160.5) < 10) {
+      this.ripple({
+        at: [160.5, 1.2, 1.2],
+        apply: () => (f.shengKind = true),
+        lines: [
+          N('Behind you, the air shivers, like heat over a road.'),
+          { who: 'sheng', name: 'Sheng the Gatekeeper', text: 'Bye now, Vivienne! Lovely day for it!' },
+          V("...Sheng has never said \"lovely day\" in his life."),
+        ],
+      });
+      return;
+    }
+    // stuck at the town wall a long while: somebody makes it easier
+    if (!f.donLadder && !f.acornPlanted && !f.acornPlantedM && x > 79 && x < L.wallX0) {
+      this.wallT = (this.wallT || 0) + dt;
+      if (this.wallT > 150) {
+        this.ripple({
+          at: [L.wallX0 - 0.5, 3, 5.4],
+          apply: () => (f.donLadder = true),
+          lines: [V('...That ladder was not there a minute ago.'), V("I'd have seen it. I've been staring at this wall for ages.")],
+        });
+      }
+    }
+  }
+
   /** The places only a roll gets through: the Future corridor's laser fence, and the postern's crawlspace. */
   updateRollSpots(f) {
     const p = this.player, b = p.body, roll = touchActive() ? 'tap <b>Roll</b>' : 'press <kbd>C</kbd>';
@@ -666,7 +802,7 @@ export class HollowmereGame extends Game {
       this.dialogue
         .run([
           V('Whoa! Did the Tower wall just flicker into another age?'),
-          V("Its heart has stopped, so it's stuttering between the ages. Once I restart it, it should hold steady."),
+          V("It's as if somebody has changed it so many times it can't make up its mind which age it's in. Once it's running again, it should hold steady."),
         ])
         .then(() => {
           if (this.mode === 'dialogue') this.mode = 'play';

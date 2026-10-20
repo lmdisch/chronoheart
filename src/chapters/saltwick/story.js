@@ -4,8 +4,9 @@ import { ERA } from '../../core/util.js';
 import { LANTERN, CLAM } from './level.js';
 
 export const ITEMS = {
-  watch: { name: "Donald Eugene's Pocketwatch", desc: 'It runs backward, and it pulls toward the sea. Donald Eugene kept it in a drawer for fifty years, and still will not say why.' },
-  myWatch: { name: "Vivienne's Pocketwatch", desc: "Twelve lost cogs and one winter of Donald Eugene's evenings. It runs backward, exactly as promised." },
+  watch: { name: "Donald Eugene's Pocketwatch", desc: 'An old pocketwatch.' }, // no longer used; kept so old saves still show it
+  myWatch: { name: "Vivienne's Pocketwatch", desc: "Twelve lost cogs and one winter of Donald Eugene's evenings, made to fit the Chronoheart." },
+  donCog: { name: 'A Notched Cog', desc: 'Brass, six hundred years old, and stamped with a notch in one tooth: Donald Eugene\'s mark. It was holding Saltwick\'s river back.' },
   nets: { name: 'Old Fishing Nets', desc: 'From the deck of the Marigold. Good for catching fish, or anything else that drifts by.' },
   clapper: { name: 'Bell Clapper', desc: 'The tongue of a great bell, misfiled in a salvage pit for three hundred years.' },
   pearlChip: { name: 'Moon-Pearl Chip', desc: "A chip off the lighthouse lamp's clouded heart. A pearl grows around a seed, given time. A great deal of time." },
@@ -18,7 +19,7 @@ export const ITEMS = {
   noteNoon: { name: "The Noon Bell's Note", desc: "Rung on Bell Rock, in Saltwick's own age. The Chronoheart holds it.", key: true },
   noteDusk: { name: "The Dusk Bell's Note", desc: 'The first sound the Dusk Bell ever made. The Chronoheart holds it.', key: true },
   // carried over from Chapter One (all ten of its Lost Cogs)
-  finder: { name: 'Cog Finder', desc: "Ten of Donald Eugene's lost cogs from Hollowmere, meshed round the Chronoheart's rim. Hold the time lens open and they turn toward any Lost Cog in the age it shows." },
+  finder: { name: 'Cog Finder', desc: "Ten of Donald Eugene's cogs, meshed round the Chronoheart's rim. Under your hearts, they point the way to the nearest Lost Cog, and say which age it is in. Through the time lens, it sends up gold." },
 };
 
 /** Kindness side quests. `start` is the flag set when the favor is asked. */
@@ -34,42 +35,43 @@ const DE = (text) => ({ who: 'eugene', name: 'Donald Eugene', text });
 
 export const INTRO = [
   N('Three weeks after the Clocktower of Hollowmere began to tick again, a river barge ties up at Saltwick, where the valley meets the sea.'),
-  N('Or where it used to. The harbor is mud from wall to wall. The tide went out the night the Tower restarted, and it has not come back.'),
-  DE('There. You see it, Vivienne? Not one drop. Now listen to this.'),
-  N('He holds up his old pocketwatch. It is ticking. Backward.'),
-  DE('I owe you the truth, apprentice. Fifty years ago there were three of us up on Highcrest: Sir Orin, his wife Lyra, and me. One Midwinter Night, Orin wanted to use this watch to wind the whole world back.'),
-  DE('Lyra made me swear to carry it down the mountain so that he could not. I have not spoken to him since.'),
-  DE('What I never knew is that it was never mine to carry. It is the heart of the Tide Clock. The day you mended the Tower, it woke up, and it has been pulling toward the headland ever since. The Tide Well, they call it.'),
-  DE('Take it, Vivienne. Put back what I took.'),
-  Wr("A clock that keeps the tide, and its heart has been hiding in your waistcoat for fifty years. All right, Master. Let's bring the sea home."),
-  DE('One thing first. The harbor children have a rhyme: "Dawn and Noon and Dusk must chime, before the Well gives back the time." Three bells, apprentice. I would start by asking where they hang.'),
+  N('Or where it used to. The harbor is mud from wall to wall, the wells are dry, and the fields behind the town are white with salt.'),
+  DE('There. Not one drop. Saltwick has been in drought for fifty years, apprentice: since long before you were born. The river that fed this harbor simply stopped coming.'),
+  DE('Nobody knows why.'),
+  DE('That is your next lesson. Find out why.'),
+  Wr('Me? On my own?'),
+  DE('You did splendidly in Hollowmere. I shall be right here on the quay, possibly eating smoked eel. Shout if you need me.'),
+  DE('The harbor children have a rhyme: "Dawn and Noon and Dusk must chime, and the Well will run as in olden time." Three bells, apprentice. I would start by asking where they hang.'),
 ];
 
 /** After the climb out of the Well: Donald Eugene has come up the stair. */
 export const ENDING_A = [
-  N('Vivienne comes up out of the Well with the sea at her heels. Behind her the water stops rising a hand below the door, exactly where it has always meant to stop.'),
-  DE('Vivienne! I felt it turn. Every clock I own struck at once. I came up those steps like a man of forty. Well. Fifty.'),
-  Wr("Master... I'm sorry. Your watch. It was the Tide Clock's heart, just as you feared, and it had to stay in the cradle. I couldn't bring it back."),
-  DE('Sorry? Fifty years I kept that watch in a drawer in the dark. Afraid of what Orin would do if he found it, and afraid of what would happen if I ever let it go.'),
-  DE('You let it go in an afternoon.'),
-  DE('...I have nothing left to teach you, apprentice.'),
-  Wr("That isn't true. You still won't tell me how you get your gear trains so quiet."),
-  DE('Ha! No. That one I am keeping. Now come and look. I think the sea has something to show you.'),
+  N('Vivienne comes up out of the Wellhead with the river at her heels. Behind her the water stops rising a hand below the door, exactly where it has always meant to stop.'),
+  DE('Vivienne! I heard it from the quay: the whole river, coming home at once. I came up those steps like a man of forty. Well. Fifty.'),
+  Wr('Somebody built a sluice down there, Master. Six hundred years ago. It turned the river away from Saltwick, on purpose.'),
+  Wr('And this was jamming the wheel.'),
+  N('She holds out the cog. Brass, worn smooth, with a notch cut in one tooth.'),
+  DE('...So it was.'),
+  Wr("It's your mark."),
+  DE('Half the cogs on this coast have my mark on them, apprentice. I sold a great many cogs, in my day. Now come and look. I think the harbor has something to show you.'),
 ];
 
 export const ENDING_COGS = [
-  DE('And what is that rattling in your apron? ...Twelve cogs. Twelve of MY cogs. The whole tray went the day the Tower stopped. Scattered clean across time, I suppose. I did wonder.'),
-  DE('Twelve is exactly enough for a watch movement. Give me the winter, and you shall have one of your own. I cannot promise it will run backward.'),
-  Wr('I can.'),
+  DE('And what is that rattling in your apron? ...Twelve cogs. Twelve of MY cogs.'),
+  Wr('All along this shore, in every age. Every one with the notch in it.'),
+  DE('Then I had better put them to some use. Twelve is exactly enough for a watch movement. Give me the winter, and you shall have one of your own, made to fit the Chronoheart.'),
 ];
 
 export const ENDING_B = [
-  N('By morning the harbor is full. By evening the boats are out. And three hundred years on, where there was salt to the horizon, there are lights on the water.'),
-  DE('There. A town that will never know how near it came to being a desert. That is the best sort of mending: the kind nobody ever finds out about.'),
-  Wr("Somebody will find out. Give it six hundred years and there'll be a statue. There's always a statue."),
-  DE('...Vivienne. With Hollowmere\'s Tower locked forward and the Tide Clock whole again, Orin has nothing left down here to siphon quietly. If he is still keeping that last hour alive on Highcrest, he will start pulling whole hours straight out of the valley\'s nights.'),
-  Wr("Then when winter comes early, we climb Highcrest—both of us."),
-  DE('Both of us, apprentice. I left my best friend on that mountain fifty years ago. I will not leave you to face him alone. Supper first, though. I am told there is smoked eel.'),
+  N('By morning the harbor is full. By evening the boats are out, the Marigold among them. And three hundred years on, where there was salt to the horizon, there are lights on the water.'),
+  DE('There. Fifty years of drought, mended in an afternoon. Splendid work, apprentice. Truly.'),
+  Wr('Master... can I ask you something silly?'),
+  DE('Always.'),
+  Wr("The bakery at home, on the square. Wasn't it called Marlow's? Before?"),
+  N('Donald Eugene goes completely still. Only for a breath. Then he smiles.'),
+  DE("Hale's, apprentice. It has always been Hale's."),
+  DE('Supper. I am told there is smoked eel.'),
+  N('All through supper, he watches her. Vivienne pretends not to notice.'),
 ];
 
 /** "One voice..." after each bell, whatever order they're rung in. */
@@ -89,29 +91,27 @@ function npcLines(game, id) {
   switch (id) {
     case 'eugene': {
       if (f.finished) {
-        const lines = [DE('Listen to that. Waves. I had quite forgotten that I missed them.')];
-        if (f.ownWatch) lines.push(DE('And how is the new watch running? ...Backward, I hope. I worked very hard on that.'));
-        else lines.push(DE(`I keep finding empty slots in my parts tray. Twelve cogs gone, and you have found ${game.state.cogs.length} of them. Bring me the lot and I can build you a watch of your own: twelve is exactly a movement.`));
+        const lines = [DE('Listen to that. Water. I had quite forgotten what this harbor sounded like.')];
+        if (f.ownWatch) lines.push(DE('And how is the new watch running? I worked very hard on that.'));
+        else lines.push(DE(`Twelve cogs of mine along this shore, and you have found ${game.state.cogs.length} of them. Bring me the lot and I can build you a watch of your own: twelve is exactly a movement.`));
         return lines;
       }
       if (!f.metEugene) {
         f.metEugene = true;
         return [
-          DE('Still here? Good. One more thing I should have said. The Chronoheart is whole again, since the Tower mended it: you may stay in any age as long as you please. No more racing its ring.'),
-          DE("Mind, it cost you the seal ring, the lens and the escape wheel. They went into the Tower's heart to mend yours. A fair trade, I'd say."),
-          DE('When Lyra pressed that watch into my hands on Highcrest, she whispered: "Keep it from him, Donald, until someone comes who can give it back." Fifty years I waited to find out who she meant.'),
-          DE('The harbormaster will know about the bells. And Vivienne: be kind to these people. They have lost a whole sea.'),
+          DE('Still here? Good. The Chronoheart is whole now: you may stay in any age as long as you please. No more racing its ring.'),
+          DE('The harbormaster will know about the bells. Off you go. And Vivienne: be kind to these people. Fifty years is a long time to go thirsty.'),
         ];
       }
       if (f.heartPlaced) return [DE('The water! Vivienne, look at the water!')];
-      if (bells === 3) return [DE('All three! I heard every one. Then the Well will open to you, up on the headland. Go on, apprentice. I shall be right here. Possibly eating smoked eel.')];
+      if (bells === 3) return [DE('All three! I heard every one. Then the Wellhead will open to you, up on the headland. Go on, apprentice. I shall be right here. Possibly eating smoked eel.')];
       if (!f.noonRung) return [DE('The Noon Bell hangs out on Bell Rock, at the end of the Long Pier. East along the quay, past the mudflats. The harbormaster says the gate out there has beaten everyone for years.')];
       if (!f.dawnRung) return [DE('The Dawn Bell... nobody in Saltwick has laid eyes on it. They say the first folk hung it. A bell that old, I would look for in an age that old. Ask at the lighthouse: lightkeepers remember things.')];
       return [DE('And the Dusk Bell. Brannoch says it has never been cast: there is only an old promise that someone will, "for whoever is still here at the end". I do not like the sound of that, Vivienne. Look in the last age.')];
     }
     case 'brannoch': {
       const b = S('brannoch', 'Harbormaster Brannoch');
-      if (f.tideRestored) return [b("Tide's in! Forty boats to refloat, eleven to bail, and one to dig out with a spade, and I have never been happier in my life."), b("I don't know what you did up on the Head, girl. I don't need to. The harbor's yours whenever you want it.")];
+      if (f.tideRestored) return [b("Water's back! Forty boats to refloat, eleven to bail, and one to dig out with a spade, and I have never been happier in my life."), b("I don't know what you did up on the Head, girl. I don't need to. The harbor's yours whenever you want it.")];
       if (kind.includes('whistle') && !f.brannochWhistle) {
         f.brannochWhistle = true;
         return [
@@ -129,13 +129,13 @@ function npcLines(game, id) {
         return [
           b('Brannoch. Harbormaster. Of that.'),
           N('(He waves a hand at the mud.)'),
-          b("Three weeks without a ripple, and the boats sinking a little deeper every day. Don't step off the quay: that mud has swallowed a horse and cart."),
-          b('My gran used to say folk swam this harbor in the first days, when it was all sea. And that one day it would be dry as a bone. Cheerful woman.'),
-          Wr('All sea in the first days... and dry as a bone, later on.'),
+          b("Fifty years without a ripple. My father was harbormaster the autumn the river stopped coming. Don't step off the quay: that mud has swallowed a horse and cart."),
+          b('These days the only water on this coast comes out of the Gilded Gear Company\'s pump, a copper a cup. Lovely people. Never met one.'),
+          b('My gran used to say folk swam this harbor in the first days, when it was all sea. Cheerful woman. Never stopped going on about it.'),
           b("Bells? The Noon Bell's on Bell Rock, at the end of the Long Pier. The Dawn Bell is a story. The Dusk Bell is a promise. That is all I know, and it's more than most."),
         ];
       }
-      return [b("Mind the mud. East past the flats for the Long Pier and the Noon Bell. And if you see the tide, tell it we've kept its place.")];
+      return [b("Mind the mud. East past the flats for the Long Pier and the Noon Bell. And if you see the river, tell it we've kept its place.")];
     }
     case 'zach': {
       const z = S('zach', 'Zach Tiberious');
@@ -154,7 +154,7 @@ function npcLines(game, id) {
       return [
         z('Ahem. Zach Tiberious, maritime expert. Nineteen years at sea. Possibly twenty.'),
         z("We did NOT stow away. We conducted an unannounced inspection of the barge's biscuit barrel."),
-        z('Now. The tide. Obviously someone has left the plug out. Find the plug. It will be on a chain.'),
+        z('Now. The water. Obviously someone has left the plug out. Find the plug. It will be on a chain.'),
         z('And while you are about it: I buried my retirement hoard somewhere along this shore this morning. Four hundred acorns. Under a bollard. Or a Tuesday. If you find it, do NOT eat it.'),
         { favor: 'hoard' },
         N('(Behind Zach, Megan shakes a tiny head very, very slowly.)'),
@@ -162,7 +162,7 @@ function npcLines(game, id) {
     }
     case 'megan': {
       const n = S('megan', 'Megan the Squirrel');
-      if (f.tideRestored) return [n('Chk. (Megan is watching the waves come in, very still, tail curled round her feet.)')];
+      if (f.tideRestored) return [n('Chk. (Megan is watching the water lap at the quay, very still, tail curled round her feet.)')];
       if (kind.includes('hoard')) return [n('Chk-chk. (Megan pats Zach on the head. He is still talking about his forest.)')];
       return [n('Chk! (Megan points at the mud, then at the horizon, then shrugs with her entire body.)')];
     }
@@ -184,7 +184,7 @@ function npcLines(game, id) {
       return [
         y('A stranger on the strand! And in such cloth: glass over your eyes, and an apron full of iron. Are you from beyond the reef?'),
         y('I am Isha. I sing the tide out and I sing it in again. The sea here always comes back: that is the first thing we teach our children.'),
-        Wr('(...Always. For about six hundred years.)'),
+        Wr('(...Always. Until it doesn\'t.)'),
         y('But the nights are long, and the little ones fear the dark water. Our fish-oil lamps blow out in the first wind. I have asked the sea for a light that does not go out. So far it has sent me a stranger.'),
         { favor: 'lamp' },
         bell,
@@ -214,7 +214,7 @@ function npcLines(game, id) {
     }
     case 'digby': {
       const t = S('digby', 'DIGBY');
-      if (f.tideRestored) return [t('WELCOME TO SALTWICK HARBOR. NINE HUNDRED YEARS OF CONTINUOUS OPERATION. HIGH WATER IS AT 06:12.'), t('I AM A SALVAGE UNIT. THERE IS NOTHING HERE TO SALVAGE. I HAVE NEVER KNOWN WHY THAT MAKES ME SO CONTENT.')];
+      if (f.tideRestored) return [t('WELCOME TO SALTWICK HARBOR. NINE HUNDRED YEARS OF CONTINUOUS OPERATION. HIGH WATER IS AT 06:12.'), t('I AM A SALVAGE UNIT. THERE IS NOTHING HERE TO SALVAGE. I HAVE NEVER KNOWN WHY THAT MAKES ME SO CONTENT.'), t('ARCHIVE NOTE: THE GILDED GEAR COMPANY CLOSED ITS SALTWICK PUMPS SOME CENTURIES AGO. NOBODY WOULD PAY FOR WATER.')];
       if (f.lampQuest && !f.lumenGiven) {
         return [
           t('QUERY: A LIGHT THAT DOES NOT BLOW OUT. SEARCHING...'),
@@ -231,26 +231,26 @@ function npcLines(game, id) {
       if (f.metDigby) return [t('REMINDER: THE DUSK BELL STANDS ON THE OLD WHARF. ITS CLAPPER IS MISFILED IN SALVAGE PIT 3. THE PIT HAS NO EXIT. THESE FACTS ARE RELATED.')];
       f.metDigby = true;
       return [
-        t('SALVAGE UNIT DIGBY. WELCOME TO SALTWICK DRY DOCK. SEA LEVEL: NOT APPLICABLE.'),
-        t('YOU ARE THE FIRST VISITOR IN 61 YEARS. PLEASE DO NOT BE SALVAGE.'),
-        t('HISTORICAL NOTE: THE TIDE LEFT THIS HARBOR THREE CENTURIES AGO AND DID NOT RETURN. THE LAST HARBOR FOLK CAST A BELL TO CALL IT HOME. THE BELL NEVER RANG. ITS CLAPPER WAS MISFILED. I BELIEVE IN SALVAGE PIT 3.'),
-        Wr("Three centuries ago... starting three weeks ago. So this is what happens if I don't mend it."),
+        t('SALVAGE UNIT DIGBY, PROPERTY OF THE GILDED GEAR COMPANY, WATER DIVISION. WELCOME TO SALTWICK DRY DOCK. SEA LEVEL: NOT APPLICABLE.'),
+        t('YOU ARE THE FIRST VISITOR IN 61 YEARS. PLEASE DO NOT BE SALVAGE. THE COMPANY PUMP IS THE ONLY WATER ON THE COAST. PRICE PER CUP: ONE GOLD COG.'),
+        t('HISTORICAL NOTE: THE WATER LEFT THIS HARBOR THREE AND A HALF CENTURIES AGO AND DID NOT RETURN. THE LAST HARBOR FOLK CAST A BELL TO CALL IT HOME. THE BELL NEVER RANG. ITS CLAPPER WAS MISFILED. I BELIEVE IN SALVAGE PIT 3.'),
+        Wr("A gold cog for a cup of water. With a notch in one tooth, I suppose. ...So this is what happens if I don't mend it."),
       ];
     }
     case 'michelle': {
       const m = S('michelle', 'Mysterious Stranger');
-      if (f.tideRestored) return [m('You gave it back. I knew you would.'), m('He will need you, up on the mountain. They both will.')];
+      if (f.tideRestored) return [m('You gave them back their river. I knew you would.'), m('He will be proud of you, Vivienne. Watch his face when he says it.')];
       if (f.hasRewind) {
-        if (!f.tideGatePassed) return [m('Stand at the gate first. Then go down to the lever. The watch remembers the way back, even up a drop that your legs would not.')];
-        return [m('Spend your time wisely, Vivienne. Even the time you get to spend twice.')];
+        if (!f.tideGatePassed) return [m('Stand at the gate first. Then go down to the lever. The Chronoheart remembers the way back, even up a drop that your legs would not.')];
+        return [m('Spend your time wisely, Vivienne. Even the time you get to spend twice.'), m('And whatever they tell you, a river does not wander off on its own.')];
       }
       return [
         m("Ah. Donald's apprentice. Keeper of the Chronoheart now, I see. You are early. Or I am late. Across the years it is hard to say."),
         m('You did well in Hollowmere. And you were kind while you did it, which is rarer.'),
-        m('That watch in your pocket was made for the sea. Does it still run backward? It did, once. Somebody made your master carry it down from the mountain, so that it could never be used to wind the world back. Hold it tight, think of where you have just been... and let it carry you.'),
-        N("The pocketwatch shivers in Vivienne's hand. For a heartbeat she is standing where she stood three steps ago."),
+        m('Here. A hairspring that runs backward. I made it a long time ago, for a heart very like that one. Fit it to the Chronoheart, think of where you have just been... and let it carry you.'),
+        N('The hairspring clicks into the Chronoheart. For a heartbeat Vivienne is standing where she stood three steps ago.'),
         { unlock: 'rewind' },
-        m('There. It only ever takes you. The world keeps walking forward without you: gates go on closing, tides go on turning. Remember that, when you are tempted to lean on it.'),
+        m('There. It only ever takes you. The world keeps walking forward without you: gates go on closing, water goes on running. Remember that, when you are tempted to lean on it.'),
         m('The tide gate ahead opens for a few breaths when its lever is pulled, and the lever is a long way from the gate. Unless, of course, you have only just been standing at the gate.'),
       ];
     }
@@ -265,7 +265,7 @@ function npcLines(game, id) {
           { take: 'pearl' },
           N('Odalys climbs the tower two steps at a time. A minute later the great lamp coughs, catches, and swings a bar of gold out over the mud.'),
           { flag: 'lampLit', refresh: true, sfx: 'key' },
-          o('Four hundred years and three weeks. Right. Back on the books.'),
+          o('Fifty years dark. Right. Back on the books.'),
           o("Light's lit, so the stair's open: a rule is a rule. Go on up to the gallery. Gran swore that on a clear dawn you could see the first folk's bell from there, hanging in the air off the rail."),
           o("She used this. Take it. A loupe: her gran's gran's. She said she didn't only see the bell through it. Once, she said, she reached out and touched it. I always put that down to the gin."),
           { give: 'loupe', unlock: 'reach' },
@@ -275,7 +275,7 @@ function npcLines(game, id) {
       if (f.gotChip) return [o('The Mother Clam lived in the pool by the stack, back when it was a pool. Three lifetimes, a pearl like that takes. I wish you luck finding a clam with the patience.')];
       return [
         o("Mind the cage. It's locked for a reason. No light, no stair: Keeper's rule."),
-        o('Odalys. I keep the Light. Kept. The lamp went out the night the tide did: its heart is a moon pearl, and it clouded over like a dead eye. Three weeks dark, for the first time in four hundred years.'),
+        o('Odalys. I keep the Light. Kept. The lamp went out the autumn the water did: its heart is a moon pearl, and it clouded over like a dead eye. Fifty years dark, after four hundred burning.'),
         o("Pearls like that don't come out of any clam I ever met. The first folk grew them in the Mother Clam, in the pool yonder, around a seed. Took the clam three lifetimes. That pool's been dry mud since before Gran."),
         o('Here. A chip off the old heart. If you ever meet a clam with three lifetimes to spare, you will know what to do.'),
         { give: 'pearlChip', flag: 'gotChip' },
@@ -284,7 +284,7 @@ function npcLines(game, id) {
     }
     case 'fenwick': {
       const w = S('fenwick', 'Old Fenwick');
-      if (f.tideRestored) return [w('Told you.'), w('Always is.')];
+      if (f.tideRestored) return [w('Told you.'), w('Always comes back.')];
       if (f.metFenwick) return [w("That jetty? Sound as a bell, what's left of it. Runs a good long way out over the mud. Mind, you would have to be daft to walk off the end of it.")];
       f.metFenwick = true;
       return [
@@ -292,28 +292,39 @@ function npcLines(game, id) {
         Wr("There's... no water."),
         w("That's what they WANT you to think."),
         w("Fifty year I've fished this lock. The jetty used to go right the way across, before the far end fell in. Nothing crosses here now, not in my time."),
-        w("Tide'll be back. Always is. I can wait. I'm very good at it."),
+        w("Water'll be back. Always comes back. I can wait. I'm very good at it."),
       ];
     }
     case 'maren': {
+      // she has met Donald Eugene, a long way back, without knowing who (or when) he is
       const m = S('maren', 'Maren the Tide-Reader');
-      if (f.tideRestored) {
-        return [
-          m('Stranger! Come and see. The grandmothers were right: it was brought. I woke, and there it was in the cradle. Small as a duck egg, gold, and ticking both ways at once.'),
-          m('No one saw who left it. There were footprints, though. Small ones. Very strange boots.'),
-          Wr('...Very strange boots.'),
-        ];
-      }
-      if (f.metMaren) return [m('No heart for it yet. The grandmothers are very patient. I am less so.')];
+      if (f.tideRestored) return [m('Stranger! The river ran past my door this morning as it always has. And yet I dreamed it had been gone a very long time.'), m('Strange dreams, up on the Head.')];
+      if (f.metMaren) return [m('Still cutting stone for the old man\'s well-house. When it is done, he says, he will turn his little wheel. I hope he pays as well as he talks.')];
       f.metMaren = true;
       return [
         m('You climbed the Head! In those boots! Sit, stranger, before you fall down my well.'),
-        m("I am Maren. I read the tides. And I have been handed a mistake: a clock for the sea. Wheels and water, to keep the tide's own time, so that it never forgets to come back."),
-        m('Not my idea, mind. The grandmothers keep the drawings, on skins so thin the sun shines through them. Whose hand drew them, they will not say. I am only the fool who said I would build it.'),
-        m("The wheels I can cut. The door is planned: it will open only to three bells' voices, so that no fool wanders in. We have hung one bell, the dawn's. The other two are a problem for people cleverer than me, a long time from now. I find most problems are."),
-        m('What I do not have is a heart for it. A clock like this wants a spring that knows how to run back as well as forward: out, and in again. No one alive can make such a thing.'),
-        m('The grandmothers say one will be brought. They do not say by whom.'),
-        Wr("(A spring that runs back as well as forward... Master's watch has been ticking against my ribs this whole time.)"),
+        m('I am Maren. I read the tides. Just now I am cutting stone instead, for an old man in a very fine coat. The river rises up here, you see, under the Head, and he wants a house built over it.'),
+        m('He drew every stone himself. And a great wheel inside, and a little door that only opens to three bells. "So that nobody wanders in," he said.'),
+        m('When it is done, he says, he will turn the wheel, and the river will go round the other side of the hills instead. "It will take a long while," he said. "I don\'t mind waiting."'),
+        Wr('Why would anyone want to turn a river away from a harbor?'),
+        m('I asked him that. He said: "So that one ship, a long way from now, stays in port." Then he laughed, and paid us in gold.'),
+        m('He was very kind about it.'),
+        Wr('An old man in a fine coat... with his gold stamped with a little cog, I suppose.'),
+        m('Notched in one tooth! How did you know?'),
+      ];
+    }
+    case 'pell': {
+      const d = S('pell', 'Dr. Pell');
+      if (f.tideRestored) return [d('The Marigold is afloat. Fifty years late.'), d('...I think I shall stay, now. Somebody here might need a doctor.')];
+      if (f.metPell) return [d('Mind the mud, child. I have set enough legs for one lifetime.')];
+      f.metPell = true;
+      return [
+        d('Dr. Pell. I was the doctor in Saltwick, once. Still am, when anyone needs one.'),
+        d('Fifty years ago this autumn I had a berth on the Marigold, bound clear across the sea. My bag was packed. Then the river stopped coming, the harbor dried up under her, and she never sailed.'),
+        d('Neither did I.'),
+        d('That winter they sent for me up Highcrest. A young woman, very ill. I sat with her all night. I could not help her. Nobody could have.'),
+        d('I sometimes wonder where I would be now, if the Marigold had sailed.'),
+        Wr('...The Marigold. The boat that\'s still aground out there in the mud.'),
       ];
     }
     default:
@@ -375,7 +386,7 @@ export async function struck(game, ent) {
     case 'dawnBell':
       ring('dawnRung', 'noteDawn');
       return say([
-        N('Your wrench passes through the lens and strikes bronze, six hundred years away. The Dawn Bell sings out over a sea that is still there.'),
+        N('Your wrench passes through the lens and strikes bronze, six hundred years away. The Dawn Bell sings out over water that is still there.'),
         N('On the strand below, in the first age, the tide folk fall silent and stare up at a bell that is ringing itself.'),
         bellCount(f),
       ]);
@@ -392,6 +403,7 @@ export async function struck(game, ent) {
       if (game.warden) game.warden.stunT = 20;
       return say([
         N('The Dusk Bell has waited three hundred years to make its first sound. It makes it now: low and enormous, rolling out across the salt as the Harbor Warden folds down into silent rest.'),
+        N("On the Warden's dented back plate, half rubbed away: a gold cog, with a notch in one tooth."),
         N('Nothing answers. Not yet.'),
         bellCount(f),
       ]);
@@ -404,10 +416,10 @@ export async function interact(game, ent) {
   switch (ent.id) {
     case 'gauge':
       if (f.tideRestored) return say(N("The harbor's tide gauge. Its float bobs halfway up the slot, exactly where the painted line says it should be."));
-      return say(N('The harbor\'s tide gauge. Its float lies at the very bottom of the slot, on dry mud. Someone has chalked beside it: "21 DAYS".'));
+      return say(N('The harbor\'s tide gauge. Its float lies at the very bottom of the slot, on dry mud. Beside it, years of chalk tally marks, and a total: "18,262 DAYS".'));
     case 'portSign':
       if (f.tideRestored) return say(N('"SALTWICK HARBOR. HIGH WATER 06:12. MIND THE GULLS."'));
-      return say([N('"SALTWICK DRY DOCK. PORT AUTHORITY NOTICE 1: THE SEA IS NOT CURRENTLY AVAILABLE. NOTICE 2: NOTICE 1 HAS BEEN IN EFFECT FOR 300 YEARS."'), Wr('Three hundred years, and it started three weeks ago.')]);
+      return say([N('"SALTWICK DRY DOCK. PORT AUTHORITY NOTICE 1: THE SEA IS NOT CURRENTLY AVAILABLE. NOTICE 2: NOTICE 1 HAS BEEN IN EFFECT FOR 350 YEARS."'), Wr('Three hundred and fifty years. And it all started before I was born.')]);
     case 'lanternM':
       return say([
         N('A lantern on an old iron post, burning with a cold, steady light. The plaque is worn almost smooth:'),
@@ -497,8 +509,8 @@ export async function interact(game, ent) {
       const missing = need.filter(([k]) => !f[k]);
       if (missing.length) {
         return say([
-          N('A slab of dark stone closes the mouth of the Tide Well. Three bells are carved into it, and something behind it is listening.'),
-          Wr(missing.length === 3 ? "It's waiting for three voices, and I haven't rung one yet." : `It hasn't heard ${listOf(missing.map(([, d]) => d))} yet.`),
+          N('A slab of dark stone closes the mouth of the Wellhead. Three bells are carved into it, and something behind it is listening. Above them, small and neat, someone has carved a cog with a notch in one tooth.'),
+          Wr(missing.length === 3 ? "Master's mark. Here, on a door older than Saltwick. ...And it's waiting for three voices. I haven't rung one yet." : `It hasn't heard ${listOf(missing.map(([, d]) => d))} yet.`),
         ]);
       }
       f.wellOpen = true;
@@ -506,7 +518,7 @@ export async function interact(game, ent) {
       game.renderer.shake = 0.5;
       await say([
         N('The Chronoheart gives back its three notes, one after another: Dawn. Noon. Dusk.'),
-        N('For a long moment, nothing. Then the slab sinks into the rock without a sound, and cold sea air breathes out of the dark.'),
+        N('For a long moment, nothing. Then the slab sinks into the rock without a sound, and cold, damp air breathes out of the dark.'),
         Wr("Only the Present's door still opens. All right. Down we go."),
       ]);
       audio.sfx('gate');
@@ -515,7 +527,7 @@ export async function interact(game, ent) {
       return;
     }
     case 'wellDoorP':
-      return say([N('A doorway framed in fresh-cut stone and closed with driftwood planks. Behind it, the well is still being dug.'), Wr("It isn't finished in this age. It has to be the Present.")]);
+      return say([N('A doorway framed in fresh-cut stone and closed with driftwood planks. Behind it, the well-house is still being dug, over the spring where the river rises.'), Wr("It isn't finished in this age. It has to be the Present.")]);
     case 'wellDoorF':
       return say([N('Salt has drifted up to the lintel and set like stone. Nothing has opened this door in three hundred years.'), Wr('Not this one. It has to be the Present.')]);
     case 'leverA':
@@ -546,14 +558,13 @@ export async function interact(game, ent) {
       game.save();
       return say([N('You reach through the lens, fit the crank to the spindle, and wind. In an age you are not standing in, a chain comes taut.'), Wr('Six hundred years of being wound. That should hold.')]);
     case 'heart':
-      if (f.heartPlaced) return say(N('The pocketwatch ticks in its cradle. Forward, and back, and forward.'));
+      if (f.heartPlaced) return say(N('The great wheel turns freely now, and the river runs home beneath it.'));
       await say([
-        N("The Tide Clock's great wheel fills the wall, turning slowly the wrong way. At its foot is a cradle of dark stone, the size of a duck egg. Empty."),
-        N("In Vivienne's pocket the watch is pulling so hard that it hums."),
-        Wr("It was never a watch. It's this clock's heart, and it has been trying to get home for fifty years."),
-        Wr("...If I put it back, I can't take it out again. No more running myself backward."),
-        N('Vivienne holds it a moment longer than she needs to.'),
-        N('Then she sets the watch in the cradle. It fits as though it had only just been lifted out.'),
+        N("A great wheel fills the wall, holding the sluice gate shut. Behind it, faintly, water: the whole river, pressing to come home the way it used to."),
+        N('At the foot of the wheel, one small brass cog is jammed into the works. Worn smooth by six hundred years. A notch cut in one tooth.'),
+        Wr("His mark. Holding a whole river back from Saltwick, for six hundred years."),
+        Wr('"So that one ship, a long way from now, stays in port."'),
+        N('Vivienne works the cog loose, and puts it in her apron.'),
       ]);
       return game.placeHeart();
     default:

@@ -1,8 +1,8 @@
-# Chapter Two: The Backward Tide
+# Chapter Two: The Dry Harbor
 
 **A time-travel puzzle adventure on one shore, in three ages.** The second chapter of [Chronoheart](../README.md). It opens once [Chapter One](chapter-1-hollowmere.md) is finished.
 
-Three weeks after Vivienne restarted the Clocktower of Hollowmere, the river barge ties up at **Saltwick**, where the valley meets the sea. Or where it used to. The tide went out the night the Tower restarted, and it has not come back. Donald Eugene's old pocketwatch has started ticking **backward**, and it pulls toward the headland: toward the **Tide Well**, where a clock far older than the Tower keeps the sea's own time.
+Three weeks after Vivienne restarted the Clocktower of Hollowmere, the river barge ties up at **Saltwick**, where the valley meets the sea. Or where it used to: the harbor is mud from wall to wall, the wells are dry, and the fields are white with salt. Saltwick has been in drought for fifty years, since the river that fed it simply stopped coming. Donald Eugene sets her the next lesson: find out why. (He knows why. See the [story](story.md).)
 
 Vivienne is the keeper of the **Chronoheart** now, and it is mended: she can stay in any age for as long as she likes.
 
@@ -12,7 +12,7 @@ Vivienne is the keeper of the **Chronoheart** now, and it is mended: she can sta
 | **Present** (Saltwick) | a harbor town with no harbor: mud from wall to wall, boats aground | pale blue |
 | **Future** (the Dry Age) | salt flats where the sea was, rusted hulks, a salvage robot with nothing to salvage | rust orange |
 
-The Future you walk through is the one that happens **if you fail**. Mend the Tide Clock, and you get to watch it become something else.
+The Future you walk through is the one that happens **if you fail**: the Gilded Gear Company selling water by the cup. Bring the river home, and you get to watch it become something else.
 
 ---
 
@@ -43,10 +43,10 @@ The Future you walk through is the one that happens **if you fail**. Mend the Ti
 
 | Power | From | The rule, in one sentence |
 | --- | --- | --- |
-| **Rewind** | The Mysterious Stranger, at the head of the Long Pier | Hold `R` and the pocketwatch runs **you** backward along the path you just took (up drops, across gaps, back through era shifts), while the rest of the world keeps going. |
+| **Rewind** | The Mysterious Stranger, at the head of the Long Pier (a backward hairspring for the Chronoheart) | Hold `R` and the Chronoheart runs **you** backward along the path you just took (up drops, across gaps, back through era shifts), while the rest of the world keeps going. |
 | **Reach** | The Keeper's Loupe, from Odalys the Lightkeeper | While the time lens is open, **Interact** and **Attack** go *through* it: use, take or strike something in the other age from where you stand in this one. |
 
-The amulet's ring shows how much path the watch remembers (about 8 seconds of your own movement; standing still costs nothing), and a faint gold trail shows it on the ground.
+The amulet's ring shows how much path Rewind remembers (about 8 seconds of your own movement; standing still costs nothing), and a faint gold trail shows it on the ground.
 
 ---
 
@@ -88,11 +88,11 @@ On-screen controls appear automatically on touch screens.
 
 > **Spoilers ahead.** The in-game **Hint** gives the same answers one step at a time.
 
-The road runs west to east along the shore. The harbor rhyme sets the goal: *"Dawn and Noon and Dusk must chime, before the Well gives back the time."* Each age hung one bell for the sea.
+The road runs west to east along the shore. The harbor rhyme sets the goal: *"Dawn and Noon and Dusk must chime, and the Well will run as in olden time."* Each age hung one bell, and the Wellhead's door is locked to all three: a lock only a Chronoheart can open. Above the carved bells on the door, small and neat: a cog with a notch in one tooth.
 
 ### 1. Saltwick Quay
 
-- Talk to **Donald Eugene** by the barge and **Harbormaster Brannoch** a little way east.
+- Talk to **Donald Eugene** by the barge and **Harbormaster Brannoch** a little way east. **Dr. Pell**, at the east end of the quay, meant to sail away fifty years ago on the Marigold, and never could.
 - All three favors start here (see [Favors](#favors)).
 
 ### 2. The Mudflats
@@ -104,7 +104,7 @@ The road runs west to east along the shore. The harbor rhyme sets the goal: *"Da
 
 ### 3. The Long Pier: the Noon Bell
 
-- The **Mysterious Stranger** (the old woman from the river in Hollowmere) is waiting at the head of the pier. She teaches the pocketwatch to **Rewind**.
+- The **Mysterious Stranger** (the old woman from the river in Hollowmere) is waiting at the head of the pier. She fits a backward hairspring to the Chronoheart: **Rewind**.
 - A raised quay deck runs out to **Bell Rock**, through the **tide gate**. The gate opens for 3.5 seconds when its lever is pulled, but the lever is down on the shore, and the only way back up is the ladder at the far west end.
 - So: climb the ladder and walk along the deck **to the gate first**. Step off the front of the deck beside it, pull the lever below, and **hold `R`**. The watch runs you straight back up to the gate. Walk through. (It locks open behind you.)
 - On top of Bell Rock, hit the **Noon Bell** three times with your wrench.
@@ -116,7 +116,7 @@ The road runs west to east along the shore. The harbor rhyme sets the goal: *"Da
 
 ### 5. Keeper's Light: the Dawn Bell
 
-- The lighthouse lamp went out the night the tide did: its heart is a **moon pearl**, and it has clouded over. **Odalys the Lightkeeper** gives you a **chip** of it.
+- The lighthouse lamp went out the autumn the water did, fifty years ago: its heart is a **moon pearl**, and it has clouded over. **Odalys the Lightkeeper** gives you a **chip** of it.
 - In the **Past**, the pool beside the sea stack is full of water, and the **Mother Clam** lies on its floor. Dive down and give her the chip. A time-lapse: six hundred years, one layer at a time.
 - In the **Present**, climb down the ladder into the dried-out pool and take the **moon pearl** from the fossil clam. Bring it to Odalys.
 - She relights the lamp, unlocks the **Keeper's stair**, and gives you her great-great-grandmother's **Loupe**: **Reach**.
@@ -129,7 +129,7 @@ A channel no age can ford: a tide-rip in the Past, mud in the Present, a dry can
 1. In the **Future**, climb the ladder to the walkway and stand **at the door**.
 2. Step off the walkway's front edge. Travel to the **Present**, and walk out to the end of the jetty.
 3. Open the lens on the **Future** (`Tab`, then `E`): the panel hangs right in front of you. Press `F` to reach through and press it.
-4. **Hold `R`.** The watch runs you back along the jetty, back into the Future, and up to the door while it's still open.
+4. **Hold `R`.** Rewind runs you back along the jetty, back into the Future, and up to the door while it's still open.
 
 ### 7. The Warden's Wharf: the Dusk Bell & The Harbor Warden
 
@@ -138,23 +138,23 @@ A channel no age can ford: a tide-rip in the Past, mud in the Present, a dry can
 - Fit the **clapper**, then face the **3-stroke showdown** to ring the Dusk Bell:
   1. **Stroke 1:** Strike the Dusk Bell (`X`). The Harbor Warden wakes and raises a shield around the bell.
   2. **Stun via Reach:** Slip into the **Present** along the front road outside the boathouse, hold the **Time Lens** (`Tab`) on the Future, and swing your wrench (`X`) through the lens to strike the **Warden's wind-up key**, stunning it and dropping the shield.
-  3. **Stroke 2 & Bollard Crash:** Strike the Dusk Bell a second time (`X`). When the Warden charges toward you in the **Future**, bait its lunge near a stone bollard and hold **Rewind** (`R`) so it crashes into the bollard, dropping its shield for the **final stroke**!
+  3. **Stroke 2, and the Warden's own bell:** Strike the Dusk Bell a second time (`X`). The Warden charges. Stay right beside the bell, and at the last moment hold **Rewind** (`R`): it can't stop, and slams into its own bell. Its shield drops: ring the **final stroke**! (On its dented back plate: a gold cog, notched in one tooth.)
 
 ### 8. Gull's Head
 
-- Climb the long stair. In the **Past**, **Maren the Tide-Reader** is building a clock for the sea, and has no heart for it yet.
-- With all three notes, the Well's door opens, in the **Present** only.
+- Climb the long stair. In the **Past**, **Maren the Tide-Reader** is cutting stone for an old man in a fine coat: a house over the spring where the river rises, with a great wheel inside and a door that opens only to three bells. "So that one ship, a long way from now, stays in port." He pays in gold stamped with a notched cog.
+- With all three notes, the Wellhead's door opens, in the **Present** only.
 
-### 9. The Tide Well
+### 9. The Wellhead
 
-Four terraces step down to the heart of the Tide Clock, with a gate on the edge of each. Only the Present's gates still move. A shrine saves at the door, and each gate leaves a ladder behind it.
+Four terraces step down to the great wheel of Donald Eugene's sluice, with a gate on the edge of each. Only the Present's gates still move. A shrine saves at the door, and each gate leaves a ladder behind it.
 
 1. **The first gate (ages, one step at a time).** Its lever is on a builders' scaffold high on the back wall, in the Past. In the **Future**, fallen masonry by the door makes a stair up to that height. At the top, step back to the **Present** (two planks of the old scaffold still hold), then on into the **Past**, and throw the lever. It stays thrown for six hundred years.
 2. **The second gate (Reach, twice).** Its winch is walled into an alcove in the Past; the winch's crank is locked in a cage in the Future. In the Present, stand where the cage is and take the crank **through the lens**. Then stand where the alcove is, and fit it and wind it through the lens.
 3. **The last gate (Rewind, across an age).** Its lever holds it open for 3.5 seconds, and the lever is in a pit in the **Future**, with no way out. Stand by the gate in the Present first; walk west to the middle of the terrace, step into the Future, and drop into the pit. Pull the lever and hold `R`: up out of the pit, back into the Present, back to the gate.
-4. **The heart.** At the foot of the great wheel is an empty cradle, the size of a pocketwatch.
+4. **The great wheel.** One small brass cog is jammed into its works, notched in one tooth: his mark. Pull it out (you keep it, and you keep Rewind).
 
-Then the tide comes in. **Hold Jump and swim up**, west over the terraces, and out the way you came.
+Then the river comes home, all at once, and fast: the water rises quickly and drags at you. **Hold Jump and swim up**, west over the terraces, and out the way you came.
 
 ---
 
@@ -175,7 +175,7 @@ Then the tide comes in. **Hold Jump and swim up**, west over the terraces, and o
 | 9 | Keeper's Light | **Past** | On top of the bare sea stack: climb the Keeper's stair in the Present, then step back. |
 | 10 | Keeper's Light | **Present** | At the far end of the lighthouse gallery. |
 | 11 | The Dry Lock | **Present** | High over the end of the jetty. Jump for it. |
-| 12 | The Tide Well | **Present** | On the second terrace, in the back corner. |
+| 12 | The Wellhead | **Present** | On the second terrace, in the back corner. |
 
 ---
 
@@ -193,9 +193,9 @@ Three optional side quests. Each gives you **+1 heart**. Nobody you meet knows y
 
 ## After the story
 
-- **Your save is kept.** Choose Continue and walk the shore with the tide back in. The Present's mud is sea again (swim it), the boats are afloat, and the Future is not the Dry Age any more: it's the **Age of Lights**, a green harbor town in a long gold evening, grass and trees where the salt was.
-- **The Lost Cogs matter.** Finish with all twelve and Donald Eugene has exactly enough for a watch movement: you keep **Rewind** for good. Find the rest afterward and bring them to him on the quay, and he'll build it then.
-- **The Warden stands down.** With the tide home, it has nothing left to guard.
+- **Your save is kept.** Choose Continue and walk the shore with the water back in. The Present's mud is sea again (swim it), the boats are afloat, and the Future is not the Dry Age any more: it's the **Age of Lights**, a green harbor town in a long gold evening, grass and trees where the salt was.
+- **The Lost Cogs matter.** Finish with all twelve and Donald Eugene has exactly enough for a watch movement, made to fit the Chronoheart: in Chapter Three your echoes remember longer. Find the rest afterward and bring them to him on the quay, and he'll build it then.
+- **The Warden stands down.** With the river home, it has nothing left to guard.
 - Talk to everyone again. Maren, in the Past, has something to show you.
 
 ---

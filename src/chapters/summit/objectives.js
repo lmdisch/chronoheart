@@ -18,12 +18,12 @@ export function currentGoal(game) {
   const k = keys(), tier = inArena(b.x, b.y, b.z) ? 5 : tierAt(b.z); // (the End of Time counts as the summit)
   const lantern = (age) => `Light the Lantern (${k.lantern}): it always lights on the First Age.${age === 'the First Age' ? '' : ` Swing it forward to <b>${age}</b> with ${k.future}.`} Inside its light, that age is real. Walk across with it lit.`;
 
-  if (f.endingAge !== undefined) {
+  if (f.finished) {
     const left = game.ch.COG_TOTAL - s.cogs.length;
-    if (left === 0 && !f.masterKey) return step('Take all ten Lost Cogs to Donald Eugene.', 'He is at the Summit in <b>Midwinter Night</b>, ready to forge the Master\'s Key.');
+    if (left === 0 && !f.masterKey) return step('Take all ten Lost Cogs to Orin.', 'He is at the foot of the Needle, at the west end of the summit.');
     return step(
-      'The hours are home.',
-      `Highcrest is yours to wander${f.masterKey ? ' across all three healed ages with the Master\'s Key' : ', in the age you chose'}.${left > 0 ? ` (${left} Lost Cog${left === 1 ? '' : 's'} still hidden on the mountain.)` : ' (The Master\'s Key also unlocks the Astral Clock-Door in Hollowmere Square!)'}`,
+      'Midwinter Night.',
+      `Highcrest is yours to wander, in all three ages.${left > 0 ? ` (${left} Lost Cog${left === 1 ? '' : 's'} still hidden on the mountain.)` : " (The Master's Key opens the star-iron door in Hollowmere Square.)"}`,
     );
   }
   switch (tier) {
@@ -37,6 +37,7 @@ export function currentGoal(game) {
     case 2:
       if (x < L.fallsX1 + 1) return step('Cross the falls.', `They pour right through the road. Only in the Stopped Age are they frozen over, and the frost won't let you shift there. At the edge: ${lantern('the Stopped Age')}`);
       if (!f.christopherMet) return step('Cross the Sundial Terrace.', 'Someone is standing by the statue.');
+      if (f.christopherMet && !f.notebooksRead) return step('Climb Highcrest.', `${up(k, 'east')} Orin said Donald Eugene doesn't want you reading something at the top.`);
       return step('Climb Highcrest.', up(k, 'east'));
     case 3:
       if (!f.hasEcho) return step('Talk to the stranger.', 'The old woman in the winter shawl is waiting at the east end of the Clockworks.');
@@ -47,7 +48,7 @@ export function currentGoal(game) {
         );
       }
       if (!inv.includes('masterDrawings') && !f.selaBuilt && x > L.gateDX) {
-        return step('Take the Master Drawings.', 'The parchment rolls lie in the middle of the Clockworks hall—Sela in the First Age has been waiting six hundred years for them.');
+        return step("Take the Founder's drawings.", 'The parchment rolls lie in the middle of the Clockworks hall. Sela, in the First Age, has been waiting six hundred years for them.');
       }
       if (!f.gateDPassed) {
         return step(
@@ -59,7 +60,7 @@ export function currentGoal(game) {
     case 4:
       if (x <= L.crev1X1 && !f.selaBuilt) {
         if (inv.includes('masterDrawings')) {
-          return step('Give the Master Drawings to Sela.', `Before the frost zone, shift to the <b>First Age</b> (${k.past}) and hand the Master Drawings to Sela the Stonecutter so her masons build a stone bridge across the crevasse (or cross with the First Age Lantern).`);
+          return step("Give the Founder's drawings to Sela.", `Before the frost, shift to the <b>First Age</b> (${k.past}) and hand the drawings to Sela the Stonecutter, so her masons build a stone bridge across the crevasse (or cross with the First Age Lantern).`);
         }
         return step('Cross the crevasse.', `Only the First Age has a bridge over it, and the frost won't let you shift. At the edge: ${lantern('the First Age')}`);
       }
@@ -72,24 +73,22 @@ export function currentGoal(game) {
       }
       return step('Climb to the summit.', up(k, 'east'));
     default:
-      if (x > L.frostWallX && !f.hoursReturned) return step('Get through the frozen doors.', `The ice is the Stopped Age's. In the First Age there were no doors here at all. At the ice: ${lantern('the First Age')}`);
-      if (f.hoursReturned) return step('Choose where to stay.', 'The Chronoheart is ready for its long shift.');
-      if (!f.summitTalk) return step('Find Sir Orin.', 'He is at the Needle, at the west end of the summit.');
+      if (x > L.frostWallX && !f.hoursReturned) return step('Get through the frozen doors.', `He sealed them. In the First Age there were no doors here at all. At the ice: ${lantern('the First Age')}`);
+      if (!f.notebooksRead && !f.summitTalk) return step('Find what he sealed in.', "Inside the observatory, on the bench past Tobin's star-books.");
+      if (!f.summitTalk) return step('Find Donald Eugene.', 'At the foot of the Needle, at the west end of the summit, the air shimmers.');
       if (!f.orinPhase1) {
         return step(
-          'Shatter the Frost-Anchor (1/3).',
-          `At the End of Time, Sir Orin's waves of frost roll down the hall. Light the Lantern (${k.lantern}) on the <b>First Age</b> and its warmth carries you through them (or jump them), then strike the Frost-Anchor by the back wall three times with your wrench (${k.attack}).`,
+          'Break the Anchor-Clock (1/3).',
+          `At the End of Time, waves of rewritten time roll down the hall. Light the Lantern (${k.lantern}) on the <b>First Age</b>: its old light carries you through them (or jump them). Then strike the Anchor-Clock by the back wall three times with your wrench (${k.attack}).`,
         );
       }
       if (!f.orinPhase2) {
         return step(
-          'Hold the Twin Frost-Locks (2/3).',
-          `Record an <b>Echo</b> (${k.echo}) standing on one of the two blue Frost-Lock plates, then stand on the other plate yourself. Jump the gnomon's sweeping shadow as it comes round. The barrier in front of the throne falls.`,
+          'Hold both of his locks (2/3).',
+          `Record an <b>Echo</b> (${k.echo}) standing on one of the two blue lock plates, then stand on the other plate yourself. Jump the gnomon's sweeping shadow as it comes round. The barrier in front of the throne falls.`,
         );
       }
-      return step(
-        'Show Sir Orin the Stopped Age (3/3).',
-        `Sir Orin is exhausted. Stand beside him, light the Lantern (${k.lantern}), swing it to <b>the Stopped Age</b> (${k.future}), and talk to him.`,
-      );
+      if (!f.zachHeld || !f.meganHeld) return step('Hold Zach and Megan in their moment (3/3).', `He is rewriting them! Stand close, face them, hold ${k.attack} and let go: a Stasis wave holds them where his rewrites can't reach.`);
+      return step('Hold him still (3/3).', `Climb the dais, face Donald Eugene, hold ${k.attack} and let go.`);
   }
 }

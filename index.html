@@ -21,6 +21,7 @@
           <div id="hearts" aria-label="Health"></div>
           <div id="breath" aria-label="Breath" hidden></div>
           <div class="cogs"><img id="cog-icon" alt="Lost cogs" /><span id="cog-count">0</span></div>
+          <div id="cog-compass" hidden aria-label="Cog Finder"><span class="cc-arrow" aria-hidden="true">&#9654;</span><span class="cc-text"></span></div>
         </div>
 
         <div id="chrono" class="locked" data-era="present" aria-label="Chronoheart">
@@ -89,6 +90,10 @@
           <div class="goal-head"><h3 class="menu-title">Current goal</h3><button id="goal-hint-btn" type="button" aria-expanded="false" aria-controls="goal-hint">Hint</button></div>
           <p id="goal-text"></p>
           <p id="goal-hint" hidden></p>
+        </section>
+        <section id="kit" class="menu-section" hidden>
+          <h3 class="menu-title">Equipment</h3>
+          <div class="kit-list"></div>
         </section>
         <section class="menu-section">
           <h3 class="menu-title">Apron Pockets</h3>

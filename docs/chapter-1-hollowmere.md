@@ -39,11 +39,15 @@ The valley is one long road, built three times. What you do in one age carries f
 - **Lost Cogs** are optional collectibles: 10 in all, and they are Donald Eugene's. Bring him all ten and he fits them to the Chronoheart as a **Cog Finder**, which you keep in Chapter Two.
 - **Finishing the chapter opens Chapter Two.** Your save is kept: choose Continue to walk the valley with the Tower ticking.
 
+### Things change that you didn't change
+
+Holding the Chronoheart, you remember how the valley was before any change: yours, and somebody else's. Nobody else does. Hobb has always had his millpond, once you've made it. Walk out of the square and the bakery's sign changes in front of you, Marlow's to Hale's, and nobody looks up. A grumpy gatekeeper is suddenly kind. Stuck at the town wall for a long time, you'll find a ladder that wasn't there a minute ago. (Who is doing this is the story: see [the story](story.md), with spoilers.)
+
 ### Abilities you pick up along the way
 
 | Ability | Where | What it does |
 | --- | --- | --- |
-| **Stasis Seal** | Donald Eugene's satchel at Tamsin's Crossing (Present) | Hold something in its moment, so it stays exactly the same in every later age. Things that can be sealed shimmer with pale light; stand beside one and a **Seal** prompt appears. It works on **creatures** too: get right up close to a thornback, a rat or a drone and seal it. It stays frozen in a crystal shell in that age and every later one, and by the Future someone has put up a museum placard beside it. |
+| **Stasis Seal** | Donald Eugene's satchel at Tamsin's Crossing (Present) | Hold something in its moment, so it stays exactly the same in every later age. Things that can be sealed shimmer with pale light; stand beside one and a **Seal** prompt appears. It works on **creatures** too: get right up close to a thornback, a rat or a drone and seal it. It stays frozen in a crystal shell in that age and every later one, and by the Future someone has put up a museum placard beside it. Anything you can seal glows white when you're near. With it on your wrench (Menu → Equipment), **hold `X` and let go** for a Stasis wave: it holds the first thing in front of you, people included (for a few seconds: they never notice, but the valley remembers), and a bowl of figs in the oldest square or Karen Louise's tea becomes a museum exhibit. |
 | **Echo** | Donald Eugene's lectern at the Echo Gallery (Present) | Record up to 5 seconds of your own movement. Your echo replays it on a loop, forever. Present only, up to 3 echoes at once (a 4th replaces the oldest). Stand on an echo and press **Interact** to dispel it. |
 | **Tempo** | Donald Eugene's toolbox at the gate of the Warden's Courtyard (Present) | Slow time around you, or speed it up. On touch, hold **Slow** or **Fast**. On a keyboard, **hold Q** (or `1`/`Z`) to slow and **hold E** (or `2`) to speed up; a quick tap of `Q`/`E` still travels an era. Only the machines within a few blocks feel it; you move as usual. It runs on the Chronoheart's ring, which refills when you let go. |
 
@@ -239,8 +243,9 @@ Nobody you meet knows you're traveling through time: in the Past and the Future 
 
 ## After the story
 
+- **The Tower wakes.** As it restarts, its great face on the west wall lights warm gold (as you'll see it from Highcrest, far below) and its hands whirl, then settle into a steady tick.
 - **Your save is kept.** Choose Continue and you're home in the square, with the Clocktower ticking in every age.
-- **Donald Eugene is back in his workshop.** The Lost Cogs are his: his parts tray emptied itself the day the Tower stopped. Bring him all ten (or have them on you at the ending) and he fits them round the Chronoheart's rim as a **Cog Finder**. You keep it in Chapter Two, where Lost Cogs glint through the time lens.
+- **Donald Eugene is back in his workshop.** The Lost Cogs are his, stamped with his mark: a notch cut in one tooth. Bring him all ten (or have them on you at the ending) and he fits them round the Chronoheart's rim as a **Cog Finder**: from Chapter Two on, it points to the nearest Lost Cog and says which age it's in.
 - **The Future remembers.** The memorial in the plaza tells a different story now, and the courtyard's Warden has stood down: there is nothing left for it to guard.
 - Talk to everyone again.
 

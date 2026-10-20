@@ -140,7 +140,7 @@ export class Actor {
     this.h = h;
     this.mesh = new THREE.Group();
     // what entities tint and fade (holograms, Echoes)
-    this.mat = { color: new THREE.Color(1, 1, 1), emissive: new THREE.Color(0, 0, 0), emissiveIntensity: 1, opacity: 1, transparent: false, depthWrite: true };
+    this.mat = { color: new THREE.Color(1, 1, 1), emissive: new THREE.Color(0, 0, 0), emissiveIntensity: 1, opacity: 1, transparent: false, depthWrite: true, userData: {} };
     this.anim = null;
     this.t = 0;
     this.flip = false;

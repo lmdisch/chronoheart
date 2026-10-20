@@ -7,8 +7,10 @@ Vivienne is a clockmaker's apprentice with an amulet, the **Chronoheart**, that 
 | | Chapter | Where | What's new |
 | --- | --- | --- | --- |
 | **I** | [The Clocktower of Hollowmere](docs/chapter-1-hollowmere.md) | A valley town whose great Clocktower has stopped | The Chronoheart itself, then the Stasis Seal, Echoes and Tempo |
-| **II** | [The Backward Tide](docs/chapter-2-saltwick.md) | The harbor town of Saltwick, three weeks later, with no sea in it | A mended Chronoheart, a pocketwatch that runs you backward (Rewind), and reaching through the time lens |
-| **III** | [The Borrowed Hour](docs/chapter-3-highcrest.md) | Highcrest, the mountain above them both, in winter: a climb to the top of the world | The Lantern (carry a bubble of another age), Echoes that wait for you, and one last shift |
+| **II** | [The Dry Harbor](docs/chapter-2-saltwick.md) | The harbor town of Saltwick, fifty years into a drought | A mended Chronoheart, Rewind (run yourself backward), and reaching through the time lens |
+| **III** | [The Other Half](docs/chapter-3-highcrest.md) | Highcrest, the mountain above them both, at Midwinter: a climb to the top of the world | The Lantern (carry a bubble of another age), Echoes that wait for you, and the Stasis wave |
+
+The story across all three is in [docs/story.md](docs/story.md) (spoilers).
 
 Each chapter's guide has its controls, a full walkthrough, every Lost Cog and every favor.
 
@@ -35,9 +37,10 @@ Every world, sprite, melody and sound in the game is generated from code: there 
 - **The title screen has a card for each chapter.** The lit card is the chapter showing behind the title; Continue and New Game act on it. Pick another card to switch.
 - **Each chapter is locked until the one before it is finished.** Finishing a chapter opens the next, and the credits offer to take you straight there.
 - **One save holds everything**: a slot for each chapter, plus which chapters are finished. It lives in your browser's local storage, so it stays on that browser and that address. Saves from before the two games were combined are brought over the first time the combined game runs.
-- **Every chapter keeps its save after the story.** Choose Continue to walk the valley with the Clocktower ticking, or the shore with the tide back in.
-- **Some rewards carry over.** Bring all ten of Chapter One's Lost Cogs to Donald Eugene and you start Chapters Two and Three with the **Cog Finder**: Lost Cogs glint through the time lens. Earn your own pocketwatch in Chapter Two, and your echo in Chapter Three remembers longer (8 seconds) and holds 4 echoes at once. Find all ten Lost Cogs in Chapter Three to forge **The Master's Key**, allowing free shifting across Highcrest's three healed ages and unlocking the secret **Astral Clock-Door** in Hollowmere Square (**The Starlit Garden, 10,000 Years On**). (The save records them under `rewards`.) **Hearts carry over too:** every heart a favor earned in an earlier chapter is added to the five you start each later chapter with.
+- **Every chapter keeps its save after the story.** Choose Continue to walk the valley with the Clocktower ticking, or the shore with the river back in.
+- **Some rewards carry over.** Bring all ten of Chapter One's Lost Cogs to Donald Eugene and you start Chapters Two and Three with the **Cog Finder**: under your hearts, it points to the nearest Lost Cog and says which age it's in. Earn your own pocketwatch in Chapter Two, and your echo in Chapter Three remembers longer (8 seconds) and holds 4 echoes at once. Bring Orin all ten Lost Cogs in Chapter Three for **The Master's Key**, which opens the secret **Astral Clock-Door** in Hollowmere Square (**The Starlit Garden, 10,000 Years On**). (The save records them under `rewards`.) **Hearts carry over too:** every heart a favor earned in an earlier chapter is added to the five you start each later chapter with.
 - **Vivienne dresses for the place.** In Hollowmere she wears her teal workshop tunic and leather apron. In Saltwick she has a navy sea-coat, a red neckerchief, sailcloth trousers and yellow sea-boots. On Highcrest, a teal wool coat with a fur hem, a mustard scarf, and red earmuffs and mittens. The goggles and the amulet go wherever she does.
+- **Equipment (Menu → Equipment)** carries between chapters (the save records it under `kit`). **Clothes:** any outfit from a chapter you've reached; the sea-coat lets you hold your breath half as long again. **Wrench:** once you have the Stasis Seal, it can send a **Stasis wave** in every chapter: hold `X`, let go, and the first thing in front of you (a creature, a person, a sealable thing) is held in its moment. What can be held glows white. The menu also lists every power the Chronoheart has learned, and where it works.
 
 To open every chapter without finishing the one before (for testing, or if you finished Chapter One before the game kept a record of it), add `#unlock` to the address once, or run `__unlockChapters()` in the browser console.
 
@@ -91,7 +94,8 @@ index.html                the page: HUD, dialogue box, title and chapter select,
 src/
   main.js                 start-up, the title screen and chapter select, the pause / Controls / Menu overlays, credits
   chapter.js              the list of chapters, which one this page load is running, and the save they share
-  game.js                 the game every chapter shares: modes, era shifting, the time lens, saving, favors, time-lapses
+  game.js                 the game every chapter shares: modes, era shifting, the time lens, saving, favors, time-lapses, ripples, the Cog Finder
+  kit.js                  what carries between chapters: clothes, the wrench (the Stasis wave), the list of powers
   chapters/
     hollowmere/           Chapter One
       theme.js              its skies, color grades, music, era names and colors (plain data)
@@ -108,14 +112,14 @@ src/
       level.js              the whole shore in all three ages: layout, features, gates, spawns, cogs
       story.js              items, favors, all dialogue, and every interaction
       objectives.js         the goal and hint
-      game.js               SaltwickGame: reaching through the lens, the watch, the Tide Well, the ending
+      game.js               SaltwickGame: reaching through the lens, Rewind, the Wellhead, the ending
       timecraft.js          Rewind, the timed gates, and the flood that carries you out of the Well
     summit/               Chapter Three, Highcrest
       theme.js              skies (aurora, the near moon, the cloud sea), music, and the ages after the ending
       level.js              the whole mountain in all three ages: the switchback road, the frost, the towns far below
       story.js              items, favors, every line of dialogue, the endings
       objectives.js         the goal and hint
-      game.js               SummitGame: the frost, Sir Orin, the hours going home, the last shift
+      game.js               SummitGame: the frost, the shimmer, the fight at the End of Time, the ending
       powers.js             the Lantern, the Echo, pressure plates and gates
   core/                   input (keyboard + virtual keys), small utilities
   world/                  voxel world and collision, physics, the shared entities (player, NPCs, enemies, the Warden, bells...)

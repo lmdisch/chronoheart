@@ -15,6 +15,7 @@ import { Player, NPC, Enemy, Warden, Searchlight, Pushable, Pickup, Interactable
 import { HUD, Dialogue, showInventoryPanel, setFade, letterbox } from './ui/ui.js';
 import { touchActive } from './ui/touch.js';
 import { chapter, theme, progress, content } from './chapter.js';
+import { Kit } from './kit.js';
 
 export const ERA_RING = theme.eraRing;
 const ERA_COLORS = theme.eraCss;
@@ -69,6 +70,7 @@ export class Game {
     this.areaIdx = -1;
     this.kinds = { interact: Interactable, strike: Strikeable };
     this.state = this.newState();
+    this.kit = new Kit(this);
     this.setup();
     this.buildWorld();
     this.clock = new THREE.Clock();
@@ -281,6 +283,63 @@ export class Game {
     letterbox(false);
     if (this.mode === 'dialogue') this.mode = 'play';
     this.lockT = 0.25;
+  }
+
+  /**
+   * Somebody else's change washes over the world: Donald Eugene, rewriting it with the other
+   * half of the Chronoheart. Everyone else lives in the new version; only Vivienne notices.
+   * `apply` sets whatever flags the change is made of; `lines` is her reaction.
+   */
+  async ripple({ at, apply, lines = [] }) {
+    if (this.mode !== 'play' || this.dialogue.active || this.lapse) return false;
+    this.mode = 'cutscene';
+    this.hud.showPrompt(null);
+    audio.sfx('shift', { era: this.era });
+    this.renderer.shake = Math.max(this.renderer.shake, 0.3);
+    this.bursts.emit(at[0], at[1], at[2], 60, { color: [0xffd070, 0xfff6e0], speed: 3.5, life: 1.1, gravity: -0.5, glow: 1 });
+    setFade(0.6, '#fff6e0');
+    await wait(180);
+    apply();
+    this.refreshWorld();
+    setFade(0);
+    await wait(500);
+    this.mode = 'play';
+    if (lines.length) await this.cutscene(lines);
+    this.save();
+    return true;
+  }
+
+  /**
+   * The Cog Finder, always on: which way the nearest Lost Cog still out there is, how far, and
+   * which age it is in. (Through the time lens, a cog in the age it shows still sends up gold.)
+   */
+  updateCogCompass(dt) {
+    const el = (this.compassEl ||= document.getElementById('cog-compass'));
+    this.compassT = (this.compassT || 0) - dt;
+    if (this.compassT > 0) return;
+    this.compassT = 0.25;
+    const b = this.player.body;
+    let best = null, bd = Infinity;
+    if (this.state.inventory.includes('finder')) {
+      for (const p of this.pickups) {
+        if (p.spec.type !== 'cog' || !p.alive || this.state.cogs.includes(p.id) || (p.available && !p.available())) continue;
+        const d = Math.hypot(p.x - b.x, (p.y - b.y) * 1.5, (p.z - b.z) * 0.6);
+        if (d < bd) {
+          bd = d;
+          best = p;
+        }
+      }
+    }
+    el.hidden = !best;
+    if (!best) return;
+    const dx = best.x - b.x, dy = best.y - b.y, dz = best.z - b.z;
+    // left or right along the road; up, down or into the scene when it's right here
+    const ang = Math.abs(dx) > 1.5 ? (dx > 0 ? 0 : 180) : Math.abs(dy) > 1.2 ? (dy > 0 ? -90 : 90) : Math.abs(dz) > 1.5 ? (dz < 0 ? -90 : 90) : null;
+    el.querySelector('.cc-arrow').style.transform = ang === null ? 'scale(0.7)' : `rotate(${ang}deg)`;
+    el.querySelector('.cc-arrow').innerHTML = ang === null ? '&#9679;' : '&#9654;';
+    const other = best.era !== this.era;
+    el.classList.toggle('other-age', other);
+    el.querySelector('.cc-text').innerHTML = `${Math.round(bd)} m${other ? ` · <b>${this.eraLabel(best.era)}</b>` : ''}`;
   }
 
   controlsEnabled() {
@@ -667,6 +726,7 @@ export class Game {
   /** Fill the Menu panel (goal and hint are kept up to date every frame). */
   renderMenu() {
     showInventoryPanel(this.state.inventory, true, this.favorList());
+    this.kit.renderMenu(document.getElementById('kit'));
   }
 
   // ------------------------------------------------------------------ kindness side quests
@@ -924,7 +984,11 @@ export class Game {
     if (this.mode === 'title' || this.mode === 'credits') {
       this.updateTitle(dt);
       this.player.mesh.visible = this.player.shadow.visible = false;
-    } else if (this.mode === 'play' || this.mode === 'dialogue') this.updatePlay(dt);
+    } else if (this.mode === 'play' || this.mode === 'dialogue') {
+      this.updatePlay(dt);
+      this.kit.update(dt, this.controlsEnabled());
+      this.updateCogCompass(dt);
+    }
     else if (this.mode === 'ending') {
       this.player.update(dt);
       for (const e of this.entities) if (e.alive && e.active()) e.update(dt);
@@ -935,6 +999,9 @@ export class Game {
     if (this.lapse) {
       r.updateCamera(dt, this.lapse.focus.clone(), [this.lapse.focus.x - 100, this.lapse.focus.x + 100]);
       this.lapse.update?.(dt);
+    } else if (this.camFocus) {
+      // a set piece looking somewhere other than at Vivienne (see a chapter's ending)
+      r.updateCamera(dt, this.camFocus.clone(), [this.camFocus.x - 100, this.camFocus.x + 100]);
     } else if (this.mode !== 'title' && this.mode !== 'credits') {
       const b = this.player.body;
       // a viewpoint: the camera eases back and down to take in the view (see L.vistas)

@@ -66,6 +66,16 @@ export class Player {
     this.pushing = false;
   }
 
+  /** Into other clothes (see src/kit.js): a new actor from the 'vivienne' sheet. */
+  redress() {
+    const old = this.actor;
+    this.actor = new Actor('vivienne', 2.1);
+    this.actor.flip = old.flip;
+    old.mesh.parent?.add(this.actor.mesh);
+    old.mesh.parent?.remove(old.mesh);
+    this.mesh = this.actor.mesh;
+  }
+
   place(x, y, z) {
     Object.assign(this.body, { x, y, z, vx: 0, vy: 0, vz: 0 });
     this.state = 'normal';
@@ -121,7 +131,8 @@ export class Player {
   updateBreath(dt, world, era) {
     const g = this.game, b = this.body;
     const under = g.mode === 'play' && overlapsType(world, era, b, T.WATER, 0.8, 1.0);
-    this.breath = Math.max(0, Math.min(BREATH, (this.breath ?? BREATH) + (under ? -dt : dt * 4)));
+    const most = BREATH * (g.kit?.breathScale ?? 1);
+    this.breath = Math.max(0, Math.min(most, (this.breath ?? most) + (under ? -dt : dt * 4)));
     if (under && this.breath <= 0) {
       this.breath = 2;
       this.hurt(1, b.x, { force: 0, ignoreRoll: true });
@@ -134,7 +145,7 @@ export class Player {
       g.state.flags.diveHint = true;
       g.hud.toast(`Underwater, your breath runs out: watch the bubbles, and come up before they're gone.`, 5000);
     }
-    g.hud.setBreath(this.breath < BREATH ? this.breath / BREATH : null);
+    g.hud.setBreath(this.breath < most ? this.breath / most : null);
   }
 
   heal(n) {
@@ -372,6 +383,26 @@ export class Player {
   }
 }
 
+/**
+ * Held in its moment by the Stasis wave (see src/kit.js): a shell of pale light over a
+ * character, or off again. The material's own look is kept, and given back when it thaws.
+ */
+export function crystal(actor, on) {
+  const m = actor.mat;
+  if (on) {
+    if (!m.userData.preCrystal) m.userData.preCrystal = { color: m.color.getHex(), emissive: m.emissive.getHex(), ei: m.emissiveIntensity };
+    m.color.setHex(0xc4eeff);
+    m.emissive.setHex(0xbff6ff);
+    m.emissiveIntensity = 1.1;
+  } else if (m.userData.preCrystal) {
+    const p = m.userData.preCrystal;
+    m.color.setHex(p.color);
+    m.emissive.setHex(p.emissive);
+    m.emissiveIntensity = p.ei;
+    delete m.userData.preCrystal;
+  }
+}
+
 // ---------------------------------------------------------------------------
 export class EraEntity {
   constructor(game, spec) {
@@ -396,6 +427,22 @@ export class EraEntity {
   }
   distTo(b) {
     return Math.hypot(b.x - this.x, (b.y + 0.7 - (this.y + 0.7)) * 0.7, (b.z - this.z) * 0.8);
+  }
+  /** Hold it in its moment for a few seconds (the Stasis wave). */
+  stasis(secs) {
+    this.stasisT = Math.max(this.stasisT || 0, secs);
+    if (this.actor) crystal(this.actor, true);
+  }
+  /** Count down a stasis; true while it still holds. */
+  stillHeld(dt) {
+    if (!(this.stasisT > 0)) return false;
+    this.stasisT -= dt;
+    if (Math.random() < dt * 6) this.game.bursts.emit(this.x ?? this.body.x, (this.y ?? this.body.y) + 1.0, this.z ?? this.body.z, 1, { color: [0xbff6ff, 0xffffff], speed: 0.5, life: 0.8, gravity: -0.6, jitter: 0.6 });
+    if (this.stasisT > 0) return true;
+    this.stasisT = 0;
+    if (this.actor) crystal(this.actor, false);
+    this.game.kit?.thawed(this);
+    return false;
   }
 }
 
@@ -448,6 +495,12 @@ export class NPC extends EraEntity {
     this.group.visible = this.present();
     if (!this.group.visible) return;
     this.t += dt;
+    if (this.stillHeld(dt)) {
+      this.actor.update(0);
+      this.actor.mesh.position.set(this.x, this.y - 0.1, this.z);
+      this.actor.mesh.quaternion.copy(this.game.renderer.billboardQ);
+      return;
+    }
     // (spec.frozen: caught in an age where time has stopped. They don't turn, or breathe.)
     if (!this.spec.frozen && Math.abs(p.x - this.x) < 5) this.facing = p.x > this.x ? 1 : -1;
     this.actor.flip = this.facing < 0;
@@ -539,6 +592,12 @@ export class Enemy extends EraEntity {
   }
   update(dt) {
     const g = this.game, b = this.body, p = g.player.body, cfg = this.cfg;
+    if (this.stillHeld(dt)) {
+      this.actor.update(0);
+      this.actor.mesh.position.set(b.x, b.y - 0.08, b.z);
+      this.actor.mesh.quaternion.copy(g.renderer.billboardQ);
+      return;
+    }
     this.t += dt;
     this.hurtT = Math.max(0, this.hurtT - dt);
     const [r0, r1] = this.spec.range;
@@ -675,6 +734,13 @@ export class Warden extends EraEntity {
     // it's a machine: Tempo slows it down or hurries it along when it's inside your bubble
     const tempo = g.era === this.era ? g.tempoAt(this.x, 0) : 1;
     dt *= tempo;
+    if (this.stillHeld(dt)) {
+      this.cone.visible = false;
+      this.actor.update(0);
+      this.actor.mesh.position.set(this.x, -0.1, this.z);
+      this.actor.mesh.quaternion.copy(g.renderer.billboardQ);
+      return;
+    }
     if (this.stunT > 0) {
       this.stunT = Math.max(0, this.stunT - dt);
       this.cone.visible = false;
@@ -1004,6 +1070,13 @@ export class Interactable extends EraEntity {
       seam.rotation.x = 0.35;
       this.cup = true;
       this.group.add(cup, seam);
+    } else if (v === 'shimmer') {
+      // a tear in time: a tall sliver of pale light, like heat over a road, but cold
+      this.shimmer = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.1, 2.4),
+        new THREE.MeshBasicMaterial({ color: new THREE.Color(0xfff2d0).multiplyScalar(1.6), transparent: true, opacity: 0.5, depthWrite: false, side: THREE.DoubleSide }),
+      );
+      this.group.add(this.shimmer);
     }
     if (this.spec.icon) {
       // something to pick up from it: floats above until its flag is set
@@ -1028,7 +1101,15 @@ export class Interactable extends EraEntity {
   }
   update(dt) {
     const g = this.game, s = g.state, t = g.time;
-    if (this.cup) this.group.visible = this.available();
+    if (this.cup || this.shimmer) this.group.visible = this.available();
+    if (this.shimmer) {
+      const sh = this.shimmer;
+      sh.position.set(this.x, this.y + 1.25, this.z);
+      sh.quaternion.copy(g.renderer.billboardQ);
+      sh.scale.set(0.8 + Math.sin(t * 7) * 0.12, 1 + Math.sin(t * 3.1) * 0.05, 1);
+      sh.material.opacity = 0.35 + Math.sin(t * 11) * 0.1 + Math.sin(t * 2.3) * 0.08;
+      if (this.era === g.era && Math.random() < dt * 14) g.bursts.emit(this.x + (Math.random() - 0.5) * 0.8, this.y + Math.random() * 2.4, this.z, 1, { color: [0xfff2d0, 0xbff6ff], speed: 0.3, life: 0.9, gravity: -0.4, glow: 2 });
+    }
     if (this.handle) {
       // a gate's lever swings back as its gate runs out of time; a flag's lever stays thrown
       const frac = this.spec.gate ? g.craft.gateFrac(this.spec.gate) : s.flags[this.spec.flag] ? 1 : 0;

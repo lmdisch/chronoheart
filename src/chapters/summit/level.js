@@ -244,7 +244,7 @@ export const L = {
 };
 
 /**
- * The End of Time: where Sir Orin takes the fight. A ruined throne room of black marble, its
+ * The End of Time: Donald Eugene's seat, where the fight is. A ruined throne room of black marble, its
  * cracks filled with gold, floating high over Base Camp where no camera on the climb ever looks.
  * Standing height `y`; its floor runs x0..x1, z0..z1. His throne is against the east wall, so
  * there is no getting behind him. The same in every age (the Lantern still works in here).
@@ -465,6 +465,7 @@ function baseCamp(b, era) {
   }
   // crates, rope coils, oxygen bottles... the stuff of an expedition
   for (let i = 0; i < 6; i++) b.deco(L.campX1 - 6 + i * 0.9, 0, 0.3 + (i % 2) * 0.9, 0.8, 0.6 + (i % 3) * 0.2, 0.8, frozen ? 0x9aa8b8 : [0xa8743e, 0x98683a, 0xc84a3a][i % 3]);
+  b.barrier(Math.floor(L.campX1 - 6), 0, 0, Math.floor(L.campX1 - 1), 0, 1); // (the supply crates are solid)
   for (let i = 0; i < 4; i++) b.deco(L.campX1 - 5 + i * 0.35, 0, 1.9, 0.22, 0.7, 0.22, frozen ? 0xa8b4c8 : [0xe8a020, 0xd84a2a][i % 2]);
   // the puja cairn: a tall pole, and flag lines strung from it in every direction
   const cx = U(26.5);
@@ -834,6 +835,7 @@ const FROZEN = 0xb8ccff;
 const on = (k, x, z) => ({ x, y: gy(k, x), z: zb(k) + z });
 export const SPAWNS = [
   // Base Camp: the guides and porters
+  { type: 'npc', id: 'eugeneCamp', era: M, ...on(0, U(6.9), 2.6), sheet: 'eugeneWinter', name: 'Donald Eugene', unless: 'donAhead', noSeal: true },
   { type: 'npc', id: 'anwen', era: M, ...on(0, L.guideX, 5.6), sheet: 'anwen', name: 'Anwen the Guide' },
   { type: 'npc', id: 'porterKit', era: M, ...on(0, U(31.5), 1.6), sheet: 'porterKit', name: 'Kit the Porter' },
   { type: 'npc', id: 'porterBram', era: M, ...on(0, U(39.5), 5.4), sheet: 'porterBram', name: 'Bram the Porter' },
@@ -852,15 +854,18 @@ export const SPAWNS = [
   { type: 'npc', id: 'michelleDome', era: M, ...on(3, L.michelle2X, 1.6), sheet: 'michelleWinter', name: 'Mysterious Stranger', stranger: true },
   { type: 'npc', id: 'porterHigh', era: M, ...on(4, U(8.5), 1.6), sheet: 'porterBram', name: 'Bram the Porter' },
   { type: 'npc', id: 'selaHigh', era: P, ...on(4, U(12.5), 1.6), sheet: 'sela', name: 'Sela the Stonecutter' },
-  // the Summit: Tobin, the memory under the orrery, Sir Orin at the Needle
+  // the Summit: Tobin, the memory under the orrery, Donald Eugene at the End of Time, and after
   { type: 'npc', id: 'tobin', era: M, ...on(5, L.tobinX, 5.4), sheet: 'tobin', name: 'Tobin the Stargazer' },
   { type: 'npc', id: 'tobinF', era: F, ...on(5, L.tobinX, 5.4), sheet: 'tobin', name: 'Tobin the Stargazer', frozen: true, tint: FROZEN, unless: 'hoursReturned' },
   { type: 'npc', id: 'tobinW', era: F, ...on(5, L.tobinX, 5.4), sheet: 'tobin', name: 'Tobin the Stargazer', needs: 'hoursReturned' },
   { type: 'npc', id: 'youngLyra', era: M, ...on(5, U(68.2), 2.4), sheet: 'lyraYoung', name: 'Lyra (Memory)', needs: 'christopherMet', unless: 'hoursReturned', memory: true },
-  { type: 'npc', id: 'youngChristopher', era: M, ...on(5, U(69.6), 2.4), sheet: 'christopherYoung', name: 'Sir Orin (Memory)', needs: 'christopherMet', unless: 'hoursReturned', memory: true },
-  { type: 'npc', id: 'christopher', era: M, ...on(5, L.christopherX, 2.2), sheet: 'christopher', name: 'Sir Orin', needs: 'christopherMet', reach: 2.4 }, // (on his throne during the fight: see SummitGame.placeOrin)
-  { type: 'npc', id: 'lyraEnd', era: M, ...on(5, U(23.2), 2.4), sheet: 'michelleWinter', name: 'Lyra', needs: 'hoursReturned', unless: 'lyraAtRest' },
-  { type: 'npc', id: 'eugene', era: M, ...on(5, U(28.5), 4.4), sheet: 'eugeneWinter', name: 'Donald Eugene', needs: 'hoursReturned' },
+  { type: 'npc', id: 'youngChristopher', era: M, ...on(5, U(69.6), 2.4), sheet: 'christopherYoung', name: 'Orin (Memory)', needs: 'christopherMet', unless: 'hoursReturned', memory: true },
+  { type: 'npc', id: 'youngDon', era: M, ...on(5, U(66.4), 2.4), sheet: 'eugeneYoung', name: 'Don (Memory)', needs: 'christopherMet', unless: 'hoursReturned', memory: true },
+  // Donald Eugene, on his throne at the End of Time while the fight is on (see SummitGame.placeOrin)
+  { type: 'npc', id: 'christopher', era: M, ...on(5, L.christopherX, 2.2), sheet: 'eugeneWinter', name: 'Donald Eugene', needs: 'summitTalk', unless: 'hoursReturned', reach: 2.4, noSeal: true },
+  // and afterward, by Lyra's cup at the foot of the Needle, with Orin
+  { type: 'npc', id: 'eugene', era: M, ...on(5, U(23.7), 3.6), sheet: 'eugeneWinter', name: 'Donald Eugene', needs: 'hoursReturned', noSeal: true },
+  { type: 'npc', id: 'orinEnd', era: M, ...on(5, U(21.1), 3.6), sheet: 'orinOld', name: 'Orin', needs: 'hoursReturned' },
   { type: 'npc', id: 'zachEnd', era: M, ...on(5, U(30.2), 5.6), sheet: 'zachWinter', name: 'Zach Tiberious', small: true, needs: 'hoursReturned' },
   { type: 'npc', id: 'meganEnd', era: M, ...on(5, U(31.4), 6), sheet: 'meganWinter', name: 'Megan the Squirrel', small: true, needs: 'hoursReturned' },
   { type: 'npc', id: 'anwenEnd', era: M, ...on(5, U(34.5), 5), sheet: 'anwen', name: 'Anwen the Guide', needs: 'hoursReturned' },
@@ -872,13 +877,15 @@ export const SPAWNS = [
   { type: 'strike', id: 'cwChime', era: M, ...on(3, U(44.5), 4.8), hits: 3, flag: 'cwChimeRung', prompt: 'Strike the Clockworks resonance chime', visual: 'chime', color: 0xffd070, freq: 392, hx: 1.2, hz: 1.4 },
   { type: 'strike', id: 'thermalLever', era: P, ...on(4, U(50.5), 1.6), hits: 3, flag: 'springOpened', prompt: 'Shatter the frozen thermal sluice', visual: 'ice', color: 0x7be0ff, hx: 1.3, hz: 1.4 },
   { type: 'strike', id: 'orreryChime', era: M, ...on(5, U(73.5), 2.2), hits: 3, flag: 'orreryChimeRung', prompt: 'Ring the Orrery alignment chime', visual: 'chime', color: 0xffe08a, freq: 523, hx: 1.2, hz: 1.4 },
-  { type: 'strike', id: 'orinAnchor', era: M, x: ARENA.anchorX, y: ARENA.y, z: ARENA.z0 + 0.6, hits: 3, flag: 'orinPhase1', needs: 'summitTalk', prompt: "Shatter the Needle's Frost-Anchor", visual: 'ice', color: 0x6ce2ff, hx: 1.4, hz: 1.5 },
+  { type: 'strike', id: 'orinAnchor', era: M, x: ARENA.anchorX, y: ARENA.y, z: ARENA.z0 + 0.6, hits: 3, flag: 'orinPhase1', needs: 'summitTalk', prompt: 'Strike the Anchor-Clock', visual: 'ice', color: 0x6ce2ff, hx: 1.4, hz: 1.5 },
   // things to look at, and use
   { type: 'interact', id: 'lookoutLamp', era: M, ...on(1, L.lampX + 0.5, 5.4), prompt: 'The lookout lamp' },
   { type: 'interact', id: 'statue', era: M, ...on(2, L.statueX + 0.5, 0.5), prompt: 'The statue' },
   { type: 'interact', id: 'statueF', era: F, ...on(2, L.statueX + 0.5, 0.5), prompt: 'The statue' },
   { type: 'interact', id: 'frostWall', era: M, ...on(5, L.frostWallX + 1.5, 3.5), prompt: 'The frozen doors', unless: 'hoursReturned' },
   { type: 'interact', id: 'starBooks', era: M, ...on(5, U(80.5), 0.6), prompt: "Tobin's star-books" },
+  { type: 'interact', id: 'notebooks', era: M, ...on(5, U(83), 0.8), prompt: "Donald Eugene's notebooks" },
+  { type: 'interact', id: 'shimmer', era: M, ...on(5, L.christopherX, 2.2), prompt: 'The shimmer', visual: 'shimmer', needs: 'christopherMet', hideIf: 'hoursReturned' },
   { type: 'interact', id: 'needle', era: M, x: L.needle.x + 0.5, y: gy(5, L.needle.x), z: L.needle.z + 1.6, prompt: 'The Needle' },
   { type: 'interact', id: 'lyraCup', era: M, ...on(5, U(22.4), 3.2), prompt: 'The cup', visual: 'cup', needs: 'lyraAtRest' },
   { type: 'interact', id: 'telescope', era: M, x: U(24), y: gy(5, U(24)), z: ZS - 8.8, prompt: 'Look through the brass telescope' },
@@ -1147,7 +1154,7 @@ function below(group, era) {
 }
 
 /**
- * The End of Time: Sir Orin's throne room (see ARENA). Black marble, broken, mended with gold.
+ * The End of Time: Donald Eugene's throne room (see ARENA). Black marble, broken, mended with gold.
  * It only exists while the fight is on, and while you're in it, the mountain isn't drawn (see
  * SummitGame.arenaMood): nothing else is at the end of time.
  */

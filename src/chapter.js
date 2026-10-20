@@ -16,11 +16,11 @@ export const CHAPTERS = [
     label: 'Chapter One',
     title: 'The Clocktower of Hollowmere',
     tagline: 'Change the past. Borrow from the future. Restart the Clocktower of Hollowmere.',
-    blurb: 'The great Clocktower has stopped, and the valley is coming loose in time.',
+    blurb: 'The great Clocktower has stopped, and Master Donald Eugene has vanished, leaving his apprentice the Chronoheart.',
     eras: ['Ancient', 'Medieval', 'Chrome'],
     credits: {
       eyebrow: 'The Clocktower ticks again',
-      bonus: 'You found every Lost Cog! Donald Eugene has fitted them to the Chronoheart: in Chapter Two, Lost Cogs glint through the time lens.',
+      bonus: 'You found every Lost Cog! Donald Eugene has fitted them to the Chronoheart: from Chapter Two on, they point the way to every Lost Cog.',
       // (not shown once every cog is found)
       more: 'Your save is kept: choose Continue to walk the valley with the Tower ticking. Bring Donald Eugene all ten Lost Cogs, in his workshop, and he has something for the Chronoheart.',
     },
@@ -33,15 +33,15 @@ export const CHAPTERS = [
     number: 2,
     numeral: 'II',
     label: 'Chapter Two',
-    title: 'The Backward Tide',
-    tagline: 'The sea has gone out of Saltwick, and it is not coming back. Not unless someone winds it forward.',
-    blurb: 'Three weeks after the Clocktower restarts, the tide goes out of Saltwick and stays out.',
+    title: 'The Dry Harbor',
+    tagline: 'Saltwick has been in drought for fifty years, and nobody knows why. Find out.',
+    blurb: 'A harbor of mud, empty wells, and a river that simply stopped coming.',
     eras: ['The Age of Tides', 'Saltwick', 'The Dry Age'],
     credits: {
-      eyebrow: 'The tide is in',
-      bonus: 'You found every Lost Cog! Donald Eugene is building you a pocketwatch of your own: Rewind is yours for good.',
+      eyebrow: 'The river is home',
+      bonus: 'You found every Lost Cog! Donald Eugene is building you a pocketwatch of your own: on the mountain, your echoes will remember longer.',
       // (not shown once every cog is found)
-      more: 'Your save is kept: choose Continue to walk the shore with the tide back in. Bring Donald Eugene all twelve Lost Cogs, and he can build you a watch of your own.',
+      more: 'Your save is kept: choose Continue to walk the shore with the water back in. Bring Donald Eugene all twelve Lost Cogs, and he can build you a watch of your own.',
     },
     theme: saltwick,
     requires: 'hollowmere',
@@ -52,15 +52,15 @@ export const CHAPTERS = [
     number: 3,
     numeral: 'III',
     label: 'Chapter Three',
-    title: 'The Borrowed Hour',
-    tagline: 'Someone is borrowing hours from every clock in the valley. Climb Highcrest, all the way to the top, and bring them home.',
-    blurb: 'Winter. Every clock in Hollowmere is losing an hour a night, and the hours are going up the mountain.',
+    title: 'The Other Half',
+    tagline: 'Climb Highcrest for Midwinter, all the way to the top, and find out what your master has been writing.',
+    blurb: 'Midwinter. Donald Eugene has asked his apprentice up the mountain, to meet someone.',
     eras: ['First Age', 'Golden Hour', 'Stopped Age'],
     credits: {
-      eyebrow: 'The hours are home',
-      bonus: "You found every Lost Cog! Donald Eugene and Sir Orin forged The Master's Key: you can now shift freely across Highcrest's three ages, and unlock the Astral Clock-Door in Hollowmere Square!",
+      eyebrow: 'Midwinter Night',
+      bonus: "You found every Lost Cog! Orin finished the key Lyra left: the Master's Key opens the star-iron door in Hollowmere Square.",
       // (not shown once every cog is found)
-      more: "Your save is kept: choose Continue to walk Highcrest in the age you chose. Find all ten Lost Cogs on the mountain to forge The Master's Key!",
+      more: "Your save is kept: choose Continue to walk Highcrest on Midwinter Night. Bring Orin all ten Lost Cogs, and he will finish what Lyra left on the bench.",
     },
     theme: summit,
     requires: 'saltwick',
@@ -142,6 +142,12 @@ export const progress = {
   hasReward: (id) => !!save.rewards[id],
   grantReward(id) {
     save.rewards[id] = true;
+    write();
+  },
+  /** What Vivienne carries between chapters: { outfit, wrench } (see src/kit.js). */
+  kit: () => save.kit || {},
+  setKit(patch) {
+    save.kit = { ...save.kit, ...patch };
     write();
   },
   /** Hearts earned by kindness in the chapters before this one: they come with you. */

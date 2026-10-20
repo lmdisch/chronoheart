@@ -857,6 +857,10 @@ export const CHAR = {
   christopherYoung: { skin: '#e8c0a4', hair: '#2a1e2a', hairStyle: 'short', top: '#4a6aa0', apron: '#7a5232', legs: '#3a3a4a', boots: '#3a2a20', belt: '#3a2614', scarf: '#c83a4a', sleeves: true },
   lyraYoung: { skin: '#d9a27c', hair: '#e6e2ea', hairStyle: 'circletLong', top: '#33416e', apron: '#c9a44a', legs: '#2c3760', boots: '#3a2a20', belt: '#c9a44a', robe: true, scarf: '#e8c25a', sleeves: true, sunPendant: true },
   eugeneYoung: { skin: '#f2cdb4', hair: '#5a4030', hairStyle: 'short', top: '#3a4a8a', apron: '#c9a44a', legs: '#2a2a3a', boots: '#3a2a20', belt: '#c9a44a', scarf: '#3a7a4a', sleeves: true },
+  // Orin, fifty years after: an old man in the same plum coat, gone shabby, keeping the observatory
+  orinOld: { skin: '#e8c0a4', hair: '#d8d4dc', hairStyle: 'short', beard: '#d8d4dc', top: '#6a2a4a', legs: '#2a1e2a', boots: '#1e161c', belt: '#8a7a5a', longCoat: '#4a2238', trim: '#c8b89a', sleeves: true, mittens: '#5a4a3a', scarf: '#8a6a4a' },
+  // the Founder's statue on the Sundial Terrace: Donald Eugene, six hundred years ago, in stone
+  statueDon: { skin: '#b8b2a4', hair: '#a8a296', hairStyle: 'baldRing', top: '#a8a296', legs: '#8f8a80', boots: '#7f7a70', belt: '#8a857a', longCoat: '#9a958a', trim: '#b8b2a4', sleeves: true, eye: '#6f6a62' },
   // Donald Eugene, who climbed a mountain on knees that are not what they were
   eugeneWinter: { skin: '#f2cdb4', hair: '#f0f0f6', hairStyle: 'baldRing', top: '#3a4a8a', legs: '#2a2a3a', boots: '#3a2a20', belt: '#c9a44a', longCoat: '#2a3a6a', trim: '#f0ece4', sleeves: true, hat: '#7a2e22', pom: '#f0ece4', scarf: '#3a7a4a', mittens: '#7a2e22', bootTrim: '#e8e0d0' },
   // the guides and porters of Highcrest: down coats, knit hats, and the biggest packs on the mountain
@@ -874,6 +878,8 @@ export const CHAR = {
   isha: { skin: '#9a6a48', hair: '#1e1612', hairStyle: 'circletLong', top: '#2f9a8a', apron: '#e8dcc0', legs: '#237a70', boots: '#8a5a32', belt: '#e0786a', robe: true, sunPendant: true },
   pim: { skin: '#a8744e', hair: '#2a1a14', hairStyle: 'short', top: '#e0786a', apron: '#e8dcc0', legs: '#2f9a8a', boots: '#8a5a32' },
   maren: { skin: '#8a5a3c', hair: '#3a2a22', hairStyle: 'braid', top: '#e8dcc0', apron: '#2f9a8a', legs: '#8a7a5a', boots: '#5a3a22', belt: '#e0786a', wide: true },
+  // Dr. Pell, who meant to sail fifty years ago: a bottle-green coat and a doctor's white collar
+  pell: { skin: '#e8b890', hair: '#ececf2', hairStyle: 'bun', top: '#2a5a4a', apron: '#e8e4d8', legs: '#34343e', boots: '#2a2420', belt: '#6a4a2a', robe: true },
 };
 CHAR.lyra = CHAR.michelle;
 CHAR.lyraWinter = CHAR.michelleWinter;
@@ -885,7 +891,7 @@ CHAR.orinYoung = CHAR.christopherYoung;
 const npc = (name) => () => humanoidSheet(CHAR[name], { npcOnly: true });
 const SHEETS = {
   // Vivienne wears what the chapter says she wears (see playerSheet in each chapter's theme.js)
-  vivienne: () => humanoidSheet(CHAR[theme.playerSheet] || CHAR.vivienne),
+  vivienne: () => humanoidSheet(CHAR[outfit || theme.playerSheet] || CHAR.vivienne),
   megan: () => squirrelSheet(),
   zach: () => squirrelSheet({ B: '#86848e', L: '#cfccd6', acorn: false, spectacles: true }),
   eugene: npc('eugene'), michelle: npc('michelle'), lyra: npc('michelle'),
@@ -896,7 +902,7 @@ const SHEETS = {
   tick: () => robotSheet('tick'),
   thornback: () => thornbackSheet(),
   // Chapter Two: Saltwick
-  brannoch: npc('brannoch'), odalys: npc('odalys'), fenwick: npc('fenwick'), isha: npc('isha'), pim: npc('pim'), maren: npc('maren'),
+  brannoch: npc('brannoch'), odalys: npc('odalys'), pell: npc('pell'), fenwick: npc('fenwick'), isha: npc('isha'), pim: npc('pim'), maren: npc('maren'),
   digby: () => robotSheet('digby'),
   crab: () => crabSheet(),
   // Chapter Three: the mountain
@@ -906,7 +912,9 @@ const SHEETS = {
   christopherYoung: npc('christopherYoung'), orinYoung: npc('christopherYoung'),
   lyraYoung: npc('lyraYoung'),
   eugeneYoung: npc('eugeneYoung'), eugeneWinter: npc('eugeneWinter'),
-  statue: () => humanoidSheet(CHAR.statue, { npcOnly: true }), // the first Clockmaker, in stone
+  statue: () => humanoidSheet(CHAR.statue, { npcOnly: true }), // (Vivienne in stone: no longer used)
+  statueDon: () => humanoidSheet(CHAR.statueDon, { npcOnly: true }), // the Founder, in stone
+  orinOld: npc('orinOld'),
   meganWinter: () => squirrelSheet({ scarf: '#e04a4a' }),
   zachWinter: () => squirrelSheet({ B: '#86848e', L: '#cfccd6', acorn: false, spectacles: true, scarf: '#4a6ad8' }),
   // both
@@ -915,6 +923,13 @@ const SHEETS = {
   sentinel: () => sentinelSheet(),
 };
 const cache = {};
+let outfit = null;
+/** Dress Vivienne in another chapter's clothes (see src/kit.js): every 'vivienne' actor made after this wears them. */
+export function setOutfit(name) {
+  if (name === outfit) return;
+  outfit = name;
+  delete cache.vivienne;
+}
 const sheets = new Proxy(cache, {
   get: (c, name) => (name in c ? c[name] : SHEETS[name] ? (c[name] = SHEETS[name]()) : undefined),
 });

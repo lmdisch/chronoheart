@@ -1,6 +1,6 @@
-// Chapter Two, Saltwick: the pocketwatch (Rewind), reaching through the time lens, the timed
-// gates, the Tide Well and its flood, and the ending that leaves the tide in. Everything every
-// chapter shares is in src/game.js.
+// Chapter Two, Saltwick: Rewind (a hairspring fitted to the Chronoheart), reaching through the
+// time lens, the timed gates, the Wellhead and its flood, and the ending that brings the river
+// home. Everything every chapter shares is in src/game.js.
 import { input } from '../../core/input.js';
 import { ERA } from '../../core/util.js';
 import { audio } from '../../audio/audio.js';
@@ -28,13 +28,14 @@ export class SaltwickGame extends Game {
       ...baseState(),
       flags: { hasAmulet: true }, // the Chronoheart is Vivienne's now, and mended: it never runs down
       // (the Cog Finder, if all of Chapter One's Lost Cogs went to Donald Eugene)
-      inventory: progress.hasReward('cogFinder') ? ['watch', 'finder'] : ['watch'],
+      inventory: progress.hasReward('cogFinder') ? ['finder'] : [],
     };
   }
 
-  /** A save from before the Cog Finder was earned in Chapter One picks it up now. */
+  /** A save from before the Cog Finder was earned in Chapter One picks it up now. (And the old pocketwatch is gone.) */
   migrate() {
     if (progress.hasReward('cogFinder') && !this.state.inventory.includes('finder')) this.state.inventory.push('finder');
+    this.state.inventory = this.state.inventory.filter((it) => it !== 'watch');
   }
 
   setup() {
@@ -69,10 +70,10 @@ export class SaltwickGame extends Game {
   }
 
   welcomeBack() {
-    return this.state.flags.finished ? 'Welcome back, Vivienne. The tide is in.' : 'Welcome back, Vivienne.';
+    return this.state.flags.finished ? 'Welcome back, Vivienne. The river is home.' : 'Welcome back, Vivienne.';
   }
 
-  /** While the watch is running you backward, the amulet has to wait. */
+  /** While Rewind is running you backward, the amulet has to wait. */
   canShift() {
     return !this.craft.rewinding;
   }
@@ -88,7 +89,7 @@ export class SaltwickGame extends Game {
     };
   }
 
-  /** Gate Dusk Bell strokes 2 and 3 behind stunning/crashing the Harbor Warden. */
+  /** Gate Dusk Bell strokes 2 and 3 behind stunning the Harbor Warden, then tricking it into its own bell. */
   canStrike(s) {
     if (s.id !== 'duskBell') return true;
     const f = this.state.flags;
@@ -99,7 +100,7 @@ export class SaltwickGame extends Game {
     }
     if (s.hits === 2 && !f.wardenCrashed) {
       audio.sfx('blocked');
-      this.hud.toast("The shield is back up! Bait the Warden's charge in the <b>Future</b> and hold <b>Rewind</b> (<kbd>R</kbd>) so it crashes into a bollard!", 5500);
+      this.hud.toast("The shield is back up! Stand by the bell and let the Warden charge. At the last moment, hold <b>Rewind</b> (<kbd>R</kbd>): it can't stop, and it will slam into its own bell.", 6500);
       return false;
     }
     return true;
@@ -125,21 +126,27 @@ export class SaltwickGame extends Game {
         this.warden.hunt(7.0);
       }
       this.save();
-      this.hud.toast("<b>Second stroke!</b> The Warden is charging—bait its lunge near a bollard and hold <b>Rewind</b> (<kbd>R</kbd>) so it crashes!", 6000);
+      this.hud.toast("<b>Second stroke!</b> The Warden is charging! Stay by the bell, and hold <b>Rewind</b> (<kbd>R</kbd>) at the last moment: it will slam into its own bell.", 6500);
     }
   }
 
-  /** When the Harbor Warden charges into a bollard (or the player rewinds out of its lunge). */
+  /**
+   * The Harbor Warden's charge ends in something solid, or the player rewinds out of its path.
+   * After the second stroke, if that happens beside the Dusk Bell, it hits the bell.
+   */
   onWardenChargeCrash(w) {
     const f = this.state.flags;
-    if (f.duskStroke2 && !f.wardenCrashed) {
+    const bell = this.L.duskBell;
+    if (f.duskStroke2 && !f.wardenCrashed && Math.hypot(w.x - bell.x, w.z - bell.z) < 3.2) {
+      w.x = bell.x + Math.sign(w.x - bell.x || 1) * 0.9;
       f.wardenCrashed = true;
       w.stunT = 14;
       audio.sfx('gate');
       this.renderer.shake = 0.65;
       this.bursts.emit(w.x, 1.2, w.z, 35, { color: [0xff9a52, 0xffe39f, 0xffffff], speed: 4.5, life: 0.8 });
       this.save();
-      this.hud.toast('<b>Crash!</b> The Harbor Warden smashed into the bollard and dropped its shield—ring the <b>final stroke</b>!', 5500);
+      audio.sfx('bell', { freq: 196 });
+      this.hud.toast('<b>CLANG!</b> The Harbor Warden slammed into its own bell, and its shield is down. Ring the <b>final stroke</b>!', 5500);
     }
   }
 
@@ -179,8 +186,8 @@ export class SaltwickGame extends Game {
     return era === ERA.FUTURE && this.state.flags.tideRestored ? 'The Age of Lights' : super.eraLabel(era);
   }
 
-  // ------------------------------------------------------------------ the watch, and the Tide Well
-  /** Twelve cogs, one winter: a pocketwatch of Vivienne's own, and Rewind for good. */
+  // ------------------------------------------------------------------ the Wellhead
+  /** Twelve cogs, one winter: a pocketwatch of Vivienne's own (Chapter Three: a longer echo). */
   grantOwnWatch() {
     const f = this.state.flags;
     if (f.ownWatch) return;
@@ -191,14 +198,11 @@ export class SaltwickGame extends Game {
     this.save();
   }
 
-  /** The watch goes back where it came from: no more Rewind, and the tide turns. */
+  /** Donald Eugene's cog comes out of the sluice's wheel, and the river comes home. */
   placeHeart() {
     const f = this.state.flags;
     f.heartPlaced = true;
-    f.hasRewind = false;
-    this.removeItem('watch');
-    this.craft.clearTrail();
-    this.craft.syncBody();
+    this.giveItem('donCog');
     audio.sfx('socket');
     audio.sfx('bell', { freq: 131 });
     audio.sfx('gate');
@@ -207,8 +211,8 @@ export class SaltwickGame extends Game {
     if (h) this.bursts.emit(h.x, 1.2, h.z, 60, { color: [0xffe9a0, 0x9ff4ff, 0xffffff], speed: 5, life: 1.2, gravity: 0 });
     this.refreshWorld();
     this.save();
-    setTimeout(() => this.hud.toast('The great wheel shudders, stops... and turns the other way.', 4500), 400);
-    setTimeout(() => this.hud.toast(`<b>The tide is coming in!</b> ${touchActive() ? 'Hold <b>Jump</b>' : 'Hold <kbd>Space</kbd>'} to swim up, and out the way you came.`, 8000), 4200);
+    setTimeout(() => this.hud.toast('The great wheel shudders, and turns. Somewhere below, a gate grinds open.', 4500), 400);
+    setTimeout(() => this.hud.toast(`<b>The river is coming back!</b> ${touchActive() ? 'Hold <b>Jump</b>' : 'Hold <kbd>Space</kbd>'} to swim up, and out the way you came.`, 8000), 4200);
   }
 
   // ------------------------------------------------------------------ the ending
@@ -247,7 +251,7 @@ export class SaltwickGame extends Game {
     r.camTarget.set(...focus);
     setTimeout(() => setFade(0), 250);
     this.mode = 'play'; // (timelapse() only runs from play)
-    await this.timelapse({ to: ERA.PRESENT, focus, years: 1, unit: ['night', 'nights'], caption: 'The tide comes home...', float: { ids: ['seaM', 'harborBoats'], by: 3 } });
+    await this.timelapse({ to: ERA.PRESENT, focus, years: 1, unit: ['night', 'nights'], caption: 'The river comes home...', float: { ids: ['seaM', 'harborBoats'], by: 3 } });
     audio.sfx('fanfare');
     await this.timelapse({ to: ERA.FUTURE, focus, years: 300, caption: '...and this time, it stays.', float: { ids: ['seaF'], by: 3 } });
     this.mode = 'ending';
@@ -384,7 +388,7 @@ export class SaltwickGame extends Game {
       this.cogGift = true;
       this.cutscene(ENDING_COGS).then(() => {
         this.grantOwnWatch();
-        this.hud.toast(`<b>Rewind</b> is yours again, for good: ${touchActive() ? 'hold <b>Rewind</b>' : 'hold <kbd>R</kbd>'}.`, 6000);
+        this.hud.toast("<b>Vivienne's Pocketwatch!</b> It fits the Chronoheart, and your echoes will remember longer on the mountain.", 6000);
       });
     }
 

@@ -1,8 +1,8 @@
-# Chapter Three: The Borrowed Hour
+# Chapter Three: The Other Half
 
 **A time-travel puzzle adventure up one mountain, in three ages.** The last chapter of [Chronoheart](../README.md). It opens once [Chapter Two](chapter-2-saltwick.md) is finished.
 
-Winter has come early to Hollowmere, and every clock in Donald Eugene's workshop is losing an hour a night. Not running slow: *losing* them, as if someone were reaching in at midnight and taking an hour off the top. The hours are going up **Highcrest**, the mountain above the valley and the harbor, where the oldest clock there is stands by an old observatory, above the clouds.
+Midwinter. Donald Eugene asks Vivienne up **Highcrest**, the mountain above the valley and the harbor, to meet someone. At Base Camp he says he'll go on ahead, and then he simply isn't there. On the way up she meets Orin, who keeps the observatory and knew Don fifty years ago; finds the Founder's statue, six hundred years old, with Don's nose; and, in the observatory, Don's notebooks. At the top, a shimmer by the Needle leads to the End of Time, and to him. (The whole story: [docs/story.md](story.md).)
 
 This chapter **climbs**, the way real mountain roads do: in switchbacks. The road slopes up across the face of the mountain; at its end it turns back on itself and climbs into the mountain to the next leg, a little higher and further back; and so on, six legs, up a face of snow and rock, past prayer flags and porters, to the summit. From the top you can see all the way down to Hollowmere and Saltwick, through the clouds.
 
@@ -10,7 +10,7 @@ This chapter **climbs**, the way real mountain roads do: in switchbacks. The roa
 | --- | --- | --- |
 | **Past** (the First Age) | a clear winter night under the aurora; the observatory is only ribs and foundations, and its builders camp by a fire | aurora green |
 | **Present** (Golden Hour) | a snowy mountain town in a sunset that never quite sets | gold |
-| **Future** (the Stopped Age) | the age the borrowed hours ran out: everything frozen still, the snow hanging in the air, a moon far too close | moonlit violet |
+| **Future** (the Stopped Age) | the world as he wants it: everything held still, the snow hanging in the air, a moon far too close | moonlit violet |
 
 ---
 
@@ -30,7 +30,7 @@ This chapter **climbs**, the way real mountain roads do: in switchbacks. The roa
 
 - **Travel through time** with `Q` and `E` (on touch: swipe), as before.
 - **Climb.** Just walk: the road goes uphill, a step at a time. At the end of each leg, where the prayer flags are strung, the road turns back up the mountain: walk up it with `W` (into the scene). East end, then west end, then east again.
-- **Frost.** Where Sir Orin's frost lies on the ground, the ages are frozen together and **you can't shift**. The Lantern still works there.
+- **Frost.** Donald Eugene's seals: where the frost lies, the ages are held still and **you can't shift**. The Lantern still works there.
 - **Cold mist and the falls cost a heart** and put you back on solid ground.
 - **Hearts:** you start with 5. Each finished favor adds one. **Clock shrines**, at the top of each turn, save and heal you.
 - **The Menu** (`I`) shows your goal, a **Hint** if you're stuck (`G`), your items and your favors.
@@ -69,6 +69,7 @@ On touch, the **Lantern** and **Echo** buttons appear once you have them.
 
 ### 1. Base Camp (walk east)
 
+- Donald Eugene is with you at Base Camp: "I'll go on ahead. My knees know a shortcut." The air shivers, and he's gone.
 - Tents, prayer flags and porters. **Anwen the Guide** explains the switchbacks.
 - **A great pine has fallen across the road.** In the First Age it's only a sapling: `Q`, walk past, `E`.
 - At the **east end** the road turns back up the mountain: walk up it (`W`).
@@ -82,33 +83,35 @@ On touch, the **Lantern** and **Echo** buttons appear once you have them.
 ### 3. The Icefall and the Sundial Terrace (walk east)
 
 - **The falls** cascade down the mountain and right through the road. Only in the Stopped Age are they frozen over. At the edge: `R`, then `E` to swing the Lantern forward to the Stopped Age. Walk across on the ice.
-- **Sir Orin** is at the statue of the First Clockmaker. He recognizes your goggles from the margin of the old drawings, refuses to say what he is keeping up on the mountain, and seals the observatory doors in ice. Zach gives you his flag.
+- **Orin** is standing at the statue of **the Founder**: six hundred years old, with Donald Eugene's nose. He knew Don fifty years ago. "Whatever he's told you he came up here for: don't help him. Ask him about Lyra." Then the air shivers, and frost seals the observatory doors: Don doesn't want her reading something up there. Zach gives you his flag.
 - The road turns at the **east end**.
 
 ### 4. The Clockworks (walk west)
 
-- The **Mysterious Stranger** is waiting here, the same old woman you met by the river and on the quay. She knows what Orin is keeping, she says, but it isn't hers to tell; she gives you an **Echo Lens** (**Echo**). (Look at her through the time lens, in any chapter, and she flickers blue, like an echo.)
+- The **Mysterious Stranger** is waiting here, the same old woman you met by the river and on the quay. She would like your master to stop. She gives you an **Echo Lens** (**Echo**). (Look at her through the time lens, in any chapter, and she flickers blue, like an echo.)
 - **The clockworks door** wants all three green plates held at once, and the third plate is crusted in frost (requiring **First Age** Lantern light). Leave echoes on the first two plates (`V`), then light the Lantern (`R`) on the First Age and stand on the third plate yourself (or record an Echo with the Lantern lit!). The door opens for good.
-- Inside the hall, pick up **The Master Drawings** (`masterDrawings`).
+- Inside the hall, pick up **The Founder's Drawings** (`masterDrawings`): six hundred years old, in Don's hand.
 - **The gold gate** opens while its gold plate is held (leave an echo on it), OR strike the brass **resonance chime** three times with your wrench (`X`) to hold the gate open for 9 seconds.
 - The road turns at the **west end**.
 
 ### 5. The Crevasses (walk east)
 
-- **The first crevasse:** Before entering the frost zone, shift to the **First Age** (`Q`) and give **The Master Drawings** to **Sela the Stonecutter** (`selaHigh`). A **600-year time-lapse** builds the First Clockmaker's carved stone bridge across the crevasse in every age! (Or cross using the First Age Lantern light.)
+- **The first crevasse:** Before entering the frost zone, shift to the **First Age** (`Q`) and give **The Founder's Drawings** to **Sela the Stonecutter** (`selaHigh`). A **600-year time-lapse** builds a carved stone bridge across the crevasse in every age. (Or cross using the First Age Lantern light.)
 - **The rockfall:** Before the rockfall frost zone, shift to the **First Age** (`Q`) and strike the **frozen thermal sluice** three times with your wrench (`X`). A **600-year time-lapse** carves warm stepped terraces right over the rockfall in the Present! (Or light the Lantern on the **Stopped Age** at the foot of the falls to climb the frozen cascade.)
 - The last turn is at the **east end**.
 
 ### 6. The Summit (walk west)
 
-- **The observatory's doors are frozen shut.** In the First Age there were no doors at all: `R` at the ice, and walk through.
-- **Tobin the Stargazer** keeps the star-books. **Under the orrery** a memory is replaying, and it plays the first time you walk past it (or ring the **Orrery alignment chime** with `X`): **Sir Orin and Lyra**, fifty years ago, at one minute to midnight on Midwinter Night. Lyra is very ill. Every time she starts to tell Orin something, her cup slips and cracks, and the hour starts again.
-- **The overlook & brass telescope:** walk out past the Needle to the rail at the north edge and examine the **brass telescope** (`F`) to look down through the clouds at Hollowmere and Saltwick.
-- **Sir Orin & The Borrowed Hour.** At the Needle, Orin strikes the stone with his staff and takes you to **the End of Time**: a ruined throne room of black marble, every crack filled with gold, with nothing outside it but drifting shards. There are no ages to step between here (the Lantern still works). Orin sits on his throne against the far wall. A shrine stands by the door, so a fall puts you back here; and if you do leave, the crack he opened at the Needle still leads to him.
-  1. **Phase 1 (Frost Waves & the Frost-Anchor):** Waves of frost roll down the hall from the throne. Light the **Lantern** (`R`) on the **First Age** and its warmth carries you through them (or jump them), then strike the **Frost-Anchor** by the back wall three times with your wrench (`X`).
-  2. **Phase 2 (Twin Frost-Locks & the Gnomon's Shadow):** Record an **Echo** (`V`) on one of the two blue Frost-Lock plates, then stand on the other plate yourself, jumping the gnomon's shadow as it sweeps round. The barrier before the throne falls.
-  3. **Phase 3 (The Stopped Age):** Climb the dais, stand beside Orin, light the **Lantern** (`R`), swing it to **the Stopped Age** (`E`), and talk to him (`F`). Vivienne tells him she would have done the same to get Donald Eugene back. Then he sees the Stopped Age: even Lyra's memory frozen, her cup hanging in the air. He lets midnight strike, and the End of Time lets them go.
-- **One Final Real Hour:** As the fifty years of borrowed hours return home, **Lyra** comes out of the Observatory on Orin's arm for one real hour. Her first words give her away: the stranger by the river, on the quay and on the Lantern Road were all echoes of her. Donald Eugene arrives, and he and Orin finally have it out. At midnight Lyra finishes the sentence she started fifty years ago, and rests. Her cup stays at the foot of the Needle, its crack filled with gold.
+- **The observatory's doors are frozen shut** (his seal). In the First Age there were no doors at all: `R` at the ice, and walk through.
+- **Tobin the Stargazer** keeps the star-books. **Under the orrery** an echo Lyra left is replaying, and it plays the first time you walk past it (or ring the **Orrery alignment chime** with `X`): Midwinter Night, fifty years ago. Lyra, very ill; young Orin holding her hand; young Don with half of something brass in his pocket. She asks Don not to use it for her. He promises.
+- **Donald Eugene's notebooks**, on the bench past the star-books: fifty years of attempts to save her, every one "Corrected". The last: "Attempt 8,512. An apprentice. Arranged. Testing."
+- **The overlook & brass telescope:** walk out past the Needle to the rail at the north edge and examine the **brass telescope** (`F`).
+- **The shimmer.** At the foot of the Needle, the air hangs wrong. Step into it (`F`): **the End of Time**, a ruined throne room of black marble with every crack mended in gold, and Donald Eugene on his throne. He asks her to solve it. She says no. A shrine stands by the door; if you leave, the shimmer still leads back.
+  1. **Phase 1 (his waves & the Anchor-Clock):** Waves of rewritten time roll down the hall. Light the **Lantern** (`R`) on the **First Age**: its old light carries you through them (or jump them). Strike the **Anchor-Clock** by the back wall three times (`X`).
+  2. **Phase 2 (his two locks & the gnomon's shadow):** Record an **Echo** (`V`) on one blue lock plate, then stand on the other yourself, jumping the gnomon's shadow as it sweeps round. The barrier before the throne falls.
+  3. **Phase 3 (Stasis waves):** He starts rubbing out Zach and Megan, who flicker into the hall. Hold each of them in their moment with a **Stasis wave**: face them, hold `X`, let go. Then climb the dais, face him, and do it again.
+- Held in his moment, he has to listen. **Lyra**'s last echo steps out of the dark (the stranger, all along) and tells him: "It was my ending, Don. Not yours to write." His half of the Chronoheart falls; Vivienne picks it up.
+- **Midwinter Night.** His seals let go of the mountain. Orin is waiting at the Needle with Lyra's cup, mended with gold. Don sits beside it, and weeps.
 
 ---
 
@@ -139,19 +142,11 @@ On touch, the **Lantern** and **Echo** buttons appear once you have them.
 
 ---
 
-## The endings & The Master's Key
+## The ending & The Master's Key
 
-At the summit the Chronoheart is ready for its long shift, and Vivienne chooses which age to call home. Because she already delivered the **Master Drawings** to Sela during the climb, **all three endings are completely paradox-free:**
+There is one ending. Vivienne goes home to Hollowmere with both halves of the Chronoheart: the keeper who remembers, and does not rewrite. After the credits, Highcrest is yours to wander on Midwinter Night, in all three ages.
 
-Each one costs her something, and each has a goodbye.
-
-- **The First Age:** she says goodbye to Donald Eugene, who gives her his wrench to keep ("I want it back in six hundred years"), and becomes the First Clockmaker. The wrench is handed down, keeper to keeper, until it comes back to her on her first day as an apprentice.
-- **Home, in Midwinter:** she walks home to Hollowmere with Donald Eugene and Sir Orin, and every Midwinter after the three of them climb Highcrest to sit by Lyra's cup and tell her what grew.
-- **The Waking Age:** she leaves everyone she knows and steps forward into the Stopped Age as it thaws, to help it start again.
-
-**The Master's Key (All 10 Cogs):** Find all ten Lost Cogs on Highcrest and Donald Eugene and Sir Orin forge **The Master's Key**, which rekindles the Chronoheart so you can shift freely between all three healed ages on Highcrest—and unlocks the **Astral Clock-Door** in Hollowmere Square (**The Starlit Garden, 10,000 Years On**)!
-
----
+**The Master's Key (all 10 cogs):** bring Orin all ten of Highcrest's Lost Cogs, and he fits them into the key-blank Lyra left on the observatory bench. It opens the star-iron door in Hollowmere Square (**The Starlit Garden, 10,000 Years On**).
 
 ## What carries over
 

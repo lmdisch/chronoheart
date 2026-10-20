@@ -88,7 +88,7 @@ She never told him about the acorn.
 
 ---
 
-## Chapter Two: Saltwick (the second exam)
+## Chapter Two: The Dry Harbor (the second exam)
 
 **What happens.** Don sends her to Saltwick with one question: "Saltwick's been dry for fifty years. Find out why." He knows exactly why. The test is whether she can trace an effect back to a cause hundreds of years earlier, which is practice for Lyra.
 
@@ -101,15 +101,15 @@ She never told him about the acorn.
 - **The Harbor Warden** guards the sluice: his machine.
 - **The sluice** itself, in the Past: far too well made for its age, with one of his stamped cogs inside it.
 
-**The resolution.** She opens the sluice in the Past. A time-lapse shows four hundred years of river finding its old way home, and the water comes back. The escape at the end of the chapter is the river returning after fifty years, as a flood surge.
+**The resolution.** The sluice still stands, at the bottom of the Wellhead (what Saltwick calls the house over the spring where the river rises). Its door opens only to three bells rung in three ages: a clockmaker's lock that only a Chronoheart can open. At the bottom, one of his stamped cogs is jammed into the great wheel. She pulls it out, the wheel turns, and the river comes home at once: the escape at the end of the chapter is the river returning after fifty years, as a flood surge. Then a time-lapse shows the harbor full again, and the Dry Age becoming the Age of Lights.
 
 **The mirror** (felt, never said): in Chapter One she turned a spring to give Hobb his millpond. Here she finds Don did the same thing to take a whole town's water away.
 
-**The turning point.** Back home, she mentions an edit in passing, almost a joke: "Wasn't the bakery called Fenwick's?" Don goes completely still. In that moment he learns she remembers. From then on it is a quiet duel: he changes small things on purpose and watches her face.
+**The turning point.** Back home, she mentions an edit in passing, almost a joke: "Wasn't the bakery called Marlow's?" Don goes completely still. In that moment he learns she remembers. From then on it is a quiet duel: he changes small things on purpose and watches her face.
 
 ---
 
-## Chapter Three: Highcrest (the truth)
+## Chapter Three: The Other Half (the truth)
 
 **Why she climbs.** Don asks her to come up Highcrest for Midwinter: "There's someone I'd like you to meet." He goes on ahead. She climbs.
 
@@ -120,7 +120,9 @@ She never told him about the acorn.
 **What she learns on the way up.**
 - **Orin's plain story.** Lyra was ill; she asked them both not to save her; Don took the Chronoheart and ran. Orin has not seen him since. (Orin is gruff, not a villain. At the first meeting he will not talk to a stranger about it.)
 - **The Mysterious Stranger,** a little more pointed each time.
-- **The memory under the orrery:** Midwinter Night, fifty years ago. Lyra, Orin, young Don. Lyra asks Don not to use it for her. He promises. This is where the theme is said, once, in Lyra's words. No one else ever says it.
+- **The memory under the orrery:** an echo Lyra left. Midwinter Night, fifty years ago: Lyra, Orin, young Don with half of something brass in his pocket. Lyra asks Don not to use it for her. He promises. This is where the theme is said, once, in Lyra's words: "It's the ending that makes it ours, Don. Let me have mine." No one else ever says it.
+- **Don leaves her at Base Camp.** "I'll go on ahead. My knees know a shortcut." The air shivers, and he simply isn't there. "He didn't walk. He went somewhen."
+- **The Founder.** The statue on the Sundial Terrace is six hundred years old, and has Don's nose. Sela, in the First Age, is waiting for the Founder's drawings; he pays in gold stamped with the notched cog. The drawings are in the Clockworks, in his hand.
 - **People who have lost someone and live with it well:** Ingrid and her gran's lantern; Orin and Lyra's cup.
 - **Don's notebooks,** in the observatory: fifty years of attempts, written in his calm craftsman's hand. "Attempt 12: a doctor from Saltwick, brought early. Did not help. The harbor changed." The last line: "Attempt 8512: an apprentice. Arranged. Testing."
 
@@ -131,17 +133,18 @@ She reaches the summit knowing.
 1. **The shimmer.** At the summit, a shimmer hangs by the Needle. She steps through into the End of Time: his throne room.
 2. **The ask.** Don stops pretending. Calmly, proudly, without shame, he tells her everything, and asks: "You're the cleverest attempt I've had. Solve it."
 3. **She refuses, at once.** She already suspected him. She has read the notebooks. Lyra was allowed to end.
-4. **He tries to force her.** He cannot write her choice, so he rewrites everything else to corner her: "Do it, or I will keep rewriting until you will." The valley changes in the pages around them. Orin is gone. Hollowmere's Tower stops again.
-5. **The fight** is surviving him as he unmakes the things she cares about. Her counter is the Stasis Seal, fired from her wrench: it holds people and places in their moment, so his rewrites cannot touch them. One beat of comedy in the middle: she seals Zach and Megan, mid-argument, to keep them safe, and they stand in crystal with a placard.
+4. **He tries to force her.** He cannot write her choice, so he rewrites everything else to corner her: "If you won't choose it, I shall make it the only thing left to choose."
+5. **The fight, as built,** has three phases. (1) Waves of rewritten time roll down the hall; the Lantern's First Age light carries her through, and she breaks his Anchor-Clock with the wrench. (2) An echo on one of his lock plates and Vivienne on the other, under the gnomon's sweeping shadow. (3) He starts rubbing out Zach and Megan, who flicker into the hall mid-complaint; she holds each of them in their moment with a Stasis wave from her wrench, so his rewrites slide off.
 6. **The last seal is Don himself,** on his throne. The man who never let a moment pass is held still while time goes on around him. For once he cannot change anything. He can only listen.
-7. **Lyra's last echo** speaks to him: "It was my ending, Don. Not yours to write. I built it in two, so you'd never be alone with it." He cannot argue, rewrite, or leave. He has to hear it.
-8. When the seal fades, his half of the Chronoheart is on the floor. He does not reach for it. **Vivienne picks it up.** Now she holds both halves.
+7. **Lyra's last echo** steps out of the dark (Vivienne knows her at once: the river, the quay, the Lantern Road) and speaks to him: "It was my ending, Don. Not yours to write." "I built it in two halves, so you would never be alone with it... You were never alone, love. You only thought you were." He cannot argue, rewrite, or leave. He has to hear it.
+8. When the seal fades, his half of the Chronoheart is on the floor. He does not reach for it. **Vivienne picks it up.** Now she holds both halves. "I don't know how to stop, Vivienne." She holds out her other hand; after a long time, he takes it.
+9. **Back on the summit,** his seals let go of the mountain, and it is Midwinter Night at last. Orin is waiting at the Needle with Lyra's cup, mended with gold: "Took you long enough, Don." Don sits beside it and weeps, and Orin lets him.
 
 ### The ending
 
 - **Don** is an ordinary old man in a world he can no longer change. He remembers every version, and no one will ever believe him. He stays on the mountain with Orin. At Midwinter he sits by Lyra's cup, and for the first time in fifty years he does not reach for anything. The game does not say whether he is sorry.
 - **The Futures** stop heading where he steered them.
-- **Vivienne** goes home. The workshop in Hollowmere is hers now, and the Tower is ticking. She walks past the bakery. It is still not called Fenwick's. She could change it back with one step into the Past, and she does not. She is the one person who knows how the world was before Don, and she leaves it be.
+- **Vivienne** goes home. The workshop in Hollowmere is hers now, and the Tower is ticking. She walks past the bakery. It is still not called Marlow's. She could change it back with one step into the Past, and she does not. She is the one person who knows how the world was before Don, and she leaves it be.
 - **After the credits,** she keeps the whole Chronoheart: the keeper who remembers, and does not rewrite. You can still travel, for the Lost Cogs and the Starlit Garden.
 
 There is one ending.
