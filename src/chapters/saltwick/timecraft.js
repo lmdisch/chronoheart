@@ -178,8 +178,8 @@ export class Timecraft {
       f.hasReach = true;
       g.hud.toast(
         touch
-          ? '<b>Reach!</b> Hold the amulet to open the time lens. What you see through it, you can now touch: <b>Interact</b> and <b>Attack</b> go through the lens.'
-          : '<b>Reach!</b> Hold <kbd>Tab</kbd> to open the time lens. What you see through it, you can now touch: <kbd>F</kbd> and <kbd>X</kbd> go through the lens.',
+          ? '<b>Reach!</b> Hold the amulet to open the time lens. What you see through it, you can now touch: <b>Interact</b> and <b>Attack</b> go through the lens. Lost Cogs come to your hand, and people over there can hear you.'
+          : '<b>Reach!</b> Hold <kbd>Tab</kbd> to open the time lens. What you see through it, you can now touch: <kbd>F</kbd> and <kbd>X</kbd> go through the lens. Lost Cogs come to your hand, and people over there can hear you.',
         9000,
       );
     }

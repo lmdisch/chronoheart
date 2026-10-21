@@ -1,8 +1,9 @@
 // Chapter Three, Highcrest: the whole climb, every puzzle solved the way it's meant to be, with real
 // key presses: up the switchbacks (walking up each turn), the Lantern at the ravine, the falls, the crevasse, the rockfall
 // and the observatory doors; three echoes on the clockworks plates and one on the gold gate's;
-// the Founder's drawings to Sela; the favors; Donald Eugene's notebooks, the shimmer, his three phases at the End of
-// Time (the last one with Stasis waves), the night after, and the credits. Teleports only skip plain walking between them.
+// the Founder's drawings to Sela; the favors; Donald Eugene's notebooks, the shimmer, the duel with him at the End of
+// Time (fought here in god mode, with the wrench whenever his guard drops; duel-check.mjs tests his patterns), the
+// squirrels held with Stasis waves, the night after, and the credits. Teleports only skip plain walking between them.
 import { boot, newGame, sleep, driver, autoplay } from './lib.mjs';
 
 const { browser, page, errors } = await boot({ chapter: 'summit' });
@@ -166,9 +167,9 @@ await interactNow();
 await check('Midwinter Night fifty years ago, left as an echo under the orrery', (s) => s.f.memorySeen);
 await walkTo(U(83), Z(5, 2.2), { t: 6000 }); // (in front of the star-books' shelves)
 await interactNow();
-await check("Donald Eugene's notebooks: Attempt 8,512", (s) => s.f.notebooksRead);
+await check("Donald Eugene's notebooks, in his strongbox (lock picked): Attempt 8,512", (s) => s.f.notebooksRead && s.f.notebookChestOpen);
 
-// ---- the shimmer at the Needle: the End of Time. The Anchor-Clock, his two locks, and the Stasis waves
+// ---- the shimmer at the Needle: the End of Time, and the duel with Donald Eugene
 await walkTo(U(28), Z(5), { t: 12000 });
 await walkTo(U(21.5) + 0.9, Z(5, 2.2), { t: 4000 });
 await interactNow();
@@ -177,34 +178,41 @@ await sleep(1500);
 await d.settle();
 const A = await page.evaluate(async () => (await import('/src/chapters/summit/level.js')).ARENA);
 await check('through the shimmer, to the End of Time: he asks, and she says no', (s) => s.f.summitTalk && s.y >= A.y - 0.1 && s.x < A.x0 + 10);
-await R();
-await walkTo(A.anchorX + 0.3, A.z0 + 1.8, { t: 9000 });
-await d.strike(3);
-await check("phase 1: the Lantern's First Age through his waves, and the Anchor-Clock broken", (s) => s.f.orinPhase1);
-await R();
-await walkTo(A.platesX + 0.5, A.z0 + 0.5, { t: 6000 });
-await echoHere();
-for (let i = 0; i < 4; i++) {
-  await walkTo(A.platesX + 0.5, A.z1 - 0.5, { t: 4000, tol: 0.15 });
-  await sleep(300);
-  if ((await d.st()).f.orinPhase2) break;
-}
-await check('phase 2: an echo on one lock, you on the other', (s) => s.f.orinPhase2);
+await check('the duel begins: Donald Eugene, 12 hours of health', async () => (await page.evaluate(() => __game.duel.on && __game.duel.hp === 12)));
+/** fight him (no dodging: god mode): every time his guard drops, the wrench, up close */
+const fight = (until) => page.evaluate(async (until) => {
+  const g = __game, d = g.duel, sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  g.godMode = true;
+  for (let i = 0; i < 3000; i++) {
+    if (until === 'squirrels' && d.phase === 3 && d.squirrelsLeft) break;
+    if (g.state.flags.duelWon) break;
+    if (g.mode === 'play' && d.open && d.state !== 'down') {
+      g.player.place(d.x - 1, 86, 0.5);
+      g.player.facing = 1;
+      g.playerAttack(d.x - 0.15, 86.7, 0.5, 1);
+    }
+    await sleep(60);
+  }
+  g.godMode = false;
+  return { phase: d.phase, hp: d.hp };
+}, until);
+await fight('squirrels');
 await d.settle();
 await sleep(500);
 await d.settle();
+await check('phases 1 and 2: hit while his guard is down', (s) => (s.f.duelPhase || 1) === 3);
 const cz = (A.z0 + A.z1 + 1) / 2;
 /** a Stasis wave: hold the swing, and let go */
 const wave = async () => { await d.down('KeyX'); await sleep(700); await d.up('KeyX'); await sleep(500); };
 const held = (s) => (s.f.zachHeld ? 1 : 0) + (s.f.meganHeld ? 1 : 0);
+await page.evaluate(() => { __game.godMode = true; __game.kit.equip('seal', true); });
 for (const [n, dz] of [[1, 0.8], [2, -0.9]]) {
   await walkTo(A.startX + 6.5, cz + dz, { t: 6000 });
   await walkTo(A.startX + 6.0, cz + dz, { t: 1500 }); // (facing them)
   await wave();
   await check(`phase 3: a Stasis wave holds ${n === 1 ? 'one squirrel' : 'the other'} where his rewrites can't reach`, (s) => held(s) >= n);
 }
-await walkTo(A.orinX - 1.6, cz, { t: 9000 });
-await wave();
+await fight('end');
 await page.waitForFunction(() => !document.getElementById('credits').hidden, { timeout: 120000 });
 await check('held still, he has to listen; Midwinter Night; and the credits', (s) => s.f.hoursReturned && s.f.finished);
 const credits = await page.evaluate(() => ({ chapter: document.getElementById('credits-chapter').textContent, next: !document.getElementById('btn-credits-next').hidden }));

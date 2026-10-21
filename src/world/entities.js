@@ -11,6 +11,8 @@ import { Actor } from '../render/actors.js';
 import { theme, content } from '../chapter.js';
 
 const GRAV = 28;
+const SLOWED = 0.25; // the pace of something the Escapement has slowed
+const REWIND_STEPS = 30; // tenths of a second the Hairspring sends things back
 const BREATH = 10; // seconds of air underwater
 
 // shared blob-shadow
@@ -433,6 +435,33 @@ export class EraEntity {
     this.stasisT = Math.max(this.stasisT || 0, secs);
     if (this.actor) crystal(this.actor, true);
   }
+  /** Slowed by the Escapement on the wrench (see src/kit.js): a crawl, for a few seconds. */
+  slow(secs) {
+    this.slowT = Math.max(this.slowT || 0, secs);
+  }
+  /** How much of dt it gets to live through: all of it, or a crawl while it's slowed. */
+  pace(dt) {
+    if (!(this.slowT > 0)) return dt;
+    this.slowT -= dt;
+    if (Math.random() < dt * 5) this.game.bursts.emit(this.x ?? this.body.x, (this.y ?? this.body.y) + 1.0, this.z ?? this.body.z, 1, { color: [0xb8f070, 0xe8d070], speed: 0.4, life: 0.9, gravity: -0.4, jitter: 0.6 });
+    return dt * SLOWED;
+  }
+  /** Note where it is, a few times a second, so the Hairspring can send it back (see rewind). */
+  remember(dt, x, z, y = 0) {
+    this.trailT = (this.trailT || 0) - dt;
+    if (this.trailT > 0) return;
+    this.trailT = 0.1;
+    (this.trail ||= []).push({ x, y, z });
+    if (this.trail.length > REWIND_STEPS) this.trail.shift();
+  }
+  /** The Hairspring: back to where it was a few seconds ago (or null, if it hasn't been anywhere). */
+  rewound() {
+    const t = this.trail;
+    if (!t || !t.length) return null;
+    const at = t[0];
+    this.trail = [];
+    return at;
+  }
   /** Count down a stasis; true while it still holds. */
   stillHeld(dt) {
     if (!(this.stasisT > 0)) return false;
@@ -575,6 +604,7 @@ export class Enemy extends EraEntity {
     return super.active() && !gone;
   }
   damage(n, dir) {
+    if (this.stasisT > 0) return this.shatter();
     if (this.hurtT > 0) return;
     this.hp -= n;
     this.hurtT = 0.3;
@@ -590,6 +620,22 @@ export class Enemy extends EraEntity {
       this.remove();
     }
   }
+  /** Held in its moment, and struck: it breaks like ice. */
+  shatter() {
+    const b = this.body;
+    audio.sfx('snap');
+    audio.sfx('enemyDie');
+    this.game.bursts.emit(b.x, b.y + this.cfg.h * 0.6, b.z, 40, { color: [0xffffff, 0xbff6ff, 0x9fd8ff], speed: 5.5, life: 0.8, gravity: 9 });
+    this.game.renderer.shake = 0.35;
+    if (Math.random() < 0.4) this.game.spawnHeart(this.era, b.x, b.y + 0.4, b.z);
+    this.remove();
+  }
+  /** The Hairspring: back where it was a few seconds ago, and too dizzy to do much for a moment. */
+  rewind() {
+    const at = this.rewound();
+    if (at) Object.assign(this.body, { x: at.x, y: at.y, z: at.z, vx: 0, vy: 0, vz: 0 });
+    this.hurtT = 1.2;
+  }
   update(dt) {
     const g = this.game, b = this.body, p = g.player.body, cfg = this.cfg;
     if (this.stillHeld(dt)) {
@@ -598,6 +644,8 @@ export class Enemy extends EraEntity {
       this.actor.mesh.quaternion.copy(g.renderer.billboardQ);
       return;
     }
+    dt = this.pace(dt);
+    this.remember(dt, b.x, b.z, b.y);
     this.t += dt;
     this.hurtT = Math.max(0, this.hurtT - dt);
     const [r0, r1] = this.spec.range;
@@ -713,6 +761,14 @@ export class Warden extends EraEntity {
     Object.assign(this, { state: 'alert', stateT: 0, lostT: 0, huntT: secs });
     audio.sfx('blocked');
   }
+  /** The Hairspring: back where it was a few seconds ago, and it has forgotten why it was coming. */
+  rewind() {
+    const at = this.rewound();
+    if (at) Object.assign(this, { x: at.x, z: at.z });
+    if (this.state === 'alert' || this.state === 'chase') this.state = 'return';
+    this.huntT = 0;
+    this.stunT = Math.max(this.stunT || 0, 1);
+  }
   /** Its clock is mended (spec.until): it stands down at its post, cone dark, and lets you be. */
   get dormant() {
     return !!this.spec.until && !!this.game.state.flags[this.spec.until];
@@ -732,8 +788,10 @@ export class Warden extends EraEntity {
       return;
     }
     // it's a machine: Tempo slows it down or hurries it along when it's inside your bubble
-    const tempo = g.era === this.era ? g.tempoAt(this.x, 0) : 1;
+    const tempo = (g.era === this.era ? g.tempoAt(this.x, 0) : 1) * (this.slowT > 0 ? SLOWED : 1);
+    if (this.slowT > 0) this.pace(dt);
     dt *= tempo;
+    this.remember(dt, this.x, this.z);
     if (this.stillHeld(dt)) {
       this.cone.visible = false;
       this.actor.update(0);
@@ -1070,6 +1128,32 @@ export class Interactable extends EraEntity {
       seam.rotation.x = 0.35;
       this.cup = true;
       this.group.add(cup, seam);
+    } else if (v === 'chest') {
+      // one of Donald Eugene's strongboxes: iron-bound, padlocked, his notched cog on the front
+      const wood = std(0x9a6a3a), iron = std(0x5a5a66, { metalness: 0.5, roughness: 0.5 });
+      const base = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.46, 0.6), wood);
+      base.position.set(this.x, this.y + 0.23, this.z);
+      for (const dx of [-0.32, 0.32]) {
+        const band = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.48, 0.62), iron);
+        band.position.set(this.x + dx, this.y + 0.24, this.z);
+        this.group.add(band);
+      }
+      this.lid = new THREE.Group();
+      this.lid.position.set(this.x, this.y + 0.46, this.z - 0.3);
+      const top = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.18, 0.62), std(0xae7a44));
+      top.position.set(0, 0.09, 0.3);
+      const rim = new THREE.Mesh(new THREE.BoxGeometry(0.94, 0.05, 0.64), iron);
+      rim.position.set(0, 0.0, 0.3);
+      this.lid.add(top, rim);
+      const cog = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.03, 10).rotateX(Math.PI / 2), glowOf(0xffc850, 2));
+      cog.position.set(this.x, this.y + 0.3, this.z + 0.31);
+      const notch = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.05, 0.04), std(0x1a140c));
+      notch.position.set(this.x, this.y + 0.4, this.z + 0.33);
+      this.padlock = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.13, 0.06), std(0x8a7a5a, { metalness: 0.7, roughness: 0.35 }));
+      this.padlock.position.set(this.x, this.y + 0.12, this.z + 0.33);
+      this.inside = new THREE.PointLight(0xffd890, 0, 2.5);
+      this.inside.position.set(this.x, this.y + 0.7, this.z);
+      this.group.add(base, this.lid, cog, notch, this.padlock, this.inside);
     } else if (v === 'shimmer') {
       // a tear in time: a tall sliver of pale light, like heat over a road, but cold
       this.shimmer = new THREE.Mesh(
@@ -1110,6 +1194,13 @@ export class Interactable extends EraEntity {
       sh.material.opacity = 0.35 + Math.sin(t * 11) * 0.1 + Math.sin(t * 2.3) * 0.08;
       if (this.era === g.era && Math.random() < dt * 14) g.bursts.emit(this.x + (Math.random() - 0.5) * 0.8, this.y + Math.random() * 2.4, this.z, 1, { color: [0xfff2d0, 0xbff6ff], speed: 0.3, life: 0.9, gravity: -0.4, glow: 2 });
     }
+    if (this.lid) {
+      const open = !!s.flags[this.spec.openFlag];
+      this.lidOpen = damp(this.lidOpen ?? (open ? 1 : 0), open ? 1 : 0, 6, dt);
+      this.lid.rotation.x = -1.9 * this.lidOpen;
+      this.padlock.visible = !open;
+      this.inside.intensity = open && !s.flags[this.spec.goneFlag] ? 2 : 0;
+    }
     if (this.handle) {
       // a gate's lever swings back as its gate runs out of time; a flag's lever stays thrown
       const frac = this.spec.gate ? g.craft.gateFrac(this.spec.gate) : s.flags[this.spec.flag] ? 1 : 0;
@@ -1123,7 +1214,7 @@ export class Interactable extends EraEntity {
     if (this.floatIcon) {
       const waiting = !s.flags[this.spec.goneFlag] && this.available();
       this.floatIcon.visible = waiting;
-      this.floatIcon.position.set(this.x, this.y + 0.5 + Math.sin(t * 2) * 0.06, this.z);
+      this.floatIcon.position.set(this.x, this.y + (this.lid ? 1.15 : 0.5) + Math.sin(t * 2) * 0.06, this.z);
       this.floatIcon.quaternion.copy(g.renderer.billboardQ);
       if (waiting && this.era === g.era && Math.random() < dt * 8) g.bursts.emit(this.x, this.y + 0.5, this.z, 1, { color: 0x7ff6ff, speed: 0.6, life: 0.8, gravity: -0.5, jitter: 0.5 });
     }

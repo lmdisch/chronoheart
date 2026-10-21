@@ -349,6 +349,7 @@ export class HollowmereGame extends Game {
         : '<b>Tempo!</b> <b>Hold</b> <kbd>Q</kbd> to slow the machines near you, <b>hold</b> <kbd>E</kbd> to speed them up. A quick tap still travels.',
       8000,
     );
+    setTimeout(() => this.hud.toast(`The <b>Escapement</b> fits your wrench, too: ${touchActive() ? 'tap the wrench under your hearts' : 'press <kbd>T</kbd>'} to fit it, then hold ${touchActive() ? '<b>Attack</b>' : '<kbd>X</kbd>'} and let go to slow a creature (or a Warden) to a crawl.`, 8000), 8400);
   }
 
   /** Era Keys placed in the Clocktower, keyed by socket id. */
@@ -497,6 +498,14 @@ export class HollowmereGame extends Game {
     return true;
   }
 
+  /** A wrench on a creature held where it was held: it shatters (an exhibit, in a later age, is behind a rope). */
+  onAttack(x, y, z) {
+    for (const e of this.entities) {
+      if (!e.rec || !e.alive || e.era !== this.era || e.rec.era !== this.era) continue;
+      if (Math.abs(e.x - x) < 1.1 && Math.abs(e.z - z) < 1 && y > e.y - 0.6 && y < e.y + 1.6) return this.abilities.shatterFrozen(e);
+    }
+  }
+
   /** Small things a Stasis wave can hold for good (see CURIOS): the figs, and Karen Louise's tea. */
   sealTargets() {
     const f = this.state.flags;
@@ -597,6 +606,7 @@ export class HollowmereGame extends Game {
     if (this.era === ERA.PRESENT && this.player.body.onGround) this.lastSafePresent = { x: this.player.body.x, y: this.player.body.y, z: this.player.body.z };
     this.updateEntities(dt);
     this.updateRollSpots(f);
+    this.vaultSteam(dt, f);
     this.updateClockEntry(f);
     if (ctl) this.updateRipples(dt, f);
 
@@ -701,6 +711,15 @@ export class HollowmereGame extends Game {
         });
       }
     }
+  }
+
+  /** Aria's quench-vault breathes steam, and glints, while there's a cracked hammer to put in it. */
+  vaultSteam(dt, f) {
+    if (this.era !== ERA.PRESENT || f.hammerLeft) return;
+    const x = 112.5, waiting = this.state.inventory.includes('hammerBroken');
+    if (Math.abs(this.player.body.x - x) > 24) return;
+    if (Math.random() < dt * (waiting ? 10 : 3)) this.bursts.emit(x + 0.45, 2.0, 0.35, 1, { color: [0xf4f4f8, 0xd8dce4], speed: 0.5, life: 1.6, gravity: -1.2, jitter: 0.2, glow: 1 });
+    if (waiting && Math.random() < dt * 10) this.bursts.emit(x - 0.6 + Math.random() * 1.4, 0.3 + Math.random() * 1.0, 1.2, 1, { color: [0xffd070, 0xffffff], speed: 0.3, life: 0.9, gravity: -0.6, glow: 2 });
   }
 
   /** The places only a roll gets through: the Future corridor's laser fence, and the postern's crawlspace. */

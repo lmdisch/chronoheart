@@ -307,6 +307,21 @@ export class SaltwickGame extends Game {
     }
   }
 
+  /** With the Loupe, a Lost Cog you're standing on in the age the lens shows comes through to your hand. */
+  reachCogs() {
+    const b = this.player.body;
+    for (const p of this.pickups) {
+      if (p.spec.type !== 'cog' || p.era !== this.reachEra || !p.available()) continue;
+      if (Math.abs(b.x - p.x) < 0.8 && Math.abs(b.z - p.z) < 0.9 && p.y > b.y - 0.4 && p.y < b.y + b.h + 0.5) {
+        this.collect(p);
+        if (!this.state.flags.reachCogHint) {
+          this.state.flags.reachCogHint = true;
+          this.hud.toast('Through the lens, and into your hand. The Loupe reaches cogs, too.', 4000);
+        }
+      }
+    }
+  }
+
   // ------------------------------------------------------------------ per-frame
   updatePlay(dt) {
     const s = this.state, f = s.flags;
@@ -332,6 +347,7 @@ export class SaltwickGame extends Game {
     // with the Loupe, what the lens shows can be touched
     this.reachEra = peeking && f.hasReach ? this.peekTarget : null;
     if (peeking) this.findCogs(dt);
+    if (this.reachEra !== null) this.reachCogs();
 
     // the pocketwatch (it moves the player itself while it's running them backward), and the gates
     this.craft.update(dt, ctl);
@@ -365,6 +381,10 @@ export class SaltwickGame extends Game {
       }
     } else this.hud.showPrompt(near ? (near.prompt ? near.prompt() : 'Interact') : null);
     const target = reach || near;
+    if (reach instanceof NPC && input.hit('interact') && !f.lensTalkHint) {
+      f.lensTalkHint = true;
+      setTimeout(() => this.hud.toast("They can hear you, but they can't see you. This being Saltwick, nobody seems very surprised.", 5000), 300);
+    }
     if (target && input.hit('interact')) {
       if (target.spec.gate) this.craft.pull(target.spec.gate); // levers and panels: no words, just the clunk
       else this.use(target);

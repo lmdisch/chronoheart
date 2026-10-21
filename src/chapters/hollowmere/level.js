@@ -1256,9 +1256,16 @@ function smithy(world) {
   b.glow(107.8, 3.75, 0.08, 5.6, 0.6, 0.02, 0xd8a040);
   // rod rack
   b.deco(113.9, 0, 0.0, 1.2, 1.4, 0.2, C.wood[1]);
-  // quench vault
+  // quench vault: a riveted iron box, its hatch wheel on the front and a steam pipe on top
   b.solid(112, 0, 0, 112, 0, 0, jitter([0x4a4a52, 0x55555e]));
-  b.deco(111.9, 0.95, -0.05, 1.2, 0.12, 1.1, 0x2a2a30);
+  b.deco(111.8, 0, -0.1, 1.4, 1.1, 1.2, 0x44444c);
+  b.deco(111.75, 1.1, -0.15, 1.5, 0.14, 1.3, 0x2a2a30); // the lid
+  for (const y of [0.25, 0.8]) b.deco(111.76, y, -0.12, 1.48, 0.08, 1.24, 0x5c5c66); // iron bands
+  b.deco(112.3, 0.38, 1.1, 0.4, 0.4, 0.06, 0x7a6a50); // the hatch wheel
+  b.glow(112.44, 0.52, 1.17, 0.12, 0.12, 0.02, 0xff8a3a);
+  b.deco(112.95, 1.24, 0.25, 0.16, 0.7, 0.16, 0x3a3a42); // steam pipe
+  b.deco(111.7, 1.9, 0.95, 1.6, 0.42, 0.06, 0x3a2614); // its sign
+  b.glow(111.9, 2.04, 1.02, 1.2, 0.06, 0.02, 0x8a6020); // (its lettering)
   filler(b, M, 116, 129, 61);
   // PAST: carver's yard
   b = world.staticBuilder(P);
@@ -2158,11 +2165,11 @@ export const SPAWNS = [
   { type: 'interact', id: 'glyphP', era: P, x: 136.5, y: 0, z: 0.5, prompt: 'Reset glyph', resets: 'block' },
   { type: 'interact', id: 'glyphF', era: F, x: 136.5, y: 0, z: 0.5, prompt: 'Reset beacon', resets: 'crate' },
   { type: 'interact', id: 'sluice', era: M, x: L.rimX + 0.5, y: 3, z: 5.6, prompt: 'Sluice gate' },
-  { type: 'interact', id: 'satchel', era: M, x: 208.5, y: 0, z: 0.6, prompt: "Donald Eugene's satchel", icon: 'satchel', goneFlag: 'hasSeal' },
+  { type: 'interact', id: 'satchel', era: M, x: 208.5, y: 0, z: 0.6, prompt: "Donald Eugene's strongbox", visual: 'chest', openFlag: 'satchelOpen', icon: 'stasisRing', goneFlag: 'hasSeal' },
   { type: 'interact', id: 'studyDoor', era: P, x: STUDY.door - 0.4, y: 0, z: 0.1, prompt: 'Knock', reach: 0.95 },
   { type: 'interact', id: 'everspring', era: P, x: STUDY.x1 - 1.5, y: 1, z: -2.4, prompt: "Donald Eugene's workbench", icon: 'everspring', goneFlag: 'steadyHeart' },
-  { type: 'interact', id: 'echoLens', era: M, x: 230.5, y: 1, z: 0.5, prompt: "Donald Eugene's lectern", icon: 'lens', goneFlag: 'hasEcho' },
-  { type: 'interact', id: 'tempoGift', era: M, x: L.yardX0 + 3.6, y: 0, z: 0.7, prompt: "Donald Eugene's toolbox", icon: 'escapement', goneFlag: 'hasTempo' },
+  { type: 'interact', id: 'echoLens', era: M, x: 230.5, y: 1, z: 0.5, prompt: "Donald Eugene's lens case", visual: 'chest', openFlag: 'lecternOpen', icon: 'lens', goneFlag: 'hasEcho' },
+  { type: 'interact', id: 'tempoGift', era: M, x: L.yardX0 + 3.6, y: 0, z: 0.7, prompt: "Donald Eugene's toolbox", visual: 'chest', openFlag: 'toolboxOpen', icon: 'escapement', goneFlag: 'hasTempo' },
   // what the valley remembers of her (see legacies())
   { type: 'interact', id: 'statueM', era: M, x: STATUE.x, y: 0, z: STATUE.z + 0.7, prompt: 'Old statue', needs: 'chartReturned' },
   { type: 'interact', id: 'statueF', era: F, x: STATUE.xF, y: 0, z: STATUE.z + 0.7, prompt: 'Museum exhibit', needs: 'chartReturned' },

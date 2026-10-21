@@ -111,7 +111,8 @@ export function currentGoal(game) {
       if (!f.noonRung) return step('Ring the Noon Bell.', `It hangs in its frame on top of Bell Rock. Three good swings of your wrench (${k.attack}).`);
       return step('Keep heading east.', 'Steps lead down the far side of Bell Rock.');
     }
-    if (!f.hasRewind) return step('Find a way out to Bell Rock.', 'The stranger in the shawl is waiting at the head of the pier. She has something for the Chronoheart.');
+    if (!f.hasRewind && f.hairspringHint) return step('Open Donald Eugene\'s sea-chest.', 'It sits by the bollard at the head of the pier, padlocked, of course. Your lock pick will see to that.');
+    if (!f.hasRewind) return step('Find a way out to Bell Rock.', 'The stranger in the shawl is waiting at the head of the pier. She knows of something for the Chronoheart.');
     if (!f.tideGatePassed) {
       return step(
         'Get through the tide gate.',

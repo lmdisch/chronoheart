@@ -320,7 +320,6 @@ export class Powers {
         audio.sfx('gate');
         g.renderer.shake = 0.4;
         if (s.id === 'clockworks') g.hud.toast('All three plates at once: the clockworks door grinds open, for good.', 4500);
-        else if (s.id === 'orinShield') g.onOrinPhase2Done?.();
         g.save();
       }
       const open = this.gateHeld(gt) || held;

@@ -249,7 +249,7 @@ export const L = {
  * Standing height `y`; its floor runs x0..x1, z0..z1. His throne is against the east wall, so
  * there is no getting behind him. The same in every age (the Lantern still works in here).
  */
-export const ARENA = { x0: 34, x1: 66, y: 86, z0: -3, z1: 3, startX: 37.5, daisX: 61, throneX: 65, orinX: 63.5, anchorX: 51.5, platesX: 44.5, shieldX: 59 };
+export const ARENA = { x0: 34, x1: 66, y: 86, z0: -3, z1: 3, startX: 37.5, daisX: 61, throneX: 65, orinX: 63.5 };
 export const inArena = (x, y, z) => x >= ARENA.x0 - 1 && x <= ARENA.x1 + 2 && y > ARENA.y - 6 && z >= ARENA.z0 - 1 && z <= ARENA.z1 + 1;
 
 /** Where Christopher's frost holds the ages still: no shifting inside, only the Lantern. */
@@ -303,13 +303,10 @@ export const PLATES = [
     ...(i === 2 ? { requiresAge: P } : {}),
   })),
   { id: 'plateD', x: L.plateDX, y: gy(3, L.plateDX), z: Z3 + 1, gate: 'gateD', color: 0xffd08a },
-  { id: 'orinPlate0', x: ARENA.platesX, y: ARENA.y, z: ARENA.z0 + 0, gate: 'orinShield', color: 0x6ce2ff, needs: 'orinPhase1' },
-  { id: 'orinPlate1', x: ARENA.platesX, y: ARENA.y, z: ARENA.z1 - 1, gate: 'orinShield', color: 0x6ce2ff, needs: 'orinPhase1' },
 ];
 export const GATES = [
   { id: 'clockworks', x: L.doorX, y: gy(3, L.doorX), z0: Z3, z1: Z3 + 6, eras: [P, M, F], openFlag: 'clockworksOpen', color: 0x7affc8, dir: -1 },
   { id: 'gateD', x: L.gateDX, y: gy(3, L.gateDX), z0: Z3, z1: Z3 + 6, eras: [P, M, F], passFlag: 'gateDPassed', color: 0xffd08a, dir: -1 },
-  { id: 'orinShield', x: ARENA.shieldX, y: ARENA.y, z0: ARENA.z0, z1: ARENA.z1, eras: [P, M, F], openFlag: 'orinPhase2', color: 0x6ce2ff, dir: -1 },
 ];
 
 /** Things that turn: the orrery's rings, the lighthouse beam far below. Spun each frame by the game. */
@@ -862,7 +859,6 @@ export const SPAWNS = [
   { type: 'npc', id: 'youngChristopher', era: M, ...on(5, U(69.6), 2.4), sheet: 'christopherYoung', name: 'Orin (Memory)', needs: 'christopherMet', unless: 'hoursReturned', memory: true },
   { type: 'npc', id: 'youngDon', era: M, ...on(5, U(66.4), 2.4), sheet: 'eugeneYoung', name: 'Don (Memory)', needs: 'christopherMet', unless: 'hoursReturned', memory: true },
   // Donald Eugene, on his throne at the End of Time while the fight is on (see SummitGame.placeOrin)
-  { type: 'npc', id: 'christopher', era: M, ...on(5, L.christopherX, 2.2), sheet: 'eugeneWinter', name: 'Donald Eugene', needs: 'summitTalk', unless: 'hoursReturned', reach: 2.4, noSeal: true },
   // and afterward, by Lyra's cup at the foot of the Needle, with Orin
   { type: 'npc', id: 'eugene', era: M, ...on(5, U(23.7), 3.6), sheet: 'eugeneWinter', name: 'Donald Eugene', needs: 'hoursReturned', noSeal: true },
   { type: 'npc', id: 'orinEnd', era: M, ...on(5, U(21.1), 3.6), sheet: 'orinOld', name: 'Orin', needs: 'hoursReturned' },
@@ -877,14 +873,13 @@ export const SPAWNS = [
   { type: 'strike', id: 'cwChime', era: M, ...on(3, U(44.5), 4.8), hits: 3, flag: 'cwChimeRung', prompt: 'Strike the Clockworks resonance chime', visual: 'chime', color: 0xffd070, freq: 392, hx: 1.2, hz: 1.4 },
   { type: 'strike', id: 'thermalLever', era: P, ...on(4, U(50.5), 1.6), hits: 3, flag: 'springOpened', prompt: 'Shatter the frozen thermal sluice', visual: 'ice', color: 0x7be0ff, hx: 1.3, hz: 1.4 },
   { type: 'strike', id: 'orreryChime', era: M, ...on(5, U(73.5), 2.2), hits: 3, flag: 'orreryChimeRung', prompt: 'Ring the Orrery alignment chime', visual: 'chime', color: 0xffe08a, freq: 523, hx: 1.2, hz: 1.4 },
-  { type: 'strike', id: 'orinAnchor', era: M, x: ARENA.anchorX, y: ARENA.y, z: ARENA.z0 + 0.6, hits: 3, flag: 'orinPhase1', needs: 'summitTalk', prompt: 'Strike the Anchor-Clock', visual: 'ice', color: 0x6ce2ff, hx: 1.4, hz: 1.5 },
   // things to look at, and use
   { type: 'interact', id: 'lookoutLamp', era: M, ...on(1, L.lampX + 0.5, 5.4), prompt: 'The lookout lamp' },
   { type: 'interact', id: 'statue', era: M, ...on(2, L.statueX + 0.5, 0.5), prompt: 'The statue' },
   { type: 'interact', id: 'statueF', era: F, ...on(2, L.statueX + 0.5, 0.5), prompt: 'The statue' },
   { type: 'interact', id: 'frostWall', era: M, ...on(5, L.frostWallX + 1.5, 3.5), prompt: 'The frozen doors', unless: 'hoursReturned' },
   { type: 'interact', id: 'starBooks', era: M, ...on(5, U(80.5), 0.6), prompt: "Tobin's star-books" },
-  { type: 'interact', id: 'notebooks', era: M, ...on(5, U(83), 0.8), prompt: "Donald Eugene's notebooks" },
+  { type: 'interact', id: 'notebooks', era: M, ...on(5, U(83), 0.8), prompt: "Donald Eugene's strongbox", visual: 'chest', openFlag: 'notebookChestOpen' },
   { type: 'interact', id: 'shimmer', era: M, ...on(5, L.christopherX, 2.2), prompt: 'The shimmer', visual: 'shimmer', needs: 'christopherMet', hideIf: 'hoursReturned' },
   { type: 'interact', id: 'needle', era: M, x: L.needle.x + 0.5, y: gy(5, L.needle.x), z: L.needle.z + 1.6, prompt: 'The Needle' },
   { type: 'interact', id: 'lyraCup', era: M, ...on(5, U(22.4), 3.2), prompt: 'The cup', visual: 'cup', needs: 'lyraAtRest' },

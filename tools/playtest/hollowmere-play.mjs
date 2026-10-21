@@ -162,7 +162,7 @@ await check('swim the millpond and climb out (clean water, no harm done)', (s) =
 // ---- Tamsin's Crossing: the Stasis Seal (Present), cable (Future), Tamsin's bridge (Past)
 await tp(208.5, 0, 1.6, M); await sleep(200);
 await interactNow();
-await check("the Stasis Seal, from Donald Eugene's satchel", (s) => s.f.hasSeal);
+await check("the Stasis ring, from Donald Eugene's strongbox (lock picked)", (s) => s.f.hasSeal && s.f.satchelOpen);
 await tp(209.0, 0, 5.2, F); await sleep(200);
 await walkTo(210.5, 5.2, { t: 3000 });
 await check('the steel cable', (s) => s.inv.includes('cable'));
@@ -171,7 +171,7 @@ await interactNow();
 await check('Tamsin builds the bridge', (s) => s.f.bridgeBuilt);
 await walkTo(215.5, 3.5, { t: 3000 });
 await check('the bridge can be sealed (it glows white)', async () => !!(await G(() => window.__game.abilities.sealTarget())));
-await tap('KeyR');
+await down('KeyX'); await sleep(700); await up('KeyX'); // (a Stasis wave from the wrench)
 await settle();
 await check('the bridge sealed in its moment', (s) => s.f.bridgeSealed);
 await tp(214.5, 0, 3.5, F); await sleep(200);
@@ -273,7 +273,7 @@ await interactNow();
 await check('the Bell Hammer in the great bell', async () => !!(await G(() => window.__game.state.sockets.socketBell)));
 await walkTo(297.0, 1.0, { t: 2000 });
 await check('the belfry floor can be sealed (it glows white)', async () => !!(await G(() => window.__game.abilities.sealTarget())));
-await tap('KeyR'); await settle();
+await down('KeyX'); await sleep(700); await up('KeyX'); await settle();
 await check('the belfry floor sealed', (s) => s.f.belfrySealed);
 await shift('KeyE');
 await walkTo(302.0, 1.0, { jump: true, t: 6000 });

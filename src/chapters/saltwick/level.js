@@ -1233,6 +1233,7 @@ export const SPAWNS = [
   { type: 'npc', id: 'digby', era: F, x: 12.5, z: 2.0, sheet: 'digby', name: 'DIGBY (Salvage Unit)' },
   { type: 'npc', id: 'pell', era: M, x: 36.8, z: 1.7, sheet: 'pell', name: 'Dr. Pell' },
   { type: 'npc', id: 'michelle', era: M, x: 67.5, z: 1.6, sheet: 'michelle', name: 'Mysterious Stranger', stranger: true },
+  { type: 'interact', id: 'seaChest', era: M, x: 70.5, y: 0, z: 0.6, prompt: "Donald Eugene's sea-chest", visual: 'chest', openFlag: 'seaChestOpen', icon: 'hairspring', goneFlag: 'hasRewind' },
   { type: 'npc', id: 'odalys', era: M, x: 145.5, z: 4.4, sheet: 'odalys', name: 'Odalys the Lightkeeper' },
   { type: 'npc', id: 'fenwick', era: M, x: 176.5, z: 1.6, sheet: 'fenwick', name: 'Old Fenwick' },
   { type: 'npc', id: 'maren', era: P, x: 252.5, y: HT, z: 1.8, sheet: 'maren', name: 'Maren the Tide-Reader' },

@@ -77,10 +77,13 @@ await down('ShiftLeft'); await down(K.right); await sleep(120); await tap('Space
 await walkTo(45.5, 2.5, { t: 3000 });
 await check('nets taken', (s) => s.inv.includes('nets'));
 
-// --- Lyra teaches Rewind
+// --- Lyra knows where he keeps the hairspring: his sea-chest, locked
 await tp(66.6, 0, 1.8, 1); await sleep(200);
 await interactNow();
-await check('has Rewind', (s) => s.f.hasRewind);
+await check('the stranger points to his sea-chest', (s) => s.f.hairspringHint && !s.f.hasRewind);
+await tp(70.5, 0, 1.4, 1); await sleep(200);
+await interactNow();
+await check("has Rewind (the hairspring, from his sea-chest, lock picked)", (s) => s.f.hasRewind && s.f.seaChestOpen);
 
 // --- the tide gate, honestly: gate -> off the deck -> lever -> rewind -> through
 await tp(70.5, 0, 1.5, 1); await sleep(200);

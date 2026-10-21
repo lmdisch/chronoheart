@@ -1,7 +1,6 @@
 // Chapter Three, Highcrest: the Lantern and the Echo, the frost (Donald Eugene's seals), the
-// shimmer at the Needle, the fight at the End of Time, and the night after. Everything every
-// chapter shares is in src/game.js. (Some names here are older than the story: 'christopher' is
-// Donald Eugene on his throne, and the 'orin' phases are the fight against him.)
+// shimmer at the Needle, the fight at the End of Time (see duel.js), and the night after.
+// Everything every chapter shares is in src/game.js.
 import * as THREE from 'three';
 import { input } from '../../core/input.js';
 import { ERA } from '../../core/util.js';
@@ -9,16 +8,17 @@ import { audio } from '../../audio/audio.js';
 import { ATMOS } from '../../render/renderer.js';
 import { GRADES } from '../../render/post.js';
 import { Actor } from '../../render/actors.js';
-import { NPC } from '../../world/entities.js';
+import { NPC, crystal } from '../../world/entities.js';
 import { setFade, letterbox } from '../../ui/ui.js';
 import { touchActive } from '../../ui/touch.js';
 import { Game, baseState, wait } from '../../game.js';
 import { progress } from '../../chapter.js';
 import theme, { ATMOS_GOLDEN, ATMOS_STOPPED, ATMOS_NIGHT, ATMOS_WAKING, GRADE_GOLDEN, GRADE_STOPPED, GRADE_NIGHT, GRADE_WAKING } from './theme.js';
 import { buildLevel, SPAWNS, CHECKPOINTS, AREAS, L, COG_TOTAL, SPINNERS, inFrost, tierAt, gy, zb, ARENA, inArena } from './level.js';
-import { talk, interact, struck, runCommand, ITEMS, INTRO, FAVORS, MEET, MEMORY, RELEASE, summitLines, ARRIVE, REUNION, AFTER, COGS_ENDING, VIEW, GONE, SQUIRRELS } from './story.js';
+import { talk, interact, struck, runCommand, ITEMS, INTRO, FAVORS, MEET, MEMORY, RELEASE, summitLines, ARRIVE, REUNION, AFTER, COGS_ENDING, VIEW, GONE, SQUIRRELS, PHASE_TWO, DEFEAT } from './story.js';
 import { currentGoal } from './objectives.js';
 import { Powers } from './powers.js';
+import { Duel } from './duel.js';
 
 const M = ERA.PRESENT, F = ERA.FUTURE;
 
@@ -50,15 +50,19 @@ export class SummitGame extends Game {
   }
   migrate() {
     for (const it of this.carried()) if (!this.state.inventory.includes(it)) this.state.inventory.push(it);
+    // a save from the old fight at the End of Time (an Anchor-Clock, and lock plates): the same phase of this one
+    const f = this.state.flags;
+    if (!f.duelPhase && (f.orinPhase1 || f.orinPhase2)) f.duelPhase = f.orinPhase2 ? 3 : 2;
   }
   setup() {
     this.lensPref = F;
     this.powers = new Powers(this);
+    this.duel = new Duel(this);
   }
   attach() {
     this.powers.attach();
+    this.duel.attach();
     this.inArenaMood = false;
-    this.placeOrin();
     this.hallSquirrels = null;
     this.placeSquirrels();
     // the statue of the Founder, on the terrace (in stone; and frosted, in the Stopped Age)
@@ -71,49 +75,10 @@ export class SummitGame extends Game {
       this.world.groups[era].add(a.mesh);
       return a;
     });
-    this.setupOrinBossMeshes();
   }
   syncBody() {
     this.powers.syncBody();
   }
-  /** Visuals for the three phases of the fight at the End of Time. */
-  setupOrinBossMeshes() {
-    if (this.bossGroup) this.scene.remove(this.bossGroup);
-    this.bossGroup = new THREE.Group();
-    const A = ARENA, ny = A.y, cz = (A.z0 + A.z1 + 1) / 2;
-    // a ring of frost turning round Donald Eugene on his throne, until his locks are broken
-    this.bossRing = new THREE.Mesh(
-      new THREE.TorusGeometry(1.6, 0.09, 10, 36),
-      new THREE.MeshBasicMaterial({ color: 0x6ce2ff, transparent: true, opacity: 0.75 }),
-    );
-    this.bossRing.rotation.x = Math.PI / 2;
-    this.bossRing.position.set(A.orinX, ny + 2.35, cz);
-    // Phase 1: waves of frost, rolling off the dais and down the hall
-    this.frostWave = new THREE.Mesh(
-      new THREE.BoxGeometry(0.45, 1.35, A.z1 - A.z0 + 1),
-      new THREE.MeshBasicMaterial({ color: 0x8ae8ff, transparent: true, opacity: 0.65 }),
-    );
-    this.frostWaveX = A.shieldX - 0.5;
-    this.frostWave.position.set(this.frostWaveX, ny + 0.68, cz);
-    // Phase 2: the shadow of a gnomon, sweeping round between the two Frost-Lock plates
-    this.gnomonPivot = new THREE.Group();
-    this.gnomonPivot.position.set(A.platesX + 0.5, ny + 0.32, cz);
-    const beam = new THREE.Mesh(
-      new THREE.BoxGeometry(7.2, 0.18, 0.28),
-      new THREE.MeshBasicMaterial({ color: 0x6ce2ff, transparent: true, opacity: 0.8 }),
-    );
-    this.gnomonPivot.add(beam);
-    this.bossGroup.add(this.bossRing, this.frostWave, this.gnomonPivot);
-    this.scene.add(this.bossGroup);
-  }
-  startOrinBoss() {
-    this.frostWaveX = ARENA.shieldX - 0.5;
-    this.hud.toast(
-      `<b>Phase 1/3:</b> Waves of rewritten time roll down the hall. Light the <b>Lantern</b> (${key('R', 'Lantern')}) on the <b>First Age</b>: its old light carries you through them (or jump them). Then strike the <b>Anchor-Clock</b> three times (${key('X', 'Attack')})!`,
-      7000,
-    );
-  }
-
   /** Through the shimmer at the Needle, to the End of Time (see ARENA). first: the first time, with words. */
   async enterArena(first) {
     const f = this.state.flags;
@@ -130,12 +95,14 @@ export class SummitGame extends Game {
     this.player.facing = 1;
     this.state.checkpoint = 6;
     this.arenaMood(true);
-    this.placeOrin();
+    this.duel.start();
     setFade(0);
     this.mode = 'play';
     if (first) {
       await this.cutscene(ARRIVE);
-      this.startOrinBoss();
+      this.duel.showBar(false);
+      this.hud.showBanner('Donald Eugene', M, 'Emperor at the End of Time');
+      setTimeout(() => this.duel.on && this.duel.showBar(true), 3300);
     }
     this.lockT = 0.3;
     this.save();
@@ -161,35 +128,49 @@ export class SummitGame extends Game {
     for (const f of this.world.features) if (f.id !== 'endOfTime') for (const ms of f.meshes) for (const m of ms || []) m.visible = !on;
   }
 
-  /** Donald Eugene: on his throne at the End of Time while the fight is on. */
-  placeOrin() {
-    const o = this.npcs.find((n) => n.id === 'christopher'), f = this.state.flags;
-    if (!o) return;
-    const fight = f.summitTalk && !f.hoursReturned;
-    o.x = fight ? ARENA.orinX : o.spec.x;
-    o.y = fight ? ARENA.y + 2 : o.spec.y;
-    o.z = fight ? (ARENA.z0 + ARENA.z1 + 1) / 2 : o.spec.z;
+  // ------------------------------------------------------------------ the fight (see duel.js)
+  /** A phase of the fight is over: a word from him, and on to the next. */
+  async duelPhaseDone(phase) {
+    this.save();
+    if (phase === 1) await this.cutscene(PHASE_TWO);
+    else {
+      this.duel.nextPhase(); // (phase three: the squirrels flicker in as he says it)
+      this.placeSquirrels();
+      await this.cutscene(SQUIRRELS);
+      this.hud.toast(`He is rubbing out Zach and Megan, and drawing on it: his guard holds while he does. Hold them in their moment: the <b>Stasis ring</b>, hold ${key('X', 'Attack')} and let go.`, 8000);
+      return;
+    }
+    this.duel.nextPhase();
   }
-  onOrinPhase1Done() {
-    this.hud.toast(
-      `<b>Phase 2/3: the Anchor-Clock is broken!</b> Record an <b>Echo</b> (${key('V', 'Echo')}) on one of his blue lock plates and stand on the other yourself, jumping the gnomon's sweeping shadow!`,
-      7500,
-    );
-  }
-  async onOrinPhase2Done() {
-    this.bursts.emit(ARENA.orinX, ARENA.y + 2.2, (ARENA.z0 + ARENA.z1 + 1) / 2, 45, { color: [0x6ce2ff, 0xffe08a, 0xffffff], speed: 4.5, life: 0.9 });
-    this.placeSquirrels();
-    await this.cutscene(SQUIRRELS);
-    this.hud.toast(
-      `<b>Phase 3/3:</b> He is rewriting Zach and Megan! Hold them in their moment with a <b>Stasis wave</b>: hold ${key('X', 'Attack')}, then let go. Then hold <b>him</b>.`,
-      8000,
-    );
+
+  /** Beaten: she tells him what she knows, and then she holds him still. */
+  async duelWon() {
+    const f = this.state.flags;
+    this.mode = 'dialogue';
+    this.hud.showPrompt(null);
+    f.duelWon = true;
+    this.save();
+    await wait(900);
+    letterbox(true);
+    await this.dialogue.run(DEFEAT);
+    // the old reflex: his hand comes up to rewrite the hall, and her wave gets there first
+    const d = this.duel, b = this.player.body;
+    this.player.facing = Math.sign(d.x - b.x) || 1;
+    this.kit.equip('seal', true);
+    this.kit.launchRing(b.x, b.y + 0.9, b.z, this.player.facing, { x: d.x, y: d.y, z: (ARENA.z0 + ARENA.z1 + 1) / 2 });
+    audio.sfx('shift', { era: M });
+    await wait(320);
+    audio.sfx('socket');
+    d.stun(1e6);
+    await wait(700);
+    letterbox(false);
+    await this.runFinale();
   }
 
   /** Zach and Megan, flickering by the door as he rubs them out (phase three). */
   placeSquirrels() {
     const f = this.state.flags;
-    if (!f.orinPhase2 || f.hoursReturned || this.hallSquirrels) return;
+    if ((f.duelPhase || 1) < 3 || !f.summitTalk || f.hoursReturned || this.hallSquirrels) return;
     const cz = (ARENA.z0 + ARENA.z1 + 1) / 2;
     this.hallSquirrels = [['zachHall', 'zachWinter', 'Zach Tiberious', 'zachHeld', 0.8], ['meganHall', 'meganWinter', 'Megan the Squirrel', 'meganHeld', -0.9]].map(([id, sheet, name, flag, dz]) => {
       const n = new NPC(this, { type: 'npc', id, era: M, x: ARENA.startX + 3 + (dz > 0 ? 0 : 1.2), y: ARENA.y, z: cz + dz, sheet, name, small: true, noSeal: true });
@@ -201,31 +182,53 @@ export class SummitGame extends Game {
     });
   }
 
-  /** What a Stasis wave can hold here, beyond the usual (see src/kit.js): the squirrels, and then him. */
-  sealTargets() {
-    const f = this.state.flags, b = this.player.body;
-    if (!f.orinPhase2 || f.hoursReturned || !inArena(b.x, b.y, b.z) || this.mode !== 'play') return [];
-    const left = (this.hallSquirrels || []).filter((n) => !f[n.flag]);
-    if (left.length) {
-      return left.map((n) => ({
-        x: n.x, y: n.y, z: n.z, name: n.spec.name,
-        seal: () => {
-          f[n.flag] = true;
-          n.stasis(1e6);
-          this.save();
-          const still = (this.hallSquirrels || []).filter((q) => !f[q.flag]).length;
-          this.hud.toast(still ? `${n.spec.name} is held in the moment: his rewrites slide right off. One more!` : 'Both held! His rewrites slide right off them. Now hold <b>him</b>.', 4500);
-        },
-      }));
-    }
-    const don = this.npcs.find((n) => n.id === 'christopher');
-    return don ? [{ x: don.x, y: don.y - 2, z: don.z, name: 'Donald Eugene', seal: () => { don.stasis(1e6); this.runFinale(); } }] : [];
+  /** The squirrels he is rubbing out, for a Stasis wave to hold (see Duel.targets). */
+  squirrelTargets() {
+    const f = this.state.flags;
+    return (this.hallSquirrels || []).filter((n) => !f[n.flag]).map((n) => ({
+      x: n.x, y: n.y, z: n.z, name: n.spec.name, actor: n.actor,
+      hit: () => {
+        f[n.flag] = true;
+        n.stasis(1e6);
+        this.save();
+        const still = (this.hallSquirrels || []).filter((q) => !f[q.flag]).length;
+        this.hud.toast(still ? `${n.spec.name} is held in the moment: his rewrites slide right off. One more!` : "Both held! His rewrites slide right off them, and he can't draw on them any more. His guard is only a guard again.", 5000);
+      },
+    }));
   }
 
-  /** At the End of Time, once his locks are broken, the wave is always on her wrench. */
-  forceWave() {
-    const f = this.state.flags, b = this.player.body;
-    return !!(f.orinPhase2 && !f.hoursReturned && inArena(b.x, b.y, b.z));
+  /** What a wave from the wrench can reach here, beyond the usual (see src/kit.js). */
+  waveTargets(part) {
+    return this.duel.targets(part);
+  }
+
+  /** At the End of Time, every part she has ever had is on her wrench (in case she never fitted one). */
+  forceParts() {
+    return !!this.duel?.on && !this.state?.flags.hoursReturned;
+  }
+
+  /** Frozen by one of his rings: no moving until it lets go. */
+  controlsEnabled() {
+    return super.controlsEnabled() && !(this.duel?.frozenT > 0);
+  }
+
+  /** The wrench, swung at him. */
+  onAttack(x, y, z) {
+    this.duel.meleeHit(x, y, z);
+  }
+
+  /** Back up after a fall at the End of Time: the phase starts again (and the squirrels need holding again). */
+  revive() {
+    if (!this.duel.on || this.state.flags.hoursReturned) return;
+    const f = this.state.flags;
+    if (this.duel.phase === 3) {
+      f.zachHeld = f.meganHeld = false;
+      for (const n of this.hallSquirrels || []) {
+        n.stasisT = 0;
+        crystal(n.actor, false);
+      }
+    }
+    this.duel.reset();
   }
 
   /** The shimmer at the foot of the Needle: through it, the first time with words. */
@@ -410,9 +413,9 @@ export class SummitGame extends Game {
     for (const n of this.hallSquirrels || []) n.remove();
     this.npcs = this.npcs.filter((n) => !(this.hallSquirrels || []).includes(n));
     this.hallSquirrels = null;
+    this.duel.stop();
     this.arenaMood(false);
     f.hoursReturned = true;
-    this.placeOrin();
     this.player.place(L.OX + 26, gy(5, L.OX + 26), zb(5) + 3.5);
     setFade(0);
     // the Lantern goes out; his seals let go; the golden evening ends
@@ -473,59 +476,6 @@ export class SummitGame extends Game {
     return !!m && Math.abs(b.x - m.x - 0.7) < 2.5;
   }
 
-  /** Step the three phases of the fight at the End of Time. */
-  updateOrinBoss(dt, ctl) {
-    const f = this.state.flags, b = this.player.body;
-    const active = f.summitTalk && !f.hoursReturned && inArena(b.x, b.y, b.z);
-    if (!this.bossGroup) return;
-    this.bossRing.visible = active && !f.orinPhase2;
-    this.frostWave.visible = active && !f.orinPhase1;
-    this.gnomonPivot.visible = active && !!f.orinPhase1 && !f.orinPhase2;
-    if (!active) return;
-
-    const ny = ARENA.y;
-    this.bossRing.rotation.z += dt * 1.4;
-
-    // Phase 1: waves of frost roll off the dais and down the hall, one after another
-    if (!f.orinPhase1) {
-      this.frostWaveX -= dt * 5.2;
-      if (this.frostWaveX < ARENA.x0 + 0.5) this.frostWaveX = ARENA.shieldX - 0.5;
-      this.frostWave.position.x = this.frostWaveX;
-      if (ctl && Math.abs(b.x - this.frostWaveX) < 0.65 && b.y < ny + 1.3) {
-        const shielded = this.powers.lit && this.powers.age === ERA.PAST;
-        if (shielded) {
-          if (Math.random() < dt * 15) {
-            this.bursts.emit(this.frostWaveX, b.y + 0.8, b.z, 4, { color: [0xffb84a, 0x9fe8ff], speed: 2, life: 0.4 });
-          }
-        } else {
-          this.player.hurt(1, this.frostWaveX + 1);
-          if (!f.waveHint) {
-            f.waveHint = true;
-            this.hud.toast(`<b>Frost Wave!</b> Light your <b>Lantern</b> (${key('R', 'Lantern')}) on the <b>First Age</b> to walk right through it!`, 5500);
-          }
-        }
-      }
-    }
-
-    // Phase 2: Sweeping Gnomon Shadow-Beam between the two Frost-Lock plates
-    if (f.orinPhase1 && !f.orinPhase2) {
-      this.gnomonPivot.rotation.y += dt * 1.65;
-      if (ctl && b.y < ny + 0.45) {
-        const dx = b.x - this.gnomonPivot.position.x;
-        const dz = b.z - this.gnomonPivot.position.z;
-        const dist = Math.hypot(dx, dz);
-        if (dist < 3.6 && dist > 0.3) {
-          const ang = -this.gnomonPivot.rotation.y;
-          const rx = dx * Math.cos(ang) - dz * Math.sin(ang);
-          const rz = dx * Math.sin(ang) + dz * Math.cos(ang);
-          if (Math.abs(rx) < 3.5 && Math.abs(rz) < 0.32) {
-            this.player.hurt(1, this.gnomonPivot.position.x);
-          }
-        }
-      }
-    }
-  }
-
   // ------------------------------------------------------------------ per-frame
   updatePlay(dt) {
     const s = this.state, f = s.flags;
@@ -555,7 +505,12 @@ export class SummitGame extends Game {
     this.powers.update(dt, ctl && !peeking);
     this.player.update(dt);
     this.updateEntities(dt);
-    this.updateOrinBoss(dt, ctl);
+    // at the End of Time (a save made there, or back up after a fall): the fight is on
+    if (!this.duel.on && f.summitTalk && !f.hoursReturned && inArena(b.x, b.y, b.z) && this.mode === 'play') {
+      this.duel.start();
+      this.placeSquirrels();
+    }
+    this.duel.update(dt, this.controlsEnabled());
     // Zach and Megan, half rubbed out, until a wave holds them
     for (const n of this.hallSquirrels || []) {
       const m = n.actor.mat;

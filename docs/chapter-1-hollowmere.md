@@ -47,9 +47,13 @@ Holding the Chronoheart, you remember how the valley was before any change: your
 
 | Ability | Where | What it does |
 | --- | --- | --- |
-| **Stasis Seal** | Donald Eugene's satchel at Tamsin's Crossing (Present) | Hold something in its moment, so it stays exactly the same in every later age. Things that can be sealed shimmer with pale light; stand beside one and a **Seal** prompt appears. It works on **creatures** too: get right up close to a thornback, a rat or a drone and seal it. It stays frozen in a crystal shell in that age and every later one, and by the Future someone has put up a museum placard beside it. Anything you can seal glows white when you're near. With it on your wrench (Menu → Equipment), **hold `X` and let go** for a Stasis wave: it holds the first thing in front of you, people included (for a few seconds: they never notice, but the valley remembers), and a bowl of figs in the oldest square or Karen Louise's tea becomes a museum exhibit. |
-| **Echo** | Donald Eugene's lectern at the Echo Gallery (Present) | Record up to 5 seconds of your own movement. Your echo replays it on a loop, forever. Present only, up to 3 echoes at once (a 4th replaces the oldest). Stand on an echo and press **Interact** to dispel it. |
-| **Tempo** | Donald Eugene's toolbox at the gate of the Warden's Courtyard (Present) | Slow time around you, or speed it up. On touch, hold **Slow** or **Fast**. On a keyboard, **hold Q** (or `1`/`Z`) to slow and **hold E** (or `2`) to speed up; a quick tap of `Q`/`E` still travels an era. Only the machines within a few blocks feel it; you move as usual. It runs on the Chronoheart's ring, which refills when you let go. |
+| **Stasis ring** (the Stasis Seal) | Donald Eugene's strongbox in the reeds at Tamsin's Crossing (Present) | It fits the head of your wrench. **Hold `X` and let go**: a Stasis wave holds the first thing in front of you in its moment (whatever it will reach glows white first). A bridge or a belfry floor held that way stays exactly the same in every later age. A **creature** held that way stays frozen until something disturbs it: strike it and it **shatters like ice**; leave it, and it waits out the centuries in its crystal shell (by the Future, someone has put up a museum placard). **People** come out of it after a few seconds, none the wiser (a wrench brings them out sooner, and they wonder why their arm hurts). A bowl of figs in the oldest square, or Karen Louise's tea, becomes a museum exhibit. |
+| **Echo** | Donald Eugene's lens case on the Echo Gallery's lectern (Present) | Record up to 5 seconds of your own movement. Your echo replays it on a loop, forever. Present only, up to 3 echoes at once (a 4th replaces the oldest). Stand on an echo and press **Interact** to dispel it. |
+| **Tempo** (the Escapement) | Donald Eugene's toolbox at the gate of the Warden's Courtyard (Present) | Slow time around you, or speed it up. On touch, hold **Slow** or **Fast**. On a keyboard, **hold Q** (or `1`/`Z`) to slow and **hold E** (or `2`) to speed up; a quick tap of `Q`/`E` still travels an era. Only the machines within a few blocks feel it; you move as usual. It runs on the Chronoheart's ring, which refills when you let go. The escape wheel fits your wrench too: with it on (`T`), a wave slows a creature, a Warden or a person to a crawl for a few seconds. |
+
+All three of Donald Eugene's parts are **locked away**: he leaves them for her, and then he padlocks them. Vivienne has her own **lock pick** (she taught herself, her first winter). Picking a lock: a pick sweeps back and forth under the pins; press `X` (or tap) when it's under the gold mark, and that pin sets. A miss costs nothing: the mark just moves.
+
+**The wrench.** The Chronoheart is the power; the wrench is how Vivienne aims it. Each part fits its head, and the head glows its color: plain steel, the **Stasis ring** (pale blue), the **Escapement** (green-gold), and in Chapter Two the **Hairspring** (amber). `T` (or a tap on the wrench under your hearts) changes parts; the Menu shows them too. They all come with you into later chapters.
 
 ---
 
@@ -68,7 +72,8 @@ Holding the Chronoheart, you remember how the valley was before any change: your
 | `F` | Interact: talk to people, use things |
 | `Q` / `E` | Tap: travel one era back / forward. Hold *(once Tempo is learned)*: slow down / speed up time (`1`/`Z` and `2` also trigger Slow / Fast directly) |
 | `Tab` | Time lens: hold to open a window onto another era around you (`Q`/`E` choose which) |
-| `R` | Stasis Seal *(once learned)* |
+| hold `X`, let go | A wave from the part on your wrench *(once you have one)* |
+| `T` | Change the part on your wrench |
 | `V` | Echo: start / stop recording *(once learned)* |
 | `I` | Menu: goal, hint, items, favors |
 | `G` | Open the Menu with the hint showing |
@@ -80,7 +85,7 @@ Holding the Chronoheart, you remember how the valley was before any change: your
 On-screen controls appear automatically on touch screens.
 
 - **Joystick:** touch anywhere on the left half and drag. Push all the way to sprint.
-- **Buttons:** Jump, Attack, Roll, and **Interact** (it only appears when there's someone to talk to or something to use). **Seal** and **Echo** appear once learned; Seal only lights up beside something sealable. **Slow** and **Fast** (hold) appear once you learn Tempo; inside the clock they replace Seal and Echo.
+- **Buttons:** Jump, Attack, Roll, and **Interact** (it only appears when there's someone to talk to or something to use). **Echo** appears once learned. Hold **Attack** and let go for a wave from your wrench; tap the wrench under your hearts to change parts. **Slow** and **Fast** (hold) appear once you learn Tempo; inside the clock they replace Echo.
 - **Swipe** anywhere else: left to travel toward the Future, right toward the Past. Drag slowly to preview first. You can also tap the era names at the top.
 - **Top-right:** Menu, Help and Pause.
 - It plays best in landscape, but portrait works too.
@@ -121,7 +126,7 @@ The road runs west to east. Each area below lists what you need and how to get i
 ### 5. Smithy Lane: the Bell Hammer (Era Key of the Present)
 
 - **Aria the Smith** (Present) gives you the Tower's **cracked bell hammer**. Star-iron needs a lifetime to temper.
-- Seal it in her **quench vault**. A time-lapse shows three hundred years of tempering.
+- Lay it in her **quench vault**: the riveted iron box breathing steam at the end of her forge (it glints while you're carrying the hammer). A time-lapse shows three hundred years of tempering.
 - In the **Future**, Aria's forge is now **Lillian's repair shop**. The finished **Bell Hammer** rests on her display case: pick it up.
 
 ### 6. The Sun Terrace: the Sun Disc (Era Key of the Past)
@@ -148,10 +153,10 @@ The road runs west to east. Each area below lists what you need and how to get i
 ### 9. Tamsin's Crossing
 
 - A gorge with a river far below.
-- **Present:** look in the reeds on this bank for **Donald Eugene's satchel**. It teaches you the **Stasis Seal**.
+- **Present:** look in the reeds on this bank for **Donald Eugene's strongbox**. Pick its lock: inside is the **Stasis ring**, for your wrench.
 - **Past:** **Tamsin the Ropewright** wants to bridge the gorge, but her vine rope always rots.
 - **Future:** a scrapyard on this bank has a spool of **steel cable** (drone nearby). Bring it to Tamsin, and she builds the bridge.
-- The bridge rots away within a century. Stand by it in the **Past** and use the **Stasis Seal**: it now exists, unchanged, in every age.
+- The bridge rots away within a century. Stand by it in the **Past** and send it a **Stasis wave** (hold `X`, let go): it now exists, unchanged, in every age.
 - The far bank is a jungle cliff in the Past and a **city wall** in the Present. Once the bridge has stood for six hundred years, the city's gate stands open onto it: walk straight across in the **Present**. (Before then the gate is barred; in the Future the wall is only rubble.)
 
 ### 10. The Echo Gallery
@@ -190,7 +195,7 @@ The finale is a climb. Each Era Key goes in higher up, in a different age, using
 
 1. **The Sun Disc (Past): wake the Tower.** The Sun pedestal stands on a high ledge just inside the door. Nothing reaches it in the Present or the Future, but in the **Past** an ancient stair still climbs to it. Place the disc and the Tower lurches awake: its great gears begin to turn, and the **piston** gets power.
 2. **The Bell Hammer (Present): ride the piston.** The bell hangs in the belfry, 12 blocks up. Beside it, the great piston rises the moment its **brass button** is pressed: far too soon to run over and board it. Record an **echo** that steps on the button. Then stand on the piston's base while it's down, and your echo sends you up. The piston waits at the top while you're standing on it, so there's no rush to step west onto the belfry. (After each trip it rests a few seconds at the bottom; the button glows when it's ready again.)
-3. **The Fusion Core (Future): seal and climb.** The reactor deck is above the belfry, but only in the **Future**, where the old wooden belfry floor has rotted away. Stand on the belfry in the Present and use the **Stasis Seal**. Then switch to the **Future** and climb the gantry to the reactor.
+3. **The Fusion Core (Future): seal and climb.** The reactor deck is above the belfry, but only in the **Future**, where the old wooden belfry floor has rotted away. Stand on the belfry in the Present and send it a **Stasis wave** (hold `X`, let go). Then switch to the **Future** and climb the gantry to the reactor.
 
 Every key you place makes the Tower lurch, its gears turn faster, and its time-stutter flare.
 

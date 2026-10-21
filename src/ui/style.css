@@ -71,6 +71,44 @@ kbd {
 #cog-compass[hidden] { display: none; }
 #cog-compass .cc-arrow { display: inline-block; color: var(--gold-2); transition: transform 0.25s; }
 #cog-compass.other-age .cc-text b { color: var(--gold-2); }
+/* Donald Eugene's health, at the End of Time (see src/chapters/summit/duel.js) */
+#boss-bar { position: absolute; top: 132px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 4px; pointer-events: none; }
+#boss-bar[hidden] { display: none; }
+.bb-name { font: 700 0.78rem var(--font-title); letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold-2); text-shadow: 0 1px 4px #000; }
+.bb-pips { display: flex; gap: 3px; padding: 4px 6px; border-radius: 8px; background: rgba(10, 6, 18, 0.7); border: 1px solid rgba(255, 216, 117, 0.4); }
+.bb-pips i { width: 14px; height: 12px; border-radius: 2px; background: linear-gradient(#fff0b8, #e0a030); box-shadow: 0 0 6px rgba(255, 200, 90, 0.6); transition: background 0.3s, box-shadow 0.3s; }
+.bb-pips i:nth-child(4n) { margin-right: 4px; }
+.bb-pips i.lost { background: #2e2638; box-shadow: none; }
+#boss-bar.guarded .bb-pips { border-color: rgba(255, 216, 117, 0.9); box-shadow: 0 0 10px rgba(255, 200, 90, 0.5); }
+
+/* picking a lock (see src/ui/lockpick.js) */
+#lockpick { position: absolute; inset: 0; display: grid; place-items: center; z-index: 40; background: rgba(8, 5, 14, 0.45); }
+#lockpick[hidden] { display: none; }
+.lp-panel { width: min(420px, calc(100vw - 32px)); padding: 18px 20px 14px; border-radius: 16px; text-align: center; }
+.lp-title { margin: 0; font: 600 0.72rem var(--font-ui); letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+.lp-name { margin: 4px 0 14px; font: 700 1.15rem var(--font-title, var(--font-ui)); color: var(--gold-2); }
+.lp-pins { display: flex; justify-content: center; gap: 12px; height: 46px; align-items: flex-end; margin-bottom: 10px; }
+.lp-pin { display: block; width: 14px; height: 26px; border-radius: 4px 4px 2px 2px; background: linear-gradient(#8a8a96, #4a4a56); transition: transform 0.18s cubic-bezier(.3, 1.6, .5, 1), background 0.2s; }
+.lp-pin.lp-now { box-shadow: 0 0 0 2px rgba(255, 216, 117, 0.7); }
+.lp-pin.lp-set { transform: translateY(-16px); background: linear-gradient(#ffe8a0, #c98a2a); box-shadow: 0 0 10px rgba(255, 200, 90, 0.7); }
+.lp-track { position: relative; height: 18px; border-radius: 9px; background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.14); overflow: hidden; }
+.lp-zone { position: absolute; top: 0; bottom: 0; background: linear-gradient(90deg, rgba(255, 200, 90, 0.35), rgba(255, 216, 117, 0.8), rgba(255, 200, 90, 0.35)); }
+.lp-track.lp-hot .lp-zone { background: linear-gradient(90deg, rgba(255, 230, 150, 0.6), #fff2c0, rgba(255, 230, 150, 0.6)); }
+.lp-pick { position: absolute; top: -2px; bottom: -2px; width: 4px; margin-left: -2px; background: #f4ecdc; box-shadow: 0 0 8px #fff; border-radius: 2px; }
+.lp-how { margin: 12px 0 8px; font-size: 0.85rem; color: var(--muted); }
+.lp-give { font: 600 0.8rem var(--font-ui); color: var(--muted); background: none; border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+#lockpick.lp-miss .lp-panel { animation: lp-shake 0.28s; }
+#lockpick.lp-open .lp-panel { box-shadow: 0 0 40px rgba(255, 210, 110, 0.55); }
+@keyframes lp-shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+@media (prefers-reduced-motion: reduce) { #lockpick.lp-miss .lp-panel { animation: none; } }
+
+/* the part on the wrench's head (see src/kit.js): tap it, or press T, for the next one */
+#wrench-chip { display: flex; align-items: center; gap: 6px; margin-top: 4px; padding: 2px 8px 2px 4px; font: 600 0.8rem var(--font-ui); color: var(--ink); background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 999px; cursor: pointer; pointer-events: auto; }
+#wrench-chip[hidden] { display: none; }
+#wrench-chip .wc-dot, .kit-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--part); box-shadow: 0 0 8px var(--part); flex: none; }
+.kit-swatch { margin-right: 6px; vertical-align: -1px; }
+#wrench-chip kbd { font-size: 0.7rem; }
+.kit-key { font-weight: 400; font-size: 0.8em; opacity: 0.7; margin-left: 6px; }
 
 #chrono { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 2px; transition: opacity 0.4s, filter 0.4s; }
 #chrono.locked { opacity: 0; transform: translateX(-50%) translateY(-20px); }
@@ -581,7 +619,8 @@ body.touch.in-dialogue #toasts {
 }
 
 /* ---------------- abilities: Stasis Seal & Echo ---------------- */
-body:not(.has-seal) .needs-seal, body:not(.has-echo) .needs-echo { display: none !important; }
+body:not(.has-parts) .needs-parts, body:not(.has-echo) .needs-echo { display: none !important; }
+.tc-seal { display: none !important; } /* (the Stasis Seal is on the wrench now: see src/kit.js) */
 #ability-status {
   position: absolute; left: 50%; top: 150px; transform: translateX(-50%); z-index: 7; pointer-events: none;
   padding: 7px 16px 7px 30px; border-radius: 99px; white-space: nowrap;

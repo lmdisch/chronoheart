@@ -16,6 +16,7 @@ import { HUD, Dialogue, showInventoryPanel, setFade, letterbox } from './ui/ui.j
 import { touchActive } from './ui/touch.js';
 import { chapter, theme, progress, content } from './chapter.js';
 import { Kit } from './kit.js';
+import { pickLock } from './ui/lockpick.js';
 
 export const ERA_RING = theme.eraRing;
 const ERA_COLORS = theme.eraCss;
@@ -49,6 +50,11 @@ export class Game {
    * interact, struck, ITEMS, INTRO, FAVORS, currentGoal }.
    */
   constructor(container, ch) {
+    // Vivienne's own lock pick, in every chapter (see pickLock)
+    ch.ITEMS.lockpick ||= {
+      name: "Vivienne's Lock Pick",
+      desc: 'A bent hairpin and a sliver of watch-spring. She taught herself, her first winter in the workshop: Donald Eugene keeps everything locked.',
+    };
     this.ch = ch;
     this.L = ch.L;
     Object.assign(content, { ITEMS: ch.ITEMS, FAVORS: ch.FAVORS, COG_TOTAL: ch.COG_TOTAL }); // for the shared UI and entities
@@ -220,6 +226,7 @@ export class Game {
   startNew() {
     progress.clearSlot(chapter.id);
     this.state = this.newState();
+    this.packApron();
     this.buildWorld();
     this.beginPlay();
     this.player.place(this.L.start.x, 0, this.L.start.z);
@@ -236,6 +243,7 @@ export class Game {
     if (!saved || !this.canContinue(saved)) return this.startNew();
     this.state = Object.assign(this.newState(), JSON.parse(JSON.stringify(saved)));
     this.migrate();
+    this.packApron();
     this.buildWorld();
     this.beginPlay();
     this.hud.toast(this.welcomeBack());
@@ -461,6 +469,11 @@ export class Game {
       const h = e.cfg ? e.cfg.h : b.h;
       if (Math.abs(b.x - x) < 0.8 + b.hw && Math.abs(b.z - z) < 0.9 && y > b.y - 0.6 && y < b.y + h + 0.6) e.damage(1, facing);
     }
+    // someone a Stasis wave is holding: a wrench brings them straight out of it
+    for (const n of this.npcs) {
+      if (n.active() && n.stasisT > 0 && n.stasisT < 1e5 && Math.abs(n.x - x) < 1 && Math.abs(n.z - z) < 1 && y > n.y - 0.5 && y < n.y + 2) this.kit.struckHeld(n);
+    }
+    this.onAttack?.(x, y, z, facing);
     for (const s of this.strikeables) {
       if (!s.struckAt(x, y, z)) continue;
       // where the lens can be reached through, and is open on its age, the wrench goes through
@@ -549,6 +562,34 @@ export class Game {
     const it = this.ch.ITEMS[item];
     audio.sfx(it.key ? 'key' : 'pickup');
     this.hud.toast(`${it.key ? `${theme.keyBadge}:` : 'Got:'} <b>${it.name}</b>`, 3000);
+  }
+
+  /** What she always has on her: the lock pick. */
+  packApron() {
+    if (!this.state.inventory.includes('lockpick')) this.state.inventory.unshift('lockpick');
+  }
+
+  /**
+   * One of Donald Eugene's locks (see src/ui/lockpick.js), with the lock pick: true once it
+   * gives. He never hands anything over for good, so everything of his she finds is locked.
+   */
+  async pickLock(name, pins = 3) {
+    this.hud.showPrompt(null);
+    const ok = await pickLock({ pins, name, touch: touchActive() });
+    this.lockT = 0.3;
+    if (!ok) this.hud.toast('You can come back to it.', 2500);
+    return ok;
+  }
+
+  /** One of his strongboxes: say what it is, pick it, and remember it's open. True once it is. */
+  async unlockChest(flag, name, pins, lines = []) {
+    const f = this.state.flags;
+    if (f[flag]) return true;
+    if (lines.length) await this.dialogue.run(lines);
+    if (!(await this.pickLock(name, pins))) return false;
+    f[flag] = true;
+    this.save();
+    return true;
   }
 
   removeItem(item) {
@@ -665,9 +706,11 @@ export class Game {
   nearestInteractive(lens = null) {
     const b = this.player.body;
     let best = null, bd = 1.7;
-    const list = lens === null ? [...this.npcs, ...this.interactables] : this.interactables;
+    const list = [...this.npcs, ...this.interactables];
+    // through the lens: things made to be reached that way, and anyone standing in that age
+    const reachable = (e) => e.era === lens && (e instanceof NPC ? e.alive && e.present() && !e.spec.memory : e.spec.lens && e.available());
     for (const e of list) {
-      if (lens === null ? !e.active() || e.spec.lensOnly : !(e.era === lens && e.spec.lens && e.available())) continue;
+      if (lens === null ? !e.active() || e.spec.lensOnly : !reachable(e)) continue;
       const d = e.distTo(b);
       if (d < Math.min(bd, e.spec.reach ?? 1.7)) {
         bd = d;

@@ -205,6 +205,7 @@ export const CREATURES = { thornback: 'thornback', rat: 'rat', drone: 'drone' };
 export class Frozen extends EraEntity {
   constructor(game, rec, era) {
     super(game, { id: 'frozen', era, x: rec.x, y: rec.y, z: rec.z, kind: rec.kind, sealedIn: rec.era, reach: 1.9 });
+    this.rec = rec;
     this.actor = new Actor(rec.kind, ENEMY[rec.kind].size);
     this.actor.flip = rec.flip;
     this.actor.play('walk');

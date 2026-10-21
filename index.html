@@ -22,6 +22,7 @@
           <div id="breath" aria-label="Breath" hidden></div>
           <div class="cogs"><img id="cog-icon" alt="Lost cogs" /><span id="cog-count">0</span></div>
           <div id="cog-compass" hidden aria-label="Cog Finder"><span class="cc-arrow" aria-hidden="true">&#9654;</span><span class="cc-text"></span></div>
+          <button id="wrench-chip" type="button" hidden aria-label="Wrench part (tap to change)"><span class="wc-dot" aria-hidden="true"></span><span class="wc-name"></span><kbd class="kb-only">T</kbd></button>
         </div>
 
         <div id="chrono" class="locked" data-era="present" aria-label="Chronoheart">
@@ -48,10 +49,12 @@
 
         <div class="hud-right">
           <div id="inventory" aria-label="Inventory"></div>
-          <div class="hud-keys kb-only"><span id="hud-menu-key"><kbd>I</kbd> Menu</span> · <kbd>Tab</kbd> <span class="only-hollowmere">Peek</span><span class="only-saltwick">Lens</span><span class="only-summit">Lens</span> · <button id="hud-controls" class="hud-key-btn" type="button"><kbd>H</kbd> Controls</button> · <kbd>Esc</kbd> Pause<span class="needs-seal"> · <kbd>R</kbd> Seal</span><span class="needs-lantern"> · <kbd>R</kbd> Lantern</span><span class="needs-echo"> · <kbd>V</kbd> Echo</span><span class="needs-tempo"> · <kbd>1</kbd>/<kbd>2</kbd> or hold <kbd>Q</kbd>/<kbd>E</kbd> Tempo</span><span class="needs-rewind"> · hold <kbd>R</kbd> Rewind</span></div>
+          <div class="hud-keys kb-only"><span id="hud-menu-key"><kbd>I</kbd> Menu</span> · <kbd>Tab</kbd> <span class="only-hollowmere">Peek</span><span class="only-saltwick">Lens</span><span class="only-summit">Lens</span> · <button id="hud-controls" class="hud-key-btn" type="button"><kbd>H</kbd> Controls</button> · <kbd>Esc</kbd> Pause<span class="needs-parts"> · <kbd>T</kbd> Wrench part</span><span class="needs-lantern"> · <kbd>R</kbd> Lantern</span><span class="needs-echo"> · <kbd>V</kbd> Echo</span><span class="needs-tempo"> · <kbd>1</kbd>/<kbd>2</kbd> or hold <kbd>Q</kbd>/<kbd>E</kbd> Tempo</span><span class="needs-rewind"> · hold <kbd>R</kbd> Rewind</span></div>
         </div>
 
-        <div id="resonance" hidden>
+        <div id="boss-bar" hidden aria-label="Donald Eugene"><span class="bb-name">Donald Eugene</span><div class="bb-pips"></div></div>
+
+      <div id="resonance" hidden>
           <span><span class="only-hollowmere">Tower resonance</span><span class="only-saltwick">Resonance</span></span>
           <div class="res-track"><div id="resonance-bar"></div></div>
         </div>
@@ -70,6 +73,17 @@
         <p id="lapse-years">+0 years</p>
         <p class="lapse-caption"></p>
         <p class="lapse-skip">Tap or press any key to skip</p>
+      </div>
+      <!-- picking one of Donald Eugene's locks (see src/ui/lockpick.js) -->
+      <div id="lockpick" hidden role="dialog" aria-label="Picking a lock">
+        <div class="lp-panel glass">
+          <p class="lp-title">Picking the lock</p>
+          <p class="lp-name"></p>
+          <div class="lp-pins"></div>
+          <div class="lp-track"><div class="lp-zone"></div><div class="lp-pick"></div></div>
+          <p class="lp-how"></p>
+          <button class="lp-give" type="button">Leave it for now</button>
+        </div>
       </div>
       <div class="lb lb-top"></div>
       <div class="lb lb-bottom"></div>
@@ -142,13 +156,13 @@
           <span class="tc-legend">Swipe</span><span>Swipe left to travel toward the Future, right toward the Past. Drag slowly to preview first.</span>
           <span class="tc-legend">Past · Future</span><span>Or tap the era names at the top</span>
           <span class="tc-legend">Amulet</span><span>Hold the amulet dial to open the time lens, a window onto another era around you, then tap Past or Future to choose which</span>
-          <span class="tc-legend needs-seal">Seal</span><span class="needs-seal">Lights up beside something that shimmers. Tap to hold it in its moment, unchanged in every later age.</span>
+          <span class="tc-legend needs-parts">Wrench</span><span class="needs-parts">Hold <b>Attack</b>, then let go: a wave from the part on your wrench's head goes out to whatever is in front of you (it glows first). The <b>Stasis ring</b> holds it in its moment; the <b>Escapement</b> slows it; the <b>Hairspring</b> sends it back a few seconds. Tap the wrench under your hearts to change parts.</span>
           <span class="tc-legend needs-echo only-hollowmere">Echo</span><span class="needs-echo only-hollowmere">In the Present: tap to start recording, tap again to stop (up to 5 seconds). Your echo repeats those moves, over and over. Up to 3 at once. Stand on an echo and tap <b>Dispel echo</b> to remove it.</span>
           <span class="tc-legend needs-lantern">Lantern</span><span class="needs-lantern">Tap to light it or put it out: inside its light, another age is real (its floors, its bridges, its ice). While lit, swipe or tap Past / Future to swing the Lantern's light between the ages.</span>
           <span class="tc-legend needs-echo only-summit">Echo</span><span class="needs-echo only-summit">Tap to start recording yourself, tap again to stop. Your echo repeats those moves, over and over (up to 3 at once, or 4 with Vivienne's Pocketwatch), and remembers the Lantern's light if it was lit! Stand on an echo and tap <b>Dispel echo</b> to remove it.</span>
           <span class="tc-legend needs-tempo">Slow · Fast</span><span class="needs-tempo">Tempo: tap to slow down or speed up the machines near you. Uses the Chronoheart's ring.</span>
           <span class="tc-legend needs-rewind">Rewind</span><span class="needs-rewind">Hold to run yourself backward along the path you just took: up drops, across gaps, back through era shifts. Only you: the world keeps going. The amulet's ring shows how much the watch remembers.</span>
-          <span class="tc-legend needs-reach">Reach</span><span class="needs-reach">While the time lens is open, <b>Interact</b> and <b>Attack</b> go through it: use, take or strike something in the other age.</span>
+          <span class="tc-legend needs-reach">Reach</span><span class="needs-reach">While the time lens is open, <b>Interact</b> and <b>Attack</b> go through it: use, take or strike something in the other age, talk to the people there, and pick up its Lost Cogs.</span>
           <span class="tc-legend">Dialogue</span><span>Tap anywhere to continue</span>
           <span class="tc-legend">Menu</span><span>Your current goal (tap Hint if you're stuck), your items and your favors. The game pauses while it's open.</span>
         </div>
@@ -162,13 +176,13 @@
           <span><kbd>F</kbd></span><span>Interact: talk to people, use things</span>
           <span><kbd>Q</kbd> / <kbd>E</kbd></span><span>Travel one era back / forward</span>
           <span><kbd>Tab</kbd></span><span>Time lens: hold to open a window onto another era around you (Q/E chooses which). You can walk about with it</span>
-          <span class="needs-seal"><kbd>R</kbd></span><span class="needs-seal">Stasis Seal: hold something in its moment, unchanged in every later age</span>
+          <span class="needs-parts">hold <kbd>X</kbd> · <kbd>T</kbd></span><span class="needs-parts">Wrench wave: hold <kbd>X</kbd>, then let go, and the part on your wrench's head reaches whatever is in front of you (it glows first). <b>Stasis ring</b>: holds it in its moment (strike a held creature and it shatters). <b>Escapement</b>: slows it. <b>Hairspring</b>: sends it back a few seconds. <kbd>T</kbd> changes parts</span>
           <span class="needs-echo only-hollowmere"><kbd>V</kbd></span><span class="needs-echo only-hollowmere">Echo (Present only): start / stop recording, up to 5 seconds; up to 3 echoes. Stand on one and press <kbd>F</kbd> to dispel it</span>
           <span class="needs-lantern"><kbd>R</kbd></span><span class="needs-lantern">Lantern: light it / put it out. Inside its light, another age is real; while lit, <kbd>Q</kbd> / <kbd>E</kbd> swing the Lantern's light between the ages</span>
           <span class="needs-echo only-summit"><kbd>V</kbd></span><span class="needs-echo only-summit">Echo: start / stop recording yourself. Your echo repeats those moves, over and over (up to 3 at once, or 4 with Vivienne's Pocketwatch), and remembers the Lantern's light if it was lit! Stand on one and press <kbd>F</kbd> to dispel it</span>
           <span class="needs-tempo"><kbd>1</kbd> / <kbd>2</kbd> or hold <kbd>Q</kbd> / <kbd>E</kbd></span><span class="needs-tempo">Tempo: press <kbd>1</kbd> (or <kbd>Z</kbd>, or hold <kbd>Q</kbd>) to slow down the machines near you, <kbd>2</kbd> (or hold <kbd>E</kbd>) to speed them up. Uses the Chronoheart's ring</span>
           <span class="needs-rewind">hold <kbd>R</kbd></span><span class="needs-rewind">Rewind: run yourself backward along the path you just took: up drops, across gaps, back through era shifts. Only you: the world keeps going. The amulet's ring shows how much the watch remembers</span>
-          <span class="needs-reach"><kbd>Tab</kbd> + <kbd>F</kbd> / <kbd>X</kbd></span><span class="needs-reach">Reach: while the time lens is open, use, take or strike something in the other age</span>
+          <span class="needs-reach"><kbd>Tab</kbd> + <kbd>F</kbd> / <kbd>X</kbd></span><span class="needs-reach">Reach: while the time lens is open, use, take or strike something in the other age, talk to the people there, and pick up its Lost Cogs</span>
           <span><kbd>I</kbd></span><span>Menu: your goal, items and favors (pauses the game)</span>
           <span><kbd>G</kbd></span><span>Open the Menu with the hint for your goal showing</span>
           <span><kbd>H</kbd></span><span>Show these controls</span>

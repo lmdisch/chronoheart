@@ -134,6 +134,13 @@ export const ARRIVE = [
   DE("Very well. If you won't choose it, I shall make it the only thing left to choose."),
 ];
 
+/** The end of phase one: she has hurt him, and he stops pretending this is a lesson. */
+export const PHASE_TWO = [
+  DE('Well. You have been practicing.'),
+  DE('So have I. For fifty years.'),
+  N('He opens his hand, and the floor of the hall begins to rewrite itself.'),
+];
+
 /** Phase three: he reaches for the things she loves. */
 export const SQUIRRELS = [
   DE('Shall I start on the things you love, then? Your squirrels, perhaps.'),
@@ -141,9 +148,24 @@ export const SQUIRRELS = [
   ZA('Excuse me. I am being ERASED. I would like to speak to whoever is in charge of erasing.'),
 ];
 
+/** Beaten. She tells him what she knows. */
+export const DEFEAT = [
+  N('Donald Eugene goes down on one knee on the gold-veined marble. Overhead, the drifting pages of the world stop drifting.'),
+  DE('...Again. Let me go again. I can do it better.'),
+  V("I know what you've done, Master. All of it."),
+  V('The drought in Saltwick. Three hundred and fifty years without the sea, so that one doctor would miss one boat.'),
+  V("The bakery. Sheng's temper. A ladder that wasn't there a minute before."),
+  V('You never asked any of them.'),
+  DE('They were better for it. Every one of them. I made it better.'),
+  V("It wasn't yours to make. It's theirs. Dr. Pell's, and Hale's, and Sheng's, and mine."),
+  DE('Then who is in charge, apprentice? If not me?'),
+  V("Nobody is in charge of everything. Everybody gets their own. That's the whole of it."),
+  N('His hand comes up anyway: the old reflex, reaching for the hall to write it over.'),
+];
+
 /** Held in his moment, he has to listen: Lyra's last echo. */
 export const RELEASE = [
-  N('The wave takes him on his throne, mid-word. Donald Eugene is held in his moment, one hand raised to rewrite the hall. For once in fifty years, he cannot change anything at all.'),
+  N('The wave takes him where he kneels, mid-reach. Donald Eugene is held in his moment, one hand raised to rewrite the hall. For once in fifty years, he cannot change anything at all.'),
   N('Someone steps out of the dark beside Vivienne. An old woman in a winter shawl.'),
   LY('Hello, Don.'),
   V('...You. The river. The quay. The Lantern Road. It was you, every time.'),
@@ -205,8 +227,8 @@ export function npcLines(game, id) {
       ];
       if (!f.hasLantern) return [
         IN('Every lamp on the road, every night, all winter. And every year they burn a little shorter. Nobody can tell me why.'),
-        IN("You're climbing? Up to the top? Then take Gran's lantern. It never kept time with the others. Some nights it shone with yesterday's light. Some nights, with tomorrow's."),
-        IN('Gran said a lady from the observatory fitted the glass, long ago. Said it held light from another hour. I never knew what she meant. Maybe you will.'),
+        IN("You're climbing? Up to the top? Then take Gran's lantern. It never shone like a proper lantern. Somebody tinkered with it, long before me, and up here its light does strange things."),
+        IN('Gran said a clockmaker fixed it up for her: a lady from the observatory, with ink on her fingers. I never knew what she did to it. Maybe you will.'),
         { give: 'hourLantern', unlock: 'lantern' },
         IN("And if you ever come across a flame that the wind can't put out... the lookout lamp has been dark since Gran's time. Nothing up here lasts long enough to light it."),
         { favor: 'ember', flag: 'emberQuest' },
@@ -322,10 +344,6 @@ export function npcLines(game, id) {
     case 'youngChristopher':
     case 'youngDon':
       return MEMORY;
-    case 'christopher': // (Donald Eugene, on his throne at the End of Time)
-      if (!f.orinPhase1) return [DE('Every wave is a version you never lived in. Hollowmere without its Tower. Saltwick without its sea. I can do this all night, apprentice.')];
-      if (!f.orinPhase2) return [DE('The Anchor was only a clock. These locks are older. They hold everything I have ever written.')];
-      return [DE('Go on, then. Hold me still, if you can. Nobody ever has.')];
     case 'orinEnd':
       return [OR('She asked us to come up here every Midwinter. Look out at the valley, not back at her, and tell her what grew.'), OR("I've come every year. Now he will too. I'll show him how.")];
     case 'eugene':
@@ -354,10 +372,17 @@ export async function interact(game, ent) {
     case 'frostWall':
       return say([N('A wall of ice across the observatory doors, hard as glass. Behind it, on the bench, you can just see a stack of notebooks.'), V("He sealed it. He doesn't want me reading something."), V('In the First Age there were no doors here at all. Only planks over the foundations.')]);
     case 'notebooks':
+      if (
+        !(await game.unlockChest('notebookChestOpen', "Donald Eugene's strongbox", 4, [
+          N("On the observatory bench, an iron-bound strongbox with his notched cog on the lid. Through a crack in its side: the edges of a great many notebooks."),
+          V("He froze the whole mountain, and he still locked it. Of course he did."),
+        ]))
+      )
+        return;
       f.notebooksRead = true;
       game.save();
       return say([
-        N("A stack of notebooks on the observatory bench, every one in Donald Eugene's small, tidy hand. The oldest are fifty years old."),
+        N("Inside, a stack of notebooks, every one in Donald Eugene's small, tidy hand. The oldest are fifty years old."),
         N('"Attempt 12. A doctor from Saltwick, kept in port. Did not help. The harbor changed. Corrected."'),
         N('"Attempt 340. A different winter. Did not help. Hollowmere lost its mill. Corrected."'),
         N('"Attempt 2,207. Moved her down to the valley. No difference. A boy in the square grew up unkind. Corrected."'),
@@ -439,14 +464,6 @@ export async function struck(game, ent) {
       } else {
         game.hud.toast('The Orrery chime rings out, harmonizing with the four brass rings overhead.', 4000);
       }
-      return;
-    case 'orinAnchor':
-      f.orinPhase1 = true;
-      audio.sfx('gate');
-      game.renderer.shake = 0.7;
-      game.refreshWorld();
-      game.save();
-      game.onOrinPhase1Done?.();
       return;
   }
 }

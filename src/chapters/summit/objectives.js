@@ -8,8 +8,8 @@ const step = (goal, hint) => ({ goal, hint });
 function keys() {
   const touch = document.body.classList.contains('touch');
   return touch
-    ? { past: 'swipe right (or tap <b>Past</b>)', future: 'swipe left (or tap <b>Future</b>)', lantern: 'tap <b>Lantern</b>', echo: 'tap <b>Echo</b>', attack: 'tap <b>Attack</b>', climb: 'push up on the joystick' }
-    : { past: '<kbd>Q</kbd>', future: '<kbd>E</kbd>', lantern: '<kbd>R</kbd>', echo: '<kbd>V</kbd>', attack: '<kbd>X</kbd>', climb: '<kbd>W</kbd>' };
+    ? { past: 'swipe right (or tap <b>Past</b>)', future: 'swipe left (or tap <b>Future</b>)', lantern: 'tap <b>Lantern</b>', echo: 'tap <b>Echo</b>', attack: 'tap <b>Attack</b>', climb: 'push up on the joystick', roll: 'tap <b>Roll</b>', part: 'tap the wrench under your hearts' }
+    : { past: '<kbd>Q</kbd>', future: '<kbd>E</kbd>', lantern: '<kbd>R</kbd>', echo: '<kbd>V</kbd>', attack: '<kbd>X</kbd>', climb: '<kbd>W</kbd>', roll: '<kbd>C</kbd>', part: '<kbd>T</kbd>' };
 }
 const up = (k, end) => `Keep climbing: at the ${end} end, where the flags are, the road turns back up the mountain. Walk up it (${k.climb}).`;
 
@@ -76,19 +76,12 @@ export function currentGoal(game) {
       if (x > L.frostWallX && !f.hoursReturned) return step('Get through the frozen doors.', `He sealed them. In the First Age there were no doors here at all. At the ice: ${lantern('the First Age')}`);
       if (!f.notebooksRead && !f.summitTalk) return step('Find what he sealed in.', "Inside the observatory, on the bench past Tobin's star-books.");
       if (!f.summitTalk) return step('Find Donald Eugene.', 'At the foot of the Needle, at the west end of the summit, the air shimmers.');
-      if (!f.orinPhase1) {
-        return step(
-          'Break the Anchor-Clock (1/3).',
-          `At the End of Time, waves of rewritten time roll down the hall. Light the Lantern (${k.lantern}) on the <b>First Age</b>: its old light carries you through them (or jump them). Then strike the Anchor-Clock by the back wall three times with your wrench (${k.attack}).`,
-        );
+      {
+        const ph = f.duelPhase || 1, wave = `hold ${k.attack} and let go`;
+        if (ph === 1) return step('Face Donald Eugene (1/3).', `His Stasis rings roll along the floor: jump them. When he tires and sinks to the floor, his guard is down: hit him with your wrench (${k.attack}), or a wave (${wave}).`);
+        if (ph === 2) return step('Face Donald Eugene (2/3).', `Stay off the floor where it flickers gold. Jump the low rings, roll under the high ones (${k.roll}). If he winds up a Rewind, hit him before the clock comes round. The Hairspring on your wrench sends a ring straight back at him.`);
+        if (!f.zachHeld || !f.meganHeld) return step('Hold Zach and Megan in their moment (3/3).', `He is rubbing them out, and it guards him. Fit the Stasis ring (${k.part}), face them, ${wave}.`);
+        return step('Face Donald Eugene (3/3).', `When he turns the whole page, light your Lantern (${k.lantern}): its old light keeps you in your own moment. Hit him while he's winded.`);
       }
-      if (!f.orinPhase2) {
-        return step(
-          'Hold both of his locks (2/3).',
-          `Record an <b>Echo</b> (${k.echo}) standing on one of the two blue lock plates, then stand on the other plate yourself. Jump the gnomon's sweeping shadow as it comes round. The barrier in front of the throne falls.`,
-        );
-      }
-      if (!f.zachHeld || !f.meganHeld) return step('Hold Zach and Megan in their moment (3/3).', `He is rewriting them! Stand close, face them, hold ${k.attack} and let go: a Stasis wave holds them where his rewrites can't reach.`);
-      return step('Hold him still (3/3).', `Climb the dais, face Donald Eugene, hold ${k.attack} and let go.`);
   }
 }

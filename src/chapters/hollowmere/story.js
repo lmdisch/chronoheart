@@ -78,7 +78,7 @@ export function endingSlip(f) {
   const oak = f.acornPlanted || f.acornPlantedM;
   return [
     oak ? DE('And that oak tree came up really well. What a great idea!') : DE("And Tamsin's bridge, strung with steel cable! What a great idea!"),
-    Wr(oak ? '...I never told you about the oak.' : "...I never told you about the bridge."),
+    Wr(oak ? 'Wait. How do you know about the oak tree? I planted that in the Past.' : 'Wait. How do you know about the cable? I strung that in the Past.'),
     DE("Didn't you? You must have. You tell me everything, apprentice."),
   ];
 }
@@ -243,11 +243,11 @@ function npcLines(game, id) {
           { give: 'medallion', flag: 'medallionGiven' },
         ];
       if (f.hammerLeft) return [b("It's in the vault now. My grandkids' grandkids can fish it out, eh?")];
-      if (inv.includes('hammerBroken')) return [b("Seal it in my quench-vault if you like. Some great-grandchild of mine can fish it out when it's done.")];
+      if (inv.includes('hammerBroken')) return [b("The quench-vault's right there, girl: the iron box steaming at the end of my forge. Lay the hammer in, seal the lid, and some great-grandchild of mine can fish it out when it's done.")];
       return [
-        b("Donald Eugene's apprentice! You've got his look, like you're late for something that hasn't happened yet."),
+        b("Donald Eugene's apprentice! I'd know that apron anywhere. He wore one just like it, before he went up in the world."),
         b('The Tower\'s bell hammer cracked last winter. Donald Eugene brought it to me, but tempering star-iron properly takes a lifetime in the quench-vault. Longer than I\'ve got left.'),
-        b("Take it. Seal it in my vault if you like, and let some great-grandchild of mine fish it out when it's done."),
+        b("Take it. See the iron vault at the end of my forge, the one breathing steam? Lay it in there and seal the lid, and let some great-grandchild of mine fish it out when it's done."),
         { give: 'hammerBroken' },
       ];
     }
@@ -674,20 +674,35 @@ export async function interact(game, ent) {
       game.save();
       return;
     case 'satchel':
-      if (f.hasSeal) return say(N("Donald Eugene's satchel, empty now apart from a few bent cogs."));
+      if (f.hasSeal) return say(N("Donald Eugene's strongbox, empty now apart from a few bent cogs."));
+      if (
+        !(await game.unlockChest('satchelOpen', "Donald Eugene's strongbox", 2, [
+          N("Half-hidden in the reeds by the old crossing: an iron-bound strongbox, with Donald Eugene's notched cog on the lid. And a padlock."),
+          Wr('He leaves me a present, and then he locks it. Of course he does.'),
+          Wr('Good thing I taught myself to pick his locks, my first winter.'),
+        ]))
+      )
+        return;
       await say([
-        N("Half-hidden in the reeds by the old crossing: Donald Eugene's battered leather satchel."),
         N('Inside is a brass ring etched with an hourglass, and another note:'),
         N('"Vivienne. If you have come this far, the Chronoheart can do more than carry you. Touch this ring to it and you can hold a thing in its moment, so the years pass it by. I call it the Stasis Seal. ~D.E."'),
         Wr('Hold a thing in its moment... so it never ages at all?'),
+        N('The ring fits the head of her wrench as if it were made for it. Perhaps it was. When she lifts the wrench, the Chronoheart answers through it.'),
       ]);
       game.abilities.unlock('seal');
       game.save();
       return;
     case 'tempoGift':
       if (f.hasTempo) return say(N("Donald Eugene's toolbox, empty now but for a note: \"Hold, don't tap.\""));
+      if (
+        !(await game.unlockChest('toolboxOpen', "Donald Eugene's toolbox", 3, [
+          N("Just inside the courtyard gate sits Donald Eugene's old toolbox, with a brand-new padlock on it."),
+          Wr("Another present. Another lock. He wants me to have it. He just doesn't want me to keep it."),
+        ]))
+      )
+        return;
       await say([
-        N("Just inside the courtyard gate sits Donald Eugene's old toolbox. In it, a small brass escape wheel, and another note:"),
+        N('In it, a small brass escape wheel, and another note:'),
         N('"Vivienne. The thing that guards this yard in the age to come is only a machine, and every machine keeps time. An escapement sets how fast a clock runs. Fit this one to the Chronoheart, and you can set the pace of any machine near you: slower, or faster. ~D.E."'),
         Wr('Slower... or faster. Any machine near me?'),
         N('The escape wheel clicks into the Chronoheart. Its ring divides in two: one half turning slowly, one racing.'),
@@ -698,8 +713,15 @@ export async function interact(game, ent) {
       return;
     case 'echoLens':
       if (f.hasEcho) return say(N("Donald Eugene's lectern. A scrawled diagram of three stone steps, and the words: \"Be in three places at once.\""));
+      if (
+        !(await game.unlockChest('lecternOpen', "Donald Eugene's lens case", 3, [
+          N('A lectern stands by the gallery wall. On it, a little iron case, padlocked, with his notched cog on the lid.'),
+          Wr('Locked. Naturally.'),
+        ]))
+      )
+        return;
       await say([
-        N("A lectern stands by the gallery wall, and on it, Donald Eugene's handwriting:"),
+        N("Inside, a lens on a bed of velvet, and Donald Eugene's handwriting:"),
         N('"Vivienne. These buttons forget you the moment you step off them. This lens lets the Chronoheart remember you, so something of you can stay behind. Lyra ground the glass for it fifty years ago. ~D.E."'),
         Wr('A copy of me that stays behind... standing on the buttons for me?'),
         N('The lens clicks neatly into the Chronoheart.'),

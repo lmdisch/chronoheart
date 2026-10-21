@@ -6,7 +6,7 @@ Vivienne is a clockmaker's apprentice with an amulet, the **Chronoheart**, that 
 
 | | Chapter | Where | What's new |
 | --- | --- | --- | --- |
-| **I** | [The Clocktower of Hollowmere](docs/chapter-1-hollowmere.md) | A valley town whose great Clocktower has stopped | The Chronoheart itself, then the Stasis Seal, Echoes and Tempo |
+| **I** | [The Clocktower of Hollowmere](docs/chapter-1-hollowmere.md) | A valley town whose great Clocktower has stopped | The Chronoheart itself, then the Stasis ring, Echoes and Tempo, from Donald Eugene's locked strongboxes |
 | **II** | [The Dry Harbor](docs/chapter-2-saltwick.md) | The harbor town of Saltwick, fifty years into a drought | A mended Chronoheart, Rewind (run yourself backward), and reaching through the time lens |
 | **III** | [The Other Half](docs/chapter-3-highcrest.md) | Highcrest, the mountain above them both, at Midwinter: a climb to the top of the world | The Lantern (carry a bubble of another age), Echoes that wait for you, and the Stasis wave |
 
@@ -40,7 +40,8 @@ Every world, sprite, melody and sound in the game is generated from code: there 
 - **Every chapter keeps its save after the story.** Choose Continue to walk the valley with the Clocktower ticking, or the shore with the river back in.
 - **Some rewards carry over.** Bring all ten of Chapter One's Lost Cogs to Donald Eugene and you start Chapters Two and Three with the **Cog Finder**: under your hearts, it points to the nearest Lost Cog and says which age it's in. Earn your own pocketwatch in Chapter Two, and your echo in Chapter Three remembers longer (8 seconds) and holds 4 echoes at once. Bring Orin all ten Lost Cogs in Chapter Three for **The Master's Key**, which opens the secret **Astral Clock-Door** in Hollowmere Square (**The Starlit Garden, 10,000 Years On**). (The save records them under `rewards`.) **Hearts carry over too:** every heart a favor earned in an earlier chapter is added to the five you start each later chapter with.
 - **Vivienne dresses for the place.** In Hollowmere she wears her teal workshop tunic and leather apron. In Saltwick she has a navy sea-coat, a red neckerchief, sailcloth trousers and yellow sea-boots. On Highcrest, a teal wool coat with a fur hem, a mustard scarf, and red earmuffs and mittens. The goggles and the amulet go wherever she does.
-- **Equipment (Menu → Equipment)** carries between chapters (the save records it under `kit`). **Clothes:** any outfit from a chapter you've reached; the sea-coat lets you hold your breath half as long again. **Wrench:** once you have the Stasis Seal, it can send a **Stasis wave** in every chapter: hold `X`, let go, and the first thing in front of you (a creature, a person, a sealable thing) is held in its moment. What can be held glows white. The menu also lists every power the Chronoheart has learned, and where it works.
+- **Equipment (Menu → Equipment)** carries between chapters (the save records it under `kit`). **Clothes:** any outfit from a chapter you've reached; the sea-coat lets you hold your breath half as long again. **Wrench:** the Chronoheart is the power, the wrench is how Vivienne aims it. Donald Eugene's parts fit its head, and each sends its own wave (hold `X`, let go) at the first thing in front of her, which glows first: the **Stasis ring** holds it in its moment (a held creature stays held until struck, and then shatters), the **Escapement** slows it, the **Hairspring** sends it back a few seconds. `T` changes parts; they carry into every later chapter. A part is learned only when found in that chapter's playthrough, so a replay starts with a plain wrench. The menu also lists every power the Chronoheart has learned, and where it works.
+- **Locks.** Everything Donald Eugene leaves for Vivienne is padlocked. She picks the locks herself (`src/ui/lockpick.js`): a pick sweeps under the pins, and `X` (or a tap) sets a pin when it's under the gold mark.
 
 To open every chapter without finishing the one before (for testing, or if you finished Chapter One before the game kept a record of it), add `#unlock` to the address once, or run `__unlockChapters()` in the browser console.
 
@@ -57,7 +58,8 @@ These are the same in every chapter. Each chapter's guide lists the powers it ad
 | `Space` | Jump (hold for a higher jump); hold to swim upward (underwater, watch your breath) |
 | `Shift` | Sprint |
 | `C` | Dodge-roll |
-| `X` | Swing your wrench |
+| `X` | Swing your wrench; hold and let go for a wave from the part on its head |
+| `T` | Change the part on your wrench |
 | `F` | Interact: talk to people, use things |
 | `Q` / `E` | Travel one era back / forward |
 | `Tab` | Time lens: hold to open a window onto another era around you (`Q`/`E` choose which) |
@@ -95,7 +97,7 @@ src/
   main.js                 start-up, the title screen and chapter select, the pause / Controls / Menu overlays, credits
   chapter.js              the list of chapters, which one this page load is running, and the save they share
   game.js                 the game every chapter shares: modes, era shifting, the time lens, saving, favors, time-lapses, ripples, the Cog Finder
-  kit.js                  what carries between chapters: clothes, the wrench (the Stasis wave), the list of powers
+  kit.js                  what carries between chapters: clothes, the wrench and its parts (the waves), the list of powers
   chapters/
     hollowmere/           Chapter One
       theme.js              its skies, color grades, music, era names and colors (plain data)
@@ -119,13 +121,14 @@ src/
       level.js              the whole mountain in all three ages: the switchback road, the frost, the towns far below
       story.js              items, favors, every line of dialogue, the endings
       objectives.js         the goal and hint
-      game.js               SummitGame: the frost, the shimmer, the fight at the End of Time, the ending
+      game.js               SummitGame: the frost, the shimmer, the End of Time, the ending
+      duel.js               the duel with Donald Eugene: his patterns, his rings, the floor he rewrites, the Page Turn
       powers.js             the Lantern, the Echo, pressure plates and gates
   core/                   input (keyboard + virtual keys), small utilities
   world/                  voxel world and collision, physics, the shared entities (player, NPCs, enemies, the Warden, bells...)
   render/                 renderer, post-processing, procedural textures and sprites, the 3D characters, the cloud sea, mountain terrain, water and mud, foliage, particles
   audio/                  procedural music (one layer per age, the tune from the chapter) and sound effects
-  ui/                     HUD and dialogue, touch controls, styles
+  ui/                     HUD and dialogue, touch controls, picking locks, styles
 tools/
   reachability/           per chapter: do the gates hold, and can you always walk back to the start?
   playtest/               headless scripted playtests (see its README)

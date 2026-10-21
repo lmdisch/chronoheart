@@ -29,10 +29,22 @@ export async function boot({ width = 1280, height = 720, url = process.env.GAME_
   await autoplay(page);
   return { browser, page, errors };
 }
-/** Auto-advance dialogue and skip time-lapses (again after any reload of the page). */
+/** Auto-advance dialogue, skip time-lapses, and pick locks (again after any reload of the page). */
 export async function autoplay(page) {
   await page.waitForFunction('window.__game');
   await page.evaluate(() => {
+    // one of Donald Eugene's locks: press X when the pick is under the gold mark, as a player would
+    clearInterval(window.__autoPick);
+    window.__autoPick = setInterval(() => {
+      const lp = document.getElementById('lockpick');
+      if (!lp || lp.hidden) return;
+      const pick = parseFloat(lp.querySelector('.lp-pick').style.left), z = lp.querySelector('.lp-zone');
+      const z0 = parseFloat(z.style.left), z1 = z0 + parseFloat(z.style.width);
+      if (pick > z0 + 1 && pick < z1 - 1) {
+        window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyX' }));
+        window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyX' }));
+      }
+    }, 12);
     clearInterval(window.__auto);
     window.__auto = setInterval(() => {
       const g = window.__game;

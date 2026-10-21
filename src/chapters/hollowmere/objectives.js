@@ -50,7 +50,7 @@ export function currentGoal(game) {
   // ---- Smithy Lane: the Bell Hammer
   if (x < X.terrace) {
     if (!hasHammer) {
-      if (inv.includes('hammerBroken')) return step('Find a way to mend the cracked hammer.', 'Star-iron takes centuries to temper. Seal it in Aria\'s quench-vault, then see what became of it.');
+      if (inv.includes('hammerBroken')) return step('Find a way to mend the cracked hammer.', 'Star-iron takes centuries to temper. Lay it in Aria\'s quench-vault (the iron box steaming beside her anvil, in the <b>Present</b>), then see what became of it.');
       if (f.hammerLeft) return step('Find out what became of the hammer.', 'Three hundred years later... visit Lillian\'s repair shop in the <b>Future</b>. It rests on her display case.');
       return step('The Clocktower\'s bell is silent. Find out why.', 'Talk to Aria the Smith about the Tower\'s bell hammer.');
     }
@@ -101,7 +101,7 @@ export function currentGoal(game) {
       if (f.bridgeQuest) return step('Find rope that never rots.', 'In the <b>Future</b>, there is a scrapyard on this bank. A spool of steel cable would do nicely.');
       return step('Find a way across the gorge.', 'In the <b>Past</b>, a ropewright named Tamsin is planning a bridge here. Talk to her.');
     }
-    if (!f.bridgeSealed) return step('Make the bridge last.', `Tamsin's bridge rots away within a century. Stand by it in the <b>Past</b> and use the Stasis Seal (${keys.seal}).`);
+    if (!f.bridgeSealed) return step('Make the bridge last.', `Tamsin's bridge rots away within a century. Stand by it in the <b>Past</b> and send it ${keys.seal}.`);
     return step('Cross the gorge.', "Tamsin's bridge has stood for six hundred years, and the city on the far bank built its gate onto it. Walk across in the <b>Present</b>.");
   }
   // ---- The Echo Gallery
@@ -198,7 +198,7 @@ export function currentGoal(game) {
     );
   }
   if (!f.belfrySealed) {
-    return step('Reach the reactor.', `The reactor deck is above the belfry, in the <b>Future</b>, but by then the wooden belfry floor has rotted away. Stand on it in the <b>Present</b> and use the Stasis Seal (${keys.seal}).`);
+    return step('Reach the reactor.', `The reactor deck is above the belfry, in the <b>Future</b>, but by then the wooden belfry floor has rotted away. Stand on it in the <b>Present</b> and send it ${keys.seal}.`);
   }
   return step('Reach the reactor.', 'From the sealed belfry floor, switch to the <b>Future</b> and climb the gantry to the reactor deck.');
 }
@@ -214,6 +214,6 @@ function missingEarlier(hasHammer, hasDisc = true) {
 function inputNames() {
   const touch = document.body.classList.contains('touch');
   return touch
-    ? { seal: 'the <b>Seal</b> button', echo: 'the <b>Echo</b> button', slow: 'the <b>Slow</b> button', fast: 'the <b>Fast</b> button', tempoNote: '' }
-    : { seal: '<kbd>R</kbd>', echo: '<kbd>V</kbd>', slow: '<kbd>Q</kbd>', fast: '<kbd>E</kbd>', tempoNote: ' (Hold the key down: a quick tap travels an era instead.)' };
+    ? { seal: 'a Stasis wave (hold <b>Attack</b>, then let go)', echo: 'the <b>Echo</b> button', slow: 'the <b>Slow</b> button', fast: 'the <b>Fast</b> button', tempoNote: '' }
+    : { seal: 'a Stasis wave (hold <kbd>X</kbd>, then let go)', echo: '<kbd>V</kbd>', slow: '<kbd>Q</kbd>', fast: '<kbd>E</kbd>', tempoNote: ' (Hold the key down: a quick tap travels an era instead.)' };
 }

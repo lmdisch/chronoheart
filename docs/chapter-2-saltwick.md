@@ -43,8 +43,8 @@ The Future you walk through is the one that happens **if you fail**: the Gilded 
 
 | Power | From | The rule, in one sentence |
 | --- | --- | --- |
-| **Rewind** | The Mysterious Stranger, at the head of the Long Pier (a backward hairspring for the Chronoheart) | Hold `R` and the Chronoheart runs **you** backward along the path you just took (up drops, across gaps, back through era shifts), while the rest of the world keeps going. |
-| **Reach** | The Keeper's Loupe, from Odalys the Lightkeeper | While the time lens is open, **Interact** and **Attack** go *through* it: use, take or strike something in the other age from where you stand in this one. |
+| **Rewind** | Donald Eugene's sea-chest at the head of the Long Pier (the Mysterious Stranger tells you it's there; a backward hairspring, tagged "NOT FOR V. NOT YET.") | Hold `R` and the Chronoheart runs **you** backward along the path you just took (up drops, across gaps, back through era shifts), while the rest of the world keeps going. The hairspring fits your wrench too: with it on (`T`), a wave sends whatever it meets back to where it was a few seconds ago. |
+| **Reach** | The Keeper's Loupe, from Odalys the Lightkeeper | While the time lens is open, **Interact** and **Attack** go *through* it: use, take or strike something in the other age from where you stand in this one. Talk to the people over there (they can hear you, not see you), and pick up a Lost Cog you're standing on in that age. |
 
 The amulet's ring shows how much path Rewind remembers (about 8 seconds of your own movement; standing still costs nothing), and a faint gold trail shows it on the ground.
 
@@ -104,7 +104,7 @@ The road runs west to east along the shore. The harbor rhyme sets the goal: *"Da
 
 ### 3. The Long Pier: the Noon Bell
 
-- The **Mysterious Stranger** (the old woman from the river in Hollowmere) is waiting at the head of the pier. She fits a backward hairspring to the Chronoheart: **Rewind**.
+- The **Mysterious Stranger** (the old woman from the river in Hollowmere) is waiting at the head of the pier. She made a backward hairspring for the Chronoheart, long ago, and Donald Eugene has it locked in his **sea-chest** by the bollard. Pick the lock: **Rewind**.
 - A raised quay deck runs out to **Bell Rock**, through the **tide gate**. The gate opens for 3.5 seconds when its lever is pulled, but the lever is down on the shore, and the only way back up is the ladder at the far west end.
 - So: climb the ladder and walk along the deck **to the gate first**. Step off the front of the deck beside it, pull the lever below, and **hold `R`**. The watch runs you straight back up to the gate. Walk through. (It locks open behind you.)
 - On top of Bell Rock, hit the **Noon Bell** three times with your wrench.

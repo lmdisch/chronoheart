@@ -179,7 +179,6 @@ export class Abilities {
   /** Body classes show the matching touch buttons and control-sheet rows. */
   syncBody() {
     const f = this.game.state.flags;
-    document.body.classList.toggle('has-seal', !!f.hasSeal);
     document.body.classList.toggle('has-echo', !!f.hasEcho);
     document.body.classList.toggle('has-tempo', !!f.hasTempo);
     document.body.classList.toggle('recording', !!this.rec);
@@ -190,10 +189,7 @@ export class Abilities {
     audio.sfx('key');
     if (which === 'seal') {
       f.hasSeal = true;
-      this.game.hud.toast(
-        `<b>Stasis Seal!</b> Anything you can seal glows white when you're near: ${touch ? 'tap <b>Seal</b>' : 'press <kbd>R</kbd>'}. Or hold ${touch ? '<b>Attack</b>' : '<kbd>X</kbd>'} and let go, to send a Stasis wave at whatever is in front of you.`,
-        8000,
-      );
+      this.game.kit.learnedPart('seal');
     } else {
       f.hasEcho = true;
       this.game.hud.toast(
@@ -206,7 +202,6 @@ export class Abilities {
 
   update(dt, ctl) {
     const g = this.game, f = g.state.flags;
-    if (ctl && f.hasSeal && input.hit('seal')) this.trySeal();
     if (f.hasEcho) {
       if (this.rec) this.record(dt, ctl);
       else if (ctl && input.hit('echo')) this.startRecording();
@@ -250,12 +245,27 @@ export class Abilities {
   /** A frozen creature's statues: where it was sealed, and the same spot in each later age (unless something has been built right through it). */
   placeFrozen(rec) {
     const g = this.game;
+    if (rec.shattered) return;
     for (let era = rec.era; era <= ERA.FUTURE; era++) {
       if (era !== rec.era && g.world.cell(era, Math.floor(rec.x), Math.floor(rec.y + 0.3), Math.floor(rec.z)) === T.SOLID) continue;
       const e = new Frozen(g, rec, era);
       g.entities.push(e);
       g.interactables.push(e);
     }
+  }
+
+  /** A held creature, struck where it was held: it shatters, and is gone from every age after. */
+  shatterFrozen(statue) {
+    const g = this.game, rec = statue.rec;
+    rec.shattered = true;
+    for (const e of g.entities) if (e.rec === rec) e.remove();
+    g.entities = g.entities.filter((e) => e.alive);
+    g.interactables = g.interactables.filter((e) => e.alive);
+    audio.sfx('snap');
+    audio.sfx('enemyDie');
+    g.bursts.emit(rec.x, rec.y + 0.5, rec.z, 40, { color: [0xffffff, 0xbff6ff, 0x9fd8ff], speed: 5.5, life: 0.8, gravity: 9 });
+    g.renderer.shake = 0.35;
+    g.save();
   }
 
   sealCreature(e) {
@@ -277,6 +287,10 @@ export class Abilities {
       g.timelapse({ to: ERA.FUTURE, focus: [eb.x, eb.y + 0.6, eb.z], years, caption: `Held in its moment, the ${name} waits out the centuries...`, effect: 'shine' })
         .then(() => g.hud.toast(`The ${name} is still there in the <b>Future</b>, and somebody has put up a placard.`, 6000));
     } else g.hud.toast(`The ${name} is held in its moment.`, 3000);
+    if (!f.shatterHint) {
+      f.shatterHint = true;
+      setTimeout(() => g.hud.toast(`Held, until something disturbs it. Strike it with your wrench, and it will shatter.`, 5000), e.era < ERA.FUTURE && f['frozenLapse' + e.era] ? 6500 : 3200);
+    }
   }
 
   /** Pale motes rise off anything that can be sealed, so it reads as special before you get there. */

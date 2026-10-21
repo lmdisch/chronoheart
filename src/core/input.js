@@ -17,6 +17,7 @@ const BIND = {
   pause: ['Escape', 'KeyP'],
   controls: ['KeyH'],
   hint: ['KeyG'],
+  part: ['KeyT'], // the next part on the wrench (see src/kit.js)
   seal: ['KeyR'],
   rewind: ['KeyR'],
   echo: ['KeyV'],

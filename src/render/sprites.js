@@ -173,11 +173,11 @@ function drawHumanoid(ctx, ox, oy, o, pose = {}) {
   }
 
   // front arm
-  drawArm(L, R, 16 + lean, 17 + by, pose.armF ?? 0.2, o.top, o.mittens || o.skin, pose.tool ? o.tool || 'wrench' : null, o.sleeves);
+  drawArm(L, R, 16 + lean, 17 + by, pose.armF ?? 0.2, o.top, o.mittens || o.skin, pose.tool ? o.tool || 'wrench' : null, o.sleeves, o.wrenchHead);
 }
 
 /** long: sleeves to the wrist, so only the hand (or a mitten) shows. */
-function drawArm(L, R, sx, sy, a, sleeve, skin, tool, long = false) {
+function drawArm(L, R, sx, sy, a, sleeve, skin, tool, long = false, head = null) {
   const len = 5;
   const mx = sx + Math.sin(a) * 3, my = sy + Math.cos(a) * 3;
   const ex = sx + Math.sin(a) * len, ey = sy + Math.cos(a) * len;
@@ -190,7 +190,7 @@ function drawArm(L, R, sx, sy, a, sleeve, skin, tool, long = false) {
   if (tool === 'wrench') {
     const tx = ex + Math.sin(a) * 7, ty = ey + Math.cos(a) * 7;
     L(ex, ey, tx, ty, '#b88a3a', 2);
-    L(tx - 1, ty - 1, tx + 1, ty + 1, '#e2bf62', 3);
+    L(tx - 1, ty - 1, tx + 1, ty + 1, head || '#e2bf62', 3);
   } else if (tool === 'hammer') {
     const tx = ex + Math.sin(a) * 6, ty = ey + Math.cos(a) * 6;
     L(ex, ey, tx, ty, '#6b4428', 2);
@@ -891,7 +891,7 @@ CHAR.orinYoung = CHAR.christopherYoung;
 const npc = (name) => () => humanoidSheet(CHAR[name], { npcOnly: true });
 const SHEETS = {
   // Vivienne wears what the chapter says she wears (see playerSheet in each chapter's theme.js)
-  vivienne: () => humanoidSheet(CHAR[outfit || theme.playerSheet] || CHAR.vivienne),
+  vivienne: () => humanoidSheet({ ...(CHAR[outfit || theme.playerSheet] || CHAR.vivienne), wrenchHead }),
   megan: () => squirrelSheet(),
   zach: () => squirrelSheet({ B: '#86848e', L: '#cfccd6', acorn: false, spectacles: true }),
   eugene: npc('eugene'), michelle: npc('michelle'), lyra: npc('michelle'),
@@ -928,6 +928,13 @@ let outfit = null;
 export function setOutfit(name) {
   if (name === outfit) return;
   outfit = name;
+  delete cache.vivienne;
+}
+/** The glow of the part on her wrench's head (see src/kit.js PARTS). */
+let wrenchHead = null;
+export function setWrenchHead(css) {
+  if (css === wrenchHead) return;
+  wrenchHead = css;
   delete cache.vivienne;
 }
 const sheets = new Proxy(cache, {
@@ -1072,6 +1079,32 @@ const ICONS = {
     line(c, 4, 6, 6, 2, '#5a3a22', 1);
     line(c, 12, 6, 10, 2, '#5a3a22', 1);
     rect(c, 6, 2, 5, 1, '#5a3a22');
+  },
+  stasisRing: (c) => {
+    // a brass ring, etched with an hourglass, glowing pale
+    disc(c, 8, 8, 6, '#c9a44a');
+    disc(c, 8, 8, 4, '#2a2030');
+    rect(c, 6, 5, 4, 1, '#bff6ff');
+    rect(c, 6, 10, 4, 1, '#bff6ff');
+    px(c, 7, 7, '#bff6ff');
+    px(c, 8, 8, '#bff6ff');
+    px(c, 7, 9, '#ffffff');
+    px(c, 4, 4, '#fff2c0');
+  },
+  hairspring: (c) => {
+    // a fine coil of blued steel, wound backward
+    for (let k = 0; k < 40; k++) {
+      const a = -k * 0.42, r = 1 + k * 0.15;
+      px(c, Math.round(8 + Math.cos(a) * r), Math.round(8 + Math.sin(a) * r), k % 5 ? '#6a8ad8' : '#ffb84a');
+    }
+  },
+  lockpick: (c) => {
+    // a bent hairpin and a sliver of watch-spring
+    line(c, 2, 13, 11, 4, '#c9c4d0', 1);
+    line(c, 11, 4, 13, 4, '#c9c4d0', 1);
+    px(c, 13, 3, '#c9c4d0');
+    line(c, 4, 14, 13, 6, '#c9a44a', 1);
+    rect(c, 2, 12, 3, 3, '#7a5232');
   },
   lens: (c) => {
     disc(c, 8, 8, 6, '#c9a44a');

@@ -241,17 +241,22 @@ function npcLines(game, id) {
       const m = S('michelle', 'Mysterious Stranger');
       if (f.tideRestored) return [m('You gave them back their river. I knew you would.'), m('He will be proud of you, Vivienne. Watch his face when he says it.')];
       if (f.hasRewind) {
-        if (!f.tideGatePassed) return [m('Stand at the gate first. Then go down to the lever. The Chronoheart remembers the way back, even up a drop that your legs would not.')];
+        if (!f.tideGatePassed)
+          return [
+            m('There. It only ever takes you. The world keeps walking forward without you: gates go on closing, water goes on running. Remember that, when you are tempted to lean on it.'),
+            m('The tide gate ahead opens for a few breaths when its lever is pulled, and the lever is a long way from the gate. Unless, of course, you have only just been standing at the gate.'),
+            m('Stand at the gate first. Then go down to the lever. The Chronoheart remembers the way back, even up a drop that your legs would not.'),
+          ];
         return [m('Spend your time wisely, Vivienne. Even the time you get to spend twice.'), m('And whatever they tell you, a river does not wander off on its own.')];
       }
       return [
         m("Ah. Donald's apprentice. Keeper of the Chronoheart now, I see. You are early. Or I am late. Across the years it is hard to say."),
         m('You did well in Hollowmere. And you were kind while you did it, which is rarer.'),
-        m('Here. A hairspring that runs backward. I made it a long time ago, for a heart very like that one. Fit it to the Chronoheart, think of where you have just been... and let it carry you.'),
-        N('The hairspring clicks into the Chronoheart. For a heartbeat Vivienne is standing where she stood three steps ago.'),
-        { unlock: 'rewind' },
-        m('There. It only ever takes you. The world keeps walking forward without you: gates go on closing, water goes on running. Remember that, when you are tempted to lean on it.'),
-        m('The tide gate ahead opens for a few breaths when its lever is pulled, and the lever is a long way from the gate. Unless, of course, you have only just been standing at the gate.'),
+        m('There is a hairspring that runs backward. I made it a long time ago, for a heart very like that one. Fit it to the Chronoheart, and it will carry you back to where you have just been.'),
+        m('Donald has it. He keeps it in his sea-chest, there by the bollard. Locked, I expect. He always did lock everything.'),
+        Wr('He brought it all the way to Saltwick, and he never said a word.'),
+        m('No. He wouldn\'t.'),
+        { flag: 'hairspringHint' },
       ];
     }
     case 'odalys': {
@@ -414,6 +419,24 @@ export async function interact(game, ent) {
   const s = game.state, f = s.flags, inv = s.inventory;
   const say = (lines) => game.dialogue.run(Array.isArray(lines) ? lines : [lines]);
   switch (ent.id) {
+    case 'seaChest':
+      if (f.hasRewind) return say(N("Donald Eugene's sea-chest, empty but for the oilcloth and its tag."));
+      if (
+        !(await game.unlockChest('seaChestOpen', "Donald Eugene's sea-chest", 3, [
+          N("An iron-bound sea-chest by the bollard, salt-stained, with Donald Eugene's notched cog on the lid. A heavy padlock, newly oiled."),
+          ...(f.hairspringHint ? [] : [Wr("His. He never lets anything out of his sight. So why is it sitting out here?")]),
+        ]))
+      )
+        return;
+      await say([
+        N('Inside, wrapped in oilcloth: a hairspring of blued steel, wound the wrong way round. There is a tag on it, in his tidy hand.'),
+        N('"NOT FOR V. NOT YET."'),
+        Wr('...Not yet.'),
+        N('The hairspring clicks into the Chronoheart. For a heartbeat Vivienne is standing where she stood three steps ago.'),
+      ]);
+      game.craft.unlock('rewind');
+      setTimeout(() => game.kit.learnedPart('rewind'), 7500);
+      return;
     case 'gauge':
       if (f.tideRestored) return say(N("The harbor's tide gauge. Its float bobs halfway up the slot, exactly where the painted line says it should be."));
       return say(N('The harbor\'s tide gauge. Its float lies at the very bottom of the slot, on dry mud. Beside it, years of chalk tally marks, and a total: "18,262 DAYS".'));
