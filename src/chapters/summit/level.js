@@ -880,6 +880,7 @@ export const SPAWNS = [
   { type: 'strike', id: 'thermalLever', era: P, ...on(4, U(50.5), 1.6), hits: 3, flag: 'springOpened', prompt: 'Shatter the frozen thermal sluice', visual: 'ice', color: 0x7be0ff, hx: 1.3, hz: 1.4 },
   { type: 'strike', id: 'orreryChime', era: M, ...on(5, U(73.5), 2.2), hits: 3, flag: 'orreryChimeRung', prompt: 'Ring the Orrery alignment chime', visual: 'chime', color: 0xffe08a, freq: 523, hx: 1.2, hz: 1.4 },
   // things to look at, and use
+  { type: 'interact', id: 'trunk', era: M, ...on(0, U(9.5), 1.0), prompt: 'Your trunk', visual: 'trunk', openFlag: 'winterCoat', icon: 'winterCoat', goneFlag: 'winterCoat' },
   { type: 'interact', id: 'lookoutLamp', era: M, ...on(1, L.lampX + 0.5, 5.4), prompt: 'The lookout lamp' },
   { type: 'interact', id: 'statue', era: M, ...on(2, L.statueX + 0.5, 0.5), prompt: 'The statue' },
   { type: 'interact', id: 'statueF', era: F, ...on(2, L.statueX + 0.5, 0.5), prompt: 'The statue' },

@@ -1141,6 +1141,17 @@ const ICONS = {
     disc(c, 8, 8, 2, '#3a2a14');
     px(c, 6, 5, '#ffe9a0');
   },
+  donCog: (c) => {
+    // old brass, and one tooth with his notch filed in it
+    disc(c, 8, 8, 5, '#a8823a');
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      rect(c, 7 + Math.cos(a) * 6, 7 + Math.sin(a) * 6, 2, 2, '#a8823a');
+    }
+    px(c, 14, 8, '#1a140c');
+    disc(c, 8, 8, 2, '#3a2a14');
+    px(c, 6, 5, '#e8c878');
+  },
   heart: (c) => {
     disc(c, 5, 6, 3, '#ff4a6a');
     disc(c, 11, 6, 3, '#ff4a6a');
@@ -1216,6 +1227,29 @@ const ICONS = {
       const a = -k * 0.42, r = 1 + k * 0.15;
       px(c, Math.round(8 + Math.cos(a) * r), Math.round(8 + Math.sin(a) * r), k % 5 ? '#6a8ad8' : '#ffb84a');
     }
+  },
+  seaCoat: (c) => {
+    // a navy oilskin coat, a red neckerchief at the collar, and one yellow sea-boot
+    rect(c, 4, 3, 8, 9, '#27477a');
+    rect(c, 2, 4, 2, 6, '#27477a');
+    rect(c, 12, 4, 2, 6, '#27477a');
+    rect(c, 7, 4, 2, 8, '#1d3660');
+    rect(c, 6, 2, 4, 2, '#e0483a');
+    rect(c, 5, 6, 1, 1, '#c9a44a');
+    rect(c, 5, 9, 1, 1, '#c9a44a');
+    rect(c, 10, 11, 4, 4, '#e2b83a');
+    rect(c, 10, 11, 4, 1, '#f4d870');
+  },
+  winterCoat: (c) => {
+    // a teal wool coat with a fur hem, a mustard scarf, and a red mitten on its string
+    rect(c, 4, 3, 8, 10, '#2a7a7c');
+    rect(c, 2, 4, 2, 6, '#246c6e');
+    rect(c, 12, 4, 2, 6, '#246c6e');
+    rect(c, 4, 12, 8, 2, '#f0ece4');
+    rect(c, 5, 2, 6, 2, '#e0a030');
+    rect(c, 9, 4, 2, 5, '#e0a030');
+    rect(c, 1, 10, 3, 3, '#c83a4a');
+    line(c, 2, 10, 4, 4, '#e8e0d0', 1);
   },
   lockpick: (c) => {
     // a bent hairpin and a sliver of watch-spring
@@ -1440,7 +1474,7 @@ const iconCache = {};
 export function iconURL(name, size = 16) {
   if (iconCache[name]) return iconCache[name];
   const { c, ctx } = makeCanvas(size, size);
-  ICONS[name](ctx);
+  (ICONS[name] || ICONS.cog)(ctx); // (an item without its own icon is a cog, not a crash)
   outlineRegion(ctx, 0, 0, size, size);
   iconCache[name] = c.toDataURL();
   return iconCache[name];
@@ -1449,7 +1483,7 @@ export function iconURL(name, size = 16) {
 /** Canvas texture for a world-space item (floating pickup). */
 export function iconTexture(name) {
   const { c, ctx } = makeCanvas(16, 16);
-  ICONS[name](ctx);
+  (ICONS[name] || ICONS.cog)(ctx); // (an item without its own icon is a cog, not a crash)
   outlineRegion(ctx, 0, 0, 16, 16);
   const t = new THREE.CanvasTexture(c);
   t.magFilter = THREE.NearestFilter;

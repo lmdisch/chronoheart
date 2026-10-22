@@ -2,7 +2,7 @@
 import { boot, newGame, sleep, settle } from './lib.mjs';
 const { browser, page, errors } = await boot({ chapter: 'saltwick' });
 const log = (...a) => console.log(...a);
-const st = () => page.evaluate(() => { const g = window.__game, b = g.player.body; return { x: +b.x.toFixed(2), y: +b.y.toFixed(2), z: +b.z.toFixed(2), era: g.era, mode: g.mode, hp: g.player.hp, ground: b.onGround, f: g.state.flags, inv: g.state.inventory, prompt: document.getElementById('prompt').classList.contains('visible') ? document.getElementById('prompt-text').textContent : null }; });
+const st = () => page.evaluate(() => { const g = window.__game, b = g.player.body; return { x: +b.x.toFixed(2), y: +b.y.toFixed(2), z: +b.z.toFixed(2), era: g.era, mode: g.mode, hp: g.player.hp, ground: b.onGround, f: g.state.flags, outfit: g.kit.outfit, inv: g.state.inventory, prompt: document.getElementById('prompt').classList.contains('visible') ? document.getElementById('prompt-text').textContent : null }; });
 const tp = (x, y, z, era) => page.evaluate((x, y, z, era) => { const g = window.__game; if (era !== undefined && era !== g.era) g.applyEra(era, true); g.player.place(x, y, z); g.post.trans = 1; }, x, y, z, era);
 const K = { left: 'KeyA', right: 'KeyD', up: 'KeyW', down: 'KeyS' };
 const down = (c) => page.keyboard.down(c), up = (c) => page.keyboard.up(c);
@@ -34,11 +34,16 @@ async function climb(dir, topY, t = 5000) {
   await up('KeyW'); if (dir) { await sleep(150); await up(dir); }
   await sleep(150);
 }
-const check = async (name, cond) => { if (errors.length) { log('ERRORS', errors.slice(0, 3)); process.exit(1); } const s = await st(); const ok = cond(s); log(ok ? 'PASS' : 'FAIL', name, ok ? '' : JSON.stringify({ x: s.x, y: s.y, z: s.z, era: s.era, mode: s.mode, prompt: s.prompt })); return ok; };
+const check = async (name, cond) => { if (errors.length) { log('ERRORS', errors.slice(0, 3)); process.exit(1); } const s = await st(); const ok = !!(await cond(s)); log(ok ? 'PASS' : 'FAIL', name, ok ? '' : JSON.stringify({ x: s.x, y: s.y, z: s.z, era: s.era, mode: s.mode, prompt: s.prompt })); return ok; };
 const interactNow = async () => { await tap('KeyF'); await sleep(300); await settle(page); await sleep(200); };
 
 await newGame(page);
 await page.evaluate(() => { window.__game.godMode = true; });
+
+// --- her trunk, off the barge
+await check('in her apron, before the trunk', (s) => s.outfit === 'vivienne' && !s.f.seaCoat);
+await walkTo(8.2, 1.9, { t: 3000 }); await interactNow();
+await check('the sea-coat, out of her trunk, and on', (s) => s.f.seaCoat && s.outfit === 'vivienneCoast');
 
 // --- era travel basics
 await tap('KeyQ'); await sleep(1600);

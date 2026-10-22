@@ -129,6 +129,7 @@ export function currentGoal(game) {
   }
 
   // ---- Saltwick Quay
+  if (!f.seaCoat) return step('Open your trunk.', 'It came down on the barge with you, and it is sitting on the quay beside Donald Eugene. Clothes for the seaside.');
   if (!f.metBrannoch) return step('Ask where the three bells hang.', 'Harbormaster Brannoch is on the quay, a little way east of the barge.');
   return step('Head east, toward the Noon Bell.', 'Follow the quay east, past the Mudflats, to the Long Pier.');
 }

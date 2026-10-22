@@ -17,8 +17,8 @@ import { CARDS } from './render/fx.js';
 /** What she can wear: each chapter's clothes, once she has been there. */
 export const OUTFITS = [
   { id: 'vivienne', name: "Apprentice's apron", note: 'Her everyday work clothes. Pockets for everything.', from: 'hollowmere' },
-  { id: 'vivienneCoast', name: 'Sea-coat', note: 'Oilskin and sea-boots: you can hold your breath half as long again under water.', from: 'saltwick' },
-  { id: 'vivienneWinter', name: 'Winter coat', note: 'Wool to the knee, earmuffs and mittens.', from: 'summit' },
+  { id: 'vivienneCoast', name: 'Sea-coat', note: 'Oilskin and sea-boots: you can hold your breath half as long again under water.', from: 'saltwick', flag: 'seaCoat', icon: 'seaCoat' },
+  { id: 'vivienneWinter', name: 'Winter coat', note: 'Wool to the knee, earmuffs and mittens.', from: 'summit', flag: 'winterCoat', icon: 'winterCoat' },
 ];
 
 /** Every power the Chronoheart learns, and where in the story it works. */
@@ -65,6 +65,14 @@ const REWOUND = [
   'Hang on. Did I just walk over here? Twice?',
   'Déjà vu. Again.',
 ];
+// Highcrest, before the winter coat (see shiver)
+const COLD = [
+  'Brrr. I packed for Saltwick. Saltwick was warm.',
+  "My trunk. It's by the tents. My coat is in my trunk.",
+  "I can't feel my ears. I'm fairly sure I still have ears.",
+  'My teeth are chattering in three-quarter time.',
+];
+const COLD_AGAIN = ['I have a perfectly good winter coat. Why am I not wearing it?', 'Brrr. Coat. Coat, coat, coat.'];
 const STRUCK = ['...Ow?', 'Did somebody just hit me with a wrench?', 'Ow! ...Why does my arm hurt?'];
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
 // each part's own shape of light (see src/render/fx.js), and the power each mark comes from
@@ -124,12 +132,18 @@ export class Kit {
   }
   /**
    * Learned already? In the chapter it comes from, only once it has been found in this playthrough
-   * (a replay starts without it); in a later chapter, once any playthrough has found it.
+   * (a replay starts without it); in a later chapter, once any playthrough has found it; in an
+   * earlier one, not yet.
    */
   learned(id) {
-    const p = POWERS.find((q) => q.id === id);
-    if (chapter.id === p.from) return !!this.game.state.flags[p.flag];
-    return progress.hasReward('power:' + id) || progress.isDone(p.from);
+    return this.found(POWERS.find((q) => q.id === id), 'power:' + id);
+  }
+  /** (learned, and the same for clothes: { from, flag }, and the reward a later chapter checks) */
+  found({ from, flag }, reward) {
+    const n = CHAPTERS.find((c) => c.id === from).number;
+    if (chapter.number < n) return false;
+    if (chapter.number === n) return !!this.game.state.flags[flag];
+    return progress.hasReward(reward) || progress.isDone(from);
   }
   get hasSeal() {
     return this.learned('seal');
@@ -150,17 +164,41 @@ export class Kit {
   get waveReady() {
     return this.wrench !== 'plain';
   }
+  /** What she has on: what she last chose, if it's hers yet; else the chapter's own, or her newest. */
   get outfit() {
-    const o = this.saved.outfit;
-    return o && this.outfits().some((x) => x.id === o) ? o : theme.playerSheet;
+    const have = this.outfits(), o = this.saved.outfit;
+    if (have.some((x) => x.id === o)) return o;
+    return have.find((x) => x.id === theme.playerSheet)?.id || have[have.length - 1].id;
   }
+  /** Her clothes: the apron always; each coat once she has opened the trunk it came in. */
   outfits() {
-    const n = this.reached();
-    return OUTFITS.filter((o) => CHAPTERS.find((c) => c.id === o.from).number <= n);
+    return OUTFITS.filter((o) => !o.flag || this.found(o, 'outfit:' + o.id));
   }
-  /** The furthest chapter she has reached. */
-  reached() {
-    return Math.max(...CHAPTERS.filter((c) => progress.isDone(c.id) || progress.slot(c.id)).map((c) => c.number), chapter.number);
+  /** Before the player is built: in whatever she has on, in this playthrough. */
+  dress() {
+    setOutfit(this.outfit);
+  }
+  /** A coat out of her trunk (see each chapter's story.js): hers from now on, and on at once. */
+  unpack(id) {
+    const o = OUTFITS.find((x) => x.id === id), g = this.game;
+    g.state.flags[o.flag] = true;
+    progress.grantReward('outfit:' + id);
+    this.wear(id);
+    const b = g.player.body;
+    g.bursts.emit(b.x, b.y + 1, b.z, 24, { color: [0xffe39f, 0xffffff], speed: 2.4, life: 0.6, gravity: 0, glow: 2 });
+    g.hud.toast(`<b>${o.name}</b>: ${o.note} Change clothes any time from the menu (${touchActive() ? 'the menu button' : '<kbd>I</kbd>'}).`, 6500);
+  }
+  /** Highcrest in anything but the winter coat: she says so, every half-minute or so. */
+  shiver() {
+    const g = this.game, b = g.player?.body;
+    const cold = chapter.id === 'summit' && this.outfit !== 'vivienneWinter' && g.mode === 'play' && !g.forceParts?.() && b;
+    if (!cold) return void (this.coldT = Math.max(this.coldT ?? 0, 8));
+    if ((this.coldT -= 1) > 0) return;
+    this.coldT = 30;
+    const lines = g.state.flags.winterCoat ? COLD_AGAIN : COLD;
+    this.coldN = (this.coldN ?? -1) + 1;
+    g.hud.toast(`<b>Vivienne:</b> "${lines[this.coldN % lines.length]}"`, 4000);
+    g.bursts.emit(b.x + g.player.facing * 0.3, b.y + 1.5, b.z, 8, { color: [0xffffff, 0xd8ecff], speed: 0.8, life: 0.9, gravity: -0.5 });
   }
   get breathScale() {
     return this.outfit === 'vivienneCoast' ? 1.5 : 1;
@@ -227,6 +265,7 @@ export class Kit {
     if (this.learnT <= 0) {
       this.learnT = 1;
       for (const p of POWERS) if (chapter.id === p.from && g.state.flags[p.flag] && !progress.hasReward('power:' + p.id)) progress.grantReward('power:' + p.id);
+      this.shiver();
       if (this.parts().length > 1 && chapter.id !== 'hollowmere' && !progress.hasReward('partsHint') && g.mode === 'play') {
         progress.grantReward('partsHint');
         g.hud.toast(`Your wrench came with you, parts and all. Hold ${touchActive() ? '<b>Attack</b>' : '<kbd>X</kbd>'}, then let go, to send a wave; ${touchActive() ? 'tap the wrench under your hearts' : '<kbd>T</kbd>'} changes parts.`, 8000);

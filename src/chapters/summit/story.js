@@ -47,6 +47,7 @@ export const INTRO = [
   DE("Come up Highcrest with me for Midwinter, apprentice. There's someone up there I'd like you to meet."),
   N('Two days later they reach Base Camp, at the foot of the mountain: bright tents in the snow, prayer flags snapping in the wind, porters loading packs for the climb.'),
   N('Above it, the road zigzags up the face of Highcrest: across, and turning back, and across again, all the way to the observatory at the top.'),
+  DE("Your trunk's by the tents: the porters carried it up for you. Get your coat on before you freeze."),
   DE("You take the road. I'll go on ahead. My knees know a shortcut."),
 ];
 
@@ -55,6 +56,7 @@ export const GONE = [
   V('Master? ...Master?'),
   V("There isn't a shortcut. There isn't anywhere to go."),
   V("He didn't walk. He went somewhen."),
+  V('...And it is freezing up here.'),
 ];
 
 /** The first time you walk out to the overlook, or look through the brass telescope. */
@@ -357,6 +359,16 @@ export async function interact(game, ent) {
   const f = game.state.flags, inv = game.state.inventory;
   const say = (lines) => game.dialogue.run(Array.isArray(lines) ? lines : [lines]);
   switch (ent.id) {
+    case 'trunk':
+      if (f.winterCoat) return say(N("Your trunk, with a dusting of snow on the lid. Everything else you own is folded in the bottom."));
+      await say([
+        N("Your trunk, carried up from the valley on a porter's back. There's snow on the lid."),
+        N('Inside: a teal wool coat to the knee with a fur hem, a mustard scarf, red earmuffs, and mittens on a string.'),
+        V('Mittens on a string.'),
+        V("...Oh. Oh, they're warm."),
+      ]);
+      game.kit.unpack('vivienneWinter');
+      return;
     case 'lookoutLamp':
       if (f.lampLit) return say(N('The lookout lamp, burning with a flame from the First Age. The wind has given up trying.'));
       return say([N('An old lamp on a tall post, dark. Its glass is clean: someone polishes it, even though it never gets lit.'), f.emberQuest ? V('A flame that never goes out. Somewhere, someone must have one.') : V('Ingrid would know about this.')]);

@@ -28,6 +28,7 @@ export function currentGoal(game) {
   }
   switch (tier) {
     case 0:
+      if (!f.winterCoat && x < L.campX1) return step('Open your trunk.', "The porters carried it up to Base Camp: it's by the tents. Your winter coat is in it.");
       if (x < L.pineX + 2) return step('Climb Highcrest.', `Walk east through Base Camp. A great pine has fallen across the path: in the First Age it's only a sapling. ${k.past} to step into the Past, walk past it, then ${k.future} to come back.`);
       return step('Climb Highcrest.', up(k, 'east'));
     case 1:
@@ -78,8 +79,8 @@ export function currentGoal(game) {
       if (!f.summitTalk) return step('Find Donald Eugene.', 'At the foot of the Needle, at the west end of the summit, the air shimmers.');
       {
         const ph = f.duelPhase || 1, wave = `hold ${k.attack} and let go`;
-        if (ph === 1) return step('Face Donald Eugene (1/3).', `His Stasis rings roll along the floor: jump them. When he tires and sinks to the floor, his guard is down: hit him with your wrench (${k.attack}), or a wave (${wave}).`);
-        if (ph === 2) return step('Face Donald Eugene (2/3).', `Stay off the floor where it flickers gold. Jump the low rings, roll under the high ones (${k.roll}). If he winds up a Rewind, hit him before the clock comes round. The Hairspring on your wrench sends a ring straight back at him.`);
+        if (ph === 1) return step('Face Donald Eugene (1/3).', `His bolts come down the hall along a line you can see on the floor: step out of it, or swing your wrench (${k.attack}) just as a bolt reaches you and knock it back. His own bolt shatters his guard. When he tires and sinks to the floor, his guard is down too: hit him, or send a wave (${wave}).`);
+        if (ph === 2) return step('Face Donald Eugene (2/3).', `Get off the floor where gold cracks spread: it falls away. Knock his bolts back with your wrench (${k.attack}) to break his guard. If he winds up a Rewind, hit him before the clock comes round.`);
         if (!f.zachHeld || !f.meganHeld) return step('Hold Zach and Megan in their moment (3/3).', `He is rubbing them out, and it guards him. Fit the Stasis ring (${k.part}), face them, ${wave}.`);
         return step('Face Donald Eugene (3/3).', `When he turns the whole page, light your Lantern (${k.lantern}): its old light keeps you in your own moment. Hit him while he's winded.`);
       }

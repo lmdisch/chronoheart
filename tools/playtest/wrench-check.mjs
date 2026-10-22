@@ -9,15 +9,17 @@ const check = (ok, what) => { console.log(`${ok ? 'PASS' : 'FAIL'}  ${what}`); i
 // (held until it's charged: on a slow machine the game's clock runs behind the wall clock)
 const wave = async (page) => { await page.keyboard.down('KeyX'); await page.waitForFunction(() => __game.kit.charged, { timeout: 5000 }).catch(() => {}); await page.keyboard.up('KeyX'); await sleep(1100); }; // (out, across, and landed)
 
-// ---- Chapter One, replayed after finishing it: no Stasis ring until the strongbox is opened again
+// ---- Chapter One, replayed after finishing the game: no Stasis ring until the strongbox is opened
+// again, and nothing from later chapters (no Hairspring, no coats)
 {
-  const save = { v: 2, slots: {}, done: { hollowmere: true }, rewards: { 'power:seal': true }, unlocked: true, last: 'hollowmere' };
+  const save = { v: 2, slots: {}, done: { hollowmere: true, saltwick: true, summit: true }, rewards: { 'power:seal': true, 'power:rewind': true, 'outfit:vivienneCoast': true, 'outfit:vivienneWinter': true }, kit: { outfit: 'vivienneWinter' }, unlocked: true, last: 'hollowmere' };
   const { browser, page, errors } = await boot({ chapter: 'hollowmere', storage: { 'chronoheart-save-v2': save, 'chronoheart-chapter': 'hollowmere' } });
   const G = (fn, ...a) => page.evaluate(fn, ...a);
   await newGame(page);
   await settle(page, 60000).catch(() => {});
-  let s = await G(() => ({ ready: __game.kit.waveReady, parts: __game.kit.parts().map((p) => p.id), chip: document.getElementById('wrench-chip').hidden, pick: __game.state.inventory.includes('lockpick') }));
+  let s = await G(() => ({ ready: __game.kit.waveReady, parts: __game.kit.parts().map((p) => p.id), chip: document.getElementById('wrench-chip').hidden, pick: __game.state.inventory.includes('lockpick'), outfits: __game.kit.outfits().map((o) => o.id), outfit: __game.kit.outfit }));
   check(!s.ready && s.parts.join() === 'plain' && s.chip, `a replay of Chapter One starts with a plain wrench (${JSON.stringify(s)})`);
+  check(s.outfits.join() === 'vivienne' && s.outfit === 'vivienne', `...and in her apron, with no coats from later chapters (${s.outfits})`);
   check(s.pick, 'she has her lock pick from the start');
   // the strongbox: walk away from the lock, and it stays locked
   await G(() => { const g = __game; g.state.flags.hasAmulet = true; g.applyEra(1, true); g.player.place(208.5, 0, 1.6); });

@@ -74,7 +74,7 @@ export function driver(page, errors) {
       const pr = document.getElementById('prompt');
       return {
         x: +b.x.toFixed(2), y: +b.y.toFixed(2), z: +b.z.toFixed(2), era: g.era, mode: g.mode, hp: g.player.hp, ground: b.onGround,
-        f: g.state.flags, inv: g.state.inventory, cogs: g.state.cogs, kind: g.state.kindness, taken: g.state.taken, meter: g.meter,
+        f: g.state.flags, inv: g.state.inventory, cogs: g.state.cogs, outfit: g.kit.outfit, kind: g.state.kindness, taken: g.state.taken, meter: g.meter,
         prompt: pr.classList.contains('visible') ? document.getElementById('prompt-text').textContent : null,
       };
     });

@@ -953,6 +953,7 @@ export class Warden extends EraEntity {
       if (this.stateT > WARDEN.windup) {
         this.state = 'chase';
         this.stateT = 0;
+        this.dodged = false;
         this.chargeTarget = { x: p.x, z: p.z };
         audio.sfx('glitch');
       }
@@ -962,7 +963,9 @@ export class Warden extends EraEntity {
         const prevX = this.x, prevZ = this.z;
         this.moveToward(p.x, p.z, WARDEN.charge, dt);
         const blocked = Math.hypot(this.x - prevX, this.z - prevZ) < WARDEN.charge * dt * 0.35;
-        if (blocked || (g.rewinding && this.stateT > 0.25)) {
+        // a rewind at any point in the charge counts, even one that's over before the lunge lands
+        if (g.rewinding) this.dodged = true;
+        if (blocked || (this.dodged && this.stateT > 0.25)) {
           g.onWardenChargeCrash?.(this);
         }
       }
@@ -1254,9 +1257,11 @@ export class Interactable extends EraEntity {
       seam.rotation.x = 0.35;
       this.cup = true;
       this.group.add(cup, seam);
-    } else if (v === 'chest') {
-      // one of Donald Eugene's strongboxes: iron-bound, padlocked, his notched cog on the front
-      const wood = std(0x9a6a3a), iron = std(0x5a5a66, { metalness: 0.5, roughness: 0.5 });
+    } else if (v === 'chest' || v === 'trunk') {
+      // one of Donald Eugene's strongboxes: iron-bound, padlocked, his notched cog on the front;
+      // or (trunk) Vivienne's own traveling trunk, painted blue, with brass corners and no lock
+      const trunk = v === 'trunk';
+      const wood = std(trunk ? 0x3a5a8a : 0x9a6a3a), iron = std(trunk ? 0xc9a44a : 0x5a5a66, { metalness: 0.5, roughness: 0.5 });
       const base = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.46, 0.6), wood);
       base.position.set(this.x, this.y + 0.23, this.z);
       for (const dx of [-0.32, 0.32]) {
@@ -1266,7 +1271,7 @@ export class Interactable extends EraEntity {
       }
       this.lid = new THREE.Group();
       this.lid.position.set(this.x, this.y + 0.46, this.z - 0.3);
-      const top = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.18, 0.62), std(0xae7a44));
+      const top = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.18, 0.62), std(trunk ? 0x46689a : 0xae7a44));
       top.position.set(0, 0.09, 0.3);
       const rim = new THREE.Mesh(new THREE.BoxGeometry(0.94, 0.05, 0.64), iron);
       rim.position.set(0, 0.0, 0.3);
@@ -1279,7 +1284,9 @@ export class Interactable extends EraEntity {
       this.padlock.position.set(this.x, this.y + 0.12, this.z + 0.33);
       this.inside = new THREE.PointLight(0xffd890, 0, 2.5);
       this.inside.position.set(this.x, this.y + 0.7, this.z);
-      this.group.add(base, this.lid, cog, notch, this.padlock, this.inside);
+      this.padlock.visible = !trunk;
+      this.group.add(base, this.lid, this.padlock, this.inside);
+      if (!trunk) this.group.add(cog, notch);
     } else if (v === 'shimmer') {
       // a tear in time: the End of Time showing through, a white-hot edge, two clock rings turning
       // round it in opposite directions, and its light on the snow
@@ -1351,7 +1358,7 @@ export class Interactable extends EraEntity {
       const open = !!s.flags[this.spec.openFlag];
       this.lidOpen = damp(this.lidOpen ?? (open ? 1 : 0), open ? 1 : 0, 6, dt);
       this.lid.rotation.x = -1.9 * this.lidOpen;
-      this.padlock.visible = !open;
+      this.padlock.visible = !open && this.spec.visual !== 'trunk';
       this.inside.intensity = open && !s.flags[this.spec.goneFlag] ? 2 : 0;
     }
     if (this.handle) {

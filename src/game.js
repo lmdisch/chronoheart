@@ -570,6 +570,7 @@ export class Game {
   /** What she always has on her: the lock pick. */
   packApron() {
     if (!this.state.inventory.includes('lockpick')) this.state.inventory.unshift('lockpick');
+    this.kit.dress(); // (in what she has in this playthrough, before the player is built)
   }
 
   /**

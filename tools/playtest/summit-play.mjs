@@ -40,6 +40,9 @@ await check('Chapter Three begins at Base Camp', (s) => s.x < U(6) && s.y === 0 
 await page.waitForFunction(() => window.__game.state.flags.donAhead, { timeout: 15000 }).catch(() => {});
 await d.settle();
 await check('Donald Eugene goes on ahead: he is simply not there any more', (s) => s.f.donAhead);
+await check('no winter coat yet', (s) => !s.f.winterCoat && s.outfit !== 'vivienneWinter');
+await walkTo(U(9.5), 2.2, { t: 4000 }); await interactNow();
+await check('the winter coat, out of her trunk, and on', (s) => s.f.winterCoat && s.outfit === 'vivienneWinter');
 await walkTo(U(14.5), 4.6, { t: 4000 });
 await interactNow();
 await check('Anwen the Guide explains the switchbacks', (s) => s.mode === 'play');

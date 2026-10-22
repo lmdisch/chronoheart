@@ -1240,6 +1240,7 @@ export const SPAWNS = [
 
   // Saltwick Quay
   { type: 'interact', id: 'gauge', era: M, x: 5.1, y: 0, z: 0.5, prompt: 'Tide gauge' },
+  { type: 'interact', id: 'trunk', era: M, x: 8.2, y: 0, z: 0.7, prompt: 'Your trunk', visual: 'trunk', openFlag: 'seaCoat', icon: 'seaCoat', goneFlag: 'seaCoat' },
   { type: 'interact', id: 'portSign', era: F, x: 15.2, y: 0, z: 0.9, prompt: 'Port sign' },
   { type: 'interact', id: 'lanternM', era: M, x: LANTERN.x, y: 0, z: LANTERN.z + 0.5, prompt: 'The Ever-Lantern', needs: 'lampGiven' },
   { type: 'interact', id: 'lanternF', era: F, x: LANTERN.x, y: 0, z: LANTERN.z + 0.5, prompt: 'Old lantern', needs: 'lampGiven' },

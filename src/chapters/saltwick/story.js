@@ -41,6 +41,7 @@ export const INTRO = [
   DE('That is your next lesson. Find out why.'),
   Wr('Me? On my own?'),
   DE('You did splendidly in Hollowmere. I shall be right here on the quay, possibly eating smoked eel. Shout if you need me.'),
+  DE("And your trunk came down on the barge with us. There's something in it for the seaside. The apron won't do for Saltwick."),
   DE('The harbor children have a rhyme: "Dawn and Noon and Dusk must chime, and the Well will run as in olden time." Three bells, apprentice. I would start by asking where they hang.'),
 ];
 
@@ -419,6 +420,16 @@ export async function interact(game, ent) {
   const s = game.state, f = s.flags, inv = s.inventory;
   const say = (lines) => game.dialogue.run(Array.isArray(lines) ? lines : [lines]);
   switch (ent.id) {
+    case 'trunk':
+      if (f.seaCoat) return say(N('Your trunk. Your apron is folded in the bottom, pockets and all.'));
+      await say([
+        N('Your trunk, salt-spotted from the barge. A note is tucked under the strap, in a small, tidy hand: "For the harbor. D.E."'),
+        N('Inside: a navy oilskin sea-coat, a red neckerchief, and a pair of bright yellow sea-boots.'),
+        Wr('He bought me yellow boots.'),
+        Wr("...They fit. Of course they fit. He'd have measured my old ones while I slept."),
+      ]);
+      game.kit.unpack('vivienneCoast');
+      return;
     case 'seaChest':
       if (f.hasRewind) return say(N("Donald Eugene's sea-chest, empty but for the oilcloth and its tag."));
       if (
