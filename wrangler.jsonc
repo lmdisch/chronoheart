@@ -1,0 +1,10 @@
+// Cloudflare hosting: the built game (npm run build -> dist/) served as static files.
+// Deploy: npm run build && npx wrangler@4 deploy
+{
+  "name": "chronoheart",
+  "compatibility_date": "2026-10-19",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}

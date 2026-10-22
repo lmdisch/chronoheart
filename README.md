@@ -16,7 +16,7 @@ Each chapter's guide has its controls, a full walkthrough, every Lost Cog and ev
 
 Every world, sprite, melody and sound in the game is generated from code: there are no image or audio files.
 
-**Play it:** <https://claude.ai/artifact/NyZQbGZhqM59hCKBWJQgiX>
+**Play it:** <https://chronoheart.chronoheart.workers.dev> (also as a claude.ai artifact: <https://claude.ai/artifact/FHGTSVYhXzt51VRp5SxbqP>)
 
 ---
 
@@ -28,6 +28,7 @@ Every world, sprite, melody and sound in the game is generated from code: there 
 - [Project structure](#project-structure)
 - [How a chapter is put together](#how-a-chapter-is-put-together)
 - [Testing](#testing)
+- [Hosting on Cloudflare](#hosting-on-cloudflare)
 - [Publishing the live page](#publishing-the-live-page)
 
 ---
@@ -174,9 +175,13 @@ Every stage should say `stuck: []`, and in Chapter Two that its gate holds. Star
 
 ---
 
+## Hosting on Cloudflare
+
+<https://chronoheart.chronoheart.workers.dev> is the `dist/` output (`npm run build`), served as static files by a Cloudflare Worker (`wrangler.jsonc`). Cloudflare's Workers Builds is connected to this repo: every push to `main` builds and deploys it. To deploy by hand instead: `npm run build && npx wrangler@4 deploy`.
+
 ## Publishing the live page
 
-The live game is a single self-contained HTML page (a claude.ai artifact), not the `dist/` output. It's assembled like this:
+The claude.ai artifact is a single self-contained HTML page, not the `dist/` output. It's assembled like this:
 
 1. Build the game code **unminified**, with `three` left external, as one ES module.
 2. Inline `src/ui/style.css` into a `<style>` tag, and copy the `<main id="app">…</main>` markup from `index.html`.
