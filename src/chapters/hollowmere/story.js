@@ -287,7 +287,7 @@ function npcLines(game, id) {
       if (f.hammerLeft)
         return [
           k('Wait. Glowing amulet. Dark hair in a bun. Goggles...'),
-          k("Family legend says someone dressed exactly like that would come for THE hammer one day. I always figured it was a joke Aria played on us. It's her last masterwork, and it's been tempering in her vault for three hundred years."),
+          k("Family legend says a girl dressed exactly like that would come for THE hammer one day, to make the Clocktower's bell ring again. I always figured it was a joke Aria played on us. It's her last masterwork, and it's been tempering in her vault for three hundred years."),
           k("Well, a legend's a legend. It's right there on the display case. Go on, take it."),
           ...(f.keepsakeQuest ? [] : (f.keepsakeQuest = true, [...wish, { favor: 'keepsake' }])),
         ];
@@ -638,7 +638,13 @@ export async function interact(game, ent) {
         game.removeItem('hammerBroken');
         f.hammerLeft = true;
         audio.sfx('lever');
-        await say([N('You lay the cracked hammer in the iron quench-vault and seal the lid.'), { who: 'aria', name: 'Aria the Smith', text: 'Let time do its work, eh? I\'ll make sure the family knows not to touch it.' }]);
+        const aria = (text) => ({ who: 'aria', name: 'Aria the Smith', text });
+        await say([
+          N('You lay the cracked hammer in the iron quench-vault and seal the lid.'),
+          Wr("Someone will come back for it, when it's ready. For the Tower's bell. She'll look... a lot like me."),
+          aria("Like you? Three hundred years from now?"),
+          aria("...Ha. All right, girl. I'll tell the family: nobody touches it till a girl in goggles comes asking, and then it goes to her, for the bell. They'll think I've gone soft in the head."),
+        ]);
         await game.timelapse({ to: ERA.FUTURE, focus: [119.5, 1.2, 0.5], years: 300, caption: 'The star-iron tempers, slowly, for three hundred years...', effect: 'shine' });
         game.save();
         return;

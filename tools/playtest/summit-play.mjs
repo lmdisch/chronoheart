@@ -21,6 +21,8 @@ async function echoHere() {
 }
 
 await newGame(page);
+// (the wolves, beetles and wisps on the road are left out: this is the route, not the fights)
+await page.evaluate(() => __game.enemies.forEach((e) => e.remove()));
 // the road's layout, from the game: x = OX + u along each leg; leg k's road runs z = zb(k) .. zb(k) + 6
 const { OX, ZB, H } = await page.evaluate(() => { const L = window.__game.L; return { OX: L.OX, ZB: [0, 1, 2, 3, 4, 5].map((k) => L.zb(k)), H: { rock: L.gy(4, L.OX + 60) } }; });
 const U = (u) => OX + u;
@@ -187,9 +189,9 @@ const fight = (until) => page.evaluate(async (until) => {
     if (until === 'squirrels' && d.phase === 3 && d.squirrelsLeft) break;
     if (g.state.flags.duelWon) break;
     if (g.mode === 'play' && d.open && d.state !== 'down') {
-      g.player.place(d.x - 1, 86, 0.5);
+      g.player.place(d.x - 1, 86, d.z);
       g.player.facing = 1;
-      g.playerAttack(d.x - 0.15, 86.7, 0.5, 1);
+      g.playerAttack(d.x - 0.15, 86.7, d.z, 1);
     }
     await sleep(60);
   }
@@ -202,13 +204,14 @@ await sleep(500);
 await d.settle();
 await check('phases 1 and 2: hit while his guard is down', (s) => (s.f.duelPhase || 1) === 3);
 const cz = (A.z0 + A.z1 + 1) / 2;
-/** a Stasis wave: hold the swing, and let go */
-const wave = async () => { await d.down('KeyX'); await sleep(700); await d.up('KeyX'); await sleep(500); };
+/** a Stasis wave: hold the swing, and let go (and give it time to land) */
+const wave = async () => { await d.down('KeyX'); await page.waitForFunction(() => __game.kit.charged, { timeout: 5000 }).catch(() => {}); await d.up('KeyX'); await sleep(900); };
 const held = (s) => (s.f.zachHeld ? 1 : 0) + (s.f.meganHeld ? 1 : 0);
 await page.evaluate(() => { __game.godMode = true; __game.kit.equip('seal', true); });
 for (const [n, dz] of [[1, 0.8], [2, -0.9]]) {
   await walkTo(A.startX + 6.5, cz + dz, { t: 6000 });
   await walkTo(A.startX + 6.0, cz + dz, { t: 1500 }); // (facing them)
+  await page.evaluate(() => { const d = __game.duel; d.clearShots(); d.nextPattern(6); }); // (no bolt in the way)
   await wave();
   await check(`phase 3: a Stasis wave holds ${n === 1 ? 'one squirrel' : 'the other'} where his rewrites can't reach`, (s) => held(s) >= n);
 }

@@ -14,7 +14,7 @@ node tools/playtest/saltwick-play.mjs      # Chapter Two, the whole story, every
 node tools/playtest/saltwick-side.mjs      # Chapter Two: favors, hazards, the Warden, cogs, the world after the story
 node tools/playtest/summit-play.mjs        # Chapter Three, the whole climb: every Lantern and Echo puzzle, the favors,
                                            #   Don's notebooks, the duel at the End of Time (in god mode), the night after
-node tools/playtest/duel-check.mjs         # Chapter Three's duel with Donald Eugene: his patterns, his guard, the Rewind
+node tools/playtest/duel-check.mjs         # Chapter Three's duel with Donald Eugene: his bolts (dodged, rolled), his guard, the floor, the Rewind
                                            #   wind-up, the squirrels, the Page Turn, and the win
 node tools/playtest/wrench-check.mjs       # the wrench's parts (learned, carried, swapped), freeze-and-shatter, the
                                            #   Escapement and Hairspring, a lock left and a lock picked, Reach to cogs and people

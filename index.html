@@ -97,29 +97,38 @@
         </div>
       </div>
 
-      <!-- the Menu: current goal (with its hint), items and favors; the game pauses while it's open -->
+      <!-- the Menu: Vivienne and what she carries on the left; the current goal (with its hint) and
+           her pockets, favors and powers on the right. The game pauses while it's open -->
       <div id="inventory-panel" class="glass panel" hidden>
-        <h2>Menu</h2>
-        <section id="goal" class="menu-section" aria-live="polite">
-          <div class="goal-head"><h3 class="menu-title">Current goal</h3><button id="goal-hint-btn" type="button" aria-expanded="false" aria-controls="goal-hint">Hint</button></div>
-          <p id="goal-text"></p>
-          <p id="goal-hint" hidden></p>
-        </section>
-        <section id="kit" class="menu-section" hidden>
-          <h3 class="menu-title">Equipment</h3>
-          <div class="kit-list"></div>
-        </section>
-        <section class="menu-section">
-          <h3 class="menu-title">Apron Pockets</h3>
-          <div class="inv-list"></div>
-        </section>
-        <section class="favors menu-section" hidden>
-          <h3 class="menu-title">Favors</h3>
-          <div class="favor-list"></div>
-        </section>
-        <div class="menu-actions">
-          <button class="btn" type="button" data-fullscreen hidden>Fullscreen</button>
-          <button id="btn-close-menu" class="btn primary">Back to the game</button>
+        <div class="menu-grid">
+          <aside id="kit" class="menu-doll" aria-label="Vivienne">
+            <div class="doll-stage"><div class="doll-fig"><img class="doll-img" alt=""><i class="doll-glow" aria-hidden="true"></i></div></div>
+            <p class="doll-caption"><b>Vivienne</b><span class="doll-outfit"></span></p>
+            <div class="kit-sec kit-clothes"><h4>Clothes</h4><div class="kit-tiles" role="group" aria-label="Clothes"></div></div>
+            <div class="kit-sec kit-wrench"><h4>Wrench <span class="kit-key"></span></h4><div class="kit-tiles" role="group" aria-label="Wrench parts"></div><p class="kit-note"></p></div>
+          </aside>
+          <div class="menu-main">
+            <section id="goal" class="menu-section" aria-live="polite">
+              <div class="goal-head"><h3 class="menu-title">Current goal</h3><button id="goal-hint-btn" type="button" aria-expanded="false" aria-controls="goal-hint">Hint</button></div>
+              <p id="goal-text"></p>
+              <p id="goal-hint" hidden></p>
+            </section>
+            <div class="menu-tabs" role="tablist">
+              <button type="button" role="tab" data-tab="pockets" aria-selected="true">Pockets <span class="tab-n"></span></button>
+              <button type="button" role="tab" data-tab="favors" aria-selected="false">Favors <span class="tab-n"></span></button>
+              <button type="button" role="tab" data-tab="powers" aria-selected="false">Chronoheart</button>
+            </div>
+            <section class="menu-tab" data-tab="pockets" role="tabpanel">
+              <div class="inv-grid"></div>
+              <div class="inv-detail" aria-live="polite"></div>
+            </section>
+            <section class="menu-tab favors" data-tab="favors" role="tabpanel" hidden><div class="favor-list"></div></section>
+            <section class="menu-tab" data-tab="powers" role="tabpanel" hidden><ul class="kit-powers"></ul></section>
+            <div class="menu-actions">
+              <button class="btn" type="button" data-fullscreen hidden>Fullscreen</button>
+              <button id="btn-close-menu" class="btn primary">Back to the game</button>
+            </div>
+          </div>
         </div>
       </div>
 

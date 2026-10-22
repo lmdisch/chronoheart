@@ -2,16 +2,17 @@
 // take, and every power the Chronoheart has learned. It lives in the shared save (progress.kit),
 // so a choice made in one chapter holds in all of them. The wrench waves live here too, because
 // they work in every chapter: the Chronoheart is the power, and the wrench is how she aims it.
-// Fit a part to its head (T swaps), hold the swing, let go, and a ring of light goes out to the
-// first thing in front of her: the Stasis ring holds it, the Escapement slows it, the Hairspring
-// sends it back to where it was a few seconds ago.
+// Fit a part to its head (T swaps), hold the swing, let go, and a wave of the part's light goes out
+// to the first thing in front of her: the Stasis ring holds it, the Escapement slows it, the
+// Hairspring sends it back to where it was a few seconds ago. (How it all looks: src/render/fx.js.)
 import * as THREE from 'three';
 import { input } from './core/input.js';
 import { audio } from './audio/audio.js';
 import { chapter, progress, CHAPTERS, theme } from './chapter.js';
-import { setOutfit, setWrenchHead } from './render/sprites.js';
+import { setOutfit, setWrenchHead, doll, iconURL } from './render/sprites.js';
 import { touchActive } from './ui/touch.js';
-import { Warden } from './world/entities.js';
+import { Warden, Pushable } from './world/entities.js';
+import { CARDS } from './render/fx.js';
 
 /** What she can wear: each chapter's clothes, once she has been there. */
 export const OUTFITS = [
@@ -35,10 +36,10 @@ const POWERS = [
  * its glow (on the wrench, the ring it sends, and whatever it is aimed at).
  */
 export const PARTS = [
-  { id: 'plain', name: 'Plain wrench', note: 'For hitting things, and tightening them.', css: '#e2bf62', hex: 0xe2bf62 },
-  { id: 'seal', name: 'Stasis ring', note: 'Holds what it meets in its moment. Strike a held creature and it shatters.', power: 'seal', css: '#bff6ff', hex: 0xbff6ff },
-  { id: 'tempo', name: 'Escapement', note: 'Slows what it meets to a crawl.', power: 'tempo', css: '#c8f070', hex: 0xc8f070 },
-  { id: 'rewind', name: 'Hairspring', note: 'Sends what it meets back to where it was a few seconds ago.', power: 'rewind', css: '#ffb84a', hex: 0xffb84a },
+  { id: 'plain', name: 'Plain wrench', note: 'For hitting things, and tightening them.', css: '#e2bf62', hex: 0xe2bf62, fx: 0xe2bf62, icon: 'wrench' },
+  { id: 'seal', name: 'Stasis ring', note: 'Holds what it meets in its moment. Strike a held creature and it shatters.', power: 'seal', css: '#bff6ff', hex: 0xbff6ff, fx: 0x5fd8ff, icon: 'stasisRing' },
+  { id: 'tempo', name: 'Escapement', note: 'Slows what it meets to a crawl.', power: 'tempo', css: '#c8f070', hex: 0xc8f070, fx: 0x9ee03a, icon: 'escapement' },
+  { id: 'rewind', name: 'Hairspring', note: 'Sends what it meets back to where it was a few seconds ago.', power: 'rewind', css: '#ffb84a', hex: 0xffb84a, fx: 0xff9424, icon: 'hairspring' },
 ];
 
 const CHARGE = 0.45; // seconds the swing is held before letting go sends a wave
@@ -66,6 +67,37 @@ const REWOUND = [
 ];
 const STRUCK = ['...Ow?', 'Did somebody just hit me with a wrench?', 'Ow! ...Why does my arm hurt?'];
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
+// each part's own shape of light (see src/render/fx.js), and the power each mark comes from
+const CARD_OF = { plain: 'glow', seal: 'snow', tempo: 'gear', rewind: 'spiral' };
+const MARK_POWER = { held: 'seal', slow: 'tempo', rewind: 'rewind' };
+
+/** Where a wave aimed at t should land, now (it may be on the move). */
+function aimAt(t) {
+  const r = t.ref;
+  return () => {
+    if (t.kind === 'enemy') return { x: r.body.x, y: r.body.y + Math.min(0.8, r.cfg.h * 0.6), z: r.body.z };
+    if (t.kind === 'block') return { x: r.cx + 0.5, y: 0.6, z: r.cz + 0.5 };
+    if (t.kind === 'region') return { x: t.x, y: t.y + 0.4, z: t.z };
+    if (t.kind === 'custom') return r.pos ? r.pos() : { x: r.x, y: r.y + (r.lift ?? 0.85), z: r.z };
+    return { x: r.x, y: (r.y ?? 0) + 0.85, z: r.z };
+  };
+}
+function stillThere(t) {
+  if (t.kind === 'enemy') return t.ref.alive;
+  if (t.kind === 'npc' || t.kind === 'warden') return t.ref.active();
+  if (t.kind === 'custom') return !t.ref.gone?.();
+  return true;
+}
+const posOf = (r) => r.body || { x: r.x, y: r.y ?? 0, z: r.z };
+const tall = (r) => r.cfg?.h ?? (r.actor ? r.actor.h * 0.95 : 1.6);
+function headOf(r) {
+  const p = posOf(r);
+  return { x: p.x, y: p.y + tall(r) + 0.55, z: p.z + 0.2 };
+}
+function midOf(r) {
+  const p = posOf(r);
+  return { x: p.x, y: p.y + tall(r) * 0.55, z: p.z + 0.25 };
+}
 
 export class Kit {
   constructor(game) {
@@ -74,7 +106,8 @@ export class Kit {
     this.target = null;
     this.glowing = null;
     this.learnT = 0;
-    this.wave = null;
+    this.shots = [];
+    this.marks = [];
     this.chip = document.getElementById('wrench-chip');
     this.chip?.addEventListener('pointerdown', (e) => {
       e.preventDefault();
@@ -182,6 +215,11 @@ export class Kit {
   }
 
   // ------------------------------------------------------------------ every frame
+  /** Holding a swing long enough to show it: the wrench goes up overhead (see Player). */
+  get charging() {
+    return this.waveReady && this.holdT > 0.16;
+  }
+
   update(dt, ctl) {
     const g = this.game;
     // powers learned in this chapter are written down for the ones after
@@ -196,14 +234,15 @@ export class Kit {
       this.showChip();
     }
     if (ctl && input.hit('part')) this.cycle();
-    this.updateWave(dt);
-    // a part on the wrench: now and then a mote of its light drifts off her hand
-    if (this.waveReady && g.mode === 'play' && Math.random() < dt * 2.5) {
-      const b = g.player.body;
-      g.bursts.emit(b.x + g.player.facing * 0.35, b.y + 0.75, b.z + 0.05, 1, { color: [this.part.hex, 0xffffff], speed: 0.25, life: 0.8, gravity: -0.5, glow: 1.6, jitter: 0.1 });
-    }
+    this.updateShots(dt);
+    this.updateMarks(dt);
     if (!this.waveReady || !ctl) {
-      this.holdT = 0;
+      // (a moment without control, a hit or a toast's pause, doesn't lose a charge still held)
+      if (!this.waveReady || !input.held('attack')) {
+        this.holdT = 0;
+        this.charged = false;
+        this.unflicker();
+      }
       this.setGlow(null);
       return;
     }
@@ -211,19 +250,98 @@ export class Kit {
     this.setGlow(this.target);
     if (input.held('attack')) {
       this.holdT += dt;
-      if (this.holdT > CHARGE && Math.random() < dt * 30) {
-        const b = g.player.body;
-        g.bursts.emit(b.x + g.player.facing * 0.4, b.y + 0.9, b.z, 1, { color: [this.part.hex, 0xffffff], speed: 1.2, life: 0.4, gravity: 0, glow: 2 });
-      }
+      if (this.holdT > 0.12) this.gather(dt);
       if (this.holdT > CHARGE && !this.charged) {
         this.charged = true;
-        audio.sfx('tick');
+        this.ready();
       }
     } else {
       if (this.holdT > CHARGE) this.fire();
       this.holdT = 0;
       this.charged = false;
+      this.unflicker();
     }
+  }
+
+  /**
+   * The light of the part on her wrench, at its head, wherever her hand is, so you can always see
+   * what's fitted: brighter as a wave gathers, and now and then a mote of it drifts off in its own
+   * shape (frost, a little gear, a coil). Every frame, whatever the game is doing (see Game.frame).
+   */
+  updateLamp(dt) {
+    const g = this.game, p = g.player;
+    if (!this.lamp) {
+      const mk = (name) => {
+        const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: CARDS[name], transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+        sp.renderOrder = 6;
+        g.scene.add(sp);
+        return sp;
+      };
+      this.lamp = { glow: mk('glow'), core: mk('snow'), at: new THREE.Vector3(), spin: 0 };
+    }
+    const L = this.lamp, part = this.part;
+    const tip = this.waveReady && p.mesh.visible && g.mode !== 'title' && g.mode !== 'credits' ? p.actor.toolTip(L.at) : null;
+    L.glow.visible = L.core.visible = !!tip;
+    this.tip = tip;
+    if (!tip) return;
+    const k = this.charged ? 1 : Math.min(1, Math.max(0, (this.holdT - 0.12) / (CHARGE - 0.12)));
+    L.glow.position.copy(tip);
+    L.glow.scale.setScalar(0.62 + Math.sin(g.time * 5) * 0.06 + k * 0.7 + (this.charged ? Math.sin(g.time * 30) * 0.12 : 0));
+    L.glow.material.color.setHex(part.fx).multiplyScalar(1.6 + k * 1.6);
+    const card = CARD_OF[part.id];
+    if (L.core.material.map !== CARDS[card]) {
+      L.core.material.map = CARDS[card];
+      L.core.material.needsUpdate = true;
+    }
+    L.core.position.copy(tip);
+    L.core.scale.setScalar(0.3 + k * 0.22);
+    L.core.material.color.setHex(part.fx).multiplyScalar(2.2 + k);
+    // each turns its own way: the frost slowly, the escapement in ticks, the hairspring backward
+    L.spin += dt * (part.id === 'rewind' ? -4 - k * 8 : part.id === 'tempo' ? 3 + k * 6 : 1.2 + k * 4);
+    L.core.material.rotation = part.id === 'tempo' ? Math.round(L.spin / (Math.PI / 5)) * (Math.PI / 5) : L.spin;
+    if (g.mode === 'play' && Math.random() < dt * 3) this.mote(tip);
+  }
+
+  mote(at) {
+    const g = this.game, part = this.part, o = { size: 0.14, life: 0.9, color: part.fx, glow: 2.4, vx: (Math.random() - 0.5) * 0.3, vy: 0.35, vz: 0.05 };
+    if (part.id === 'seal') g.fx.spawn('snow', at.x, at.y, at.z, { ...o, spin: 1.5 });
+    else if (part.id === 'tempo') g.fx.spawn('gear', at.x, at.y, at.z, { ...o, spin: 3, tick: Math.PI / 5 });
+    else g.fx.spawn('spiral', at.x, at.y, at.z, { ...o, spin: -6, vx: -0.3 * g.player.facing });
+  }
+
+  /** A wave gathering: motes of the part's light drawn in to the wrench's head from all round. */
+  gather(dt) {
+    const g = this.game, tip = this.tip, part = this.part;
+    this.gatherAcc = (this.gatherAcc || 0) + dt * (this.charged ? 16 : 36);
+    for (; tip && this.gatherAcc >= 1; this.gatherAcc--) {
+      const a = Math.random() * Math.PI * 2, r = this.charged ? 0.65 : 1.15, T = 0.24;
+      const x = tip.x + Math.cos(a) * r, y = tip.y + Math.sin(a) * r;
+      g.fx.spawn(part.id === 'seal' ? 'shard' : 'flash', x, y, tip.z, { size: 0.17, life: T, color: part.fx, glow: 2.6, vx: (tip.x - x) / T, vy: (tip.y - y) / T, fade: 'in', rot: a + Math.PI / 2 });
+    }
+    // charged: she flickers with its light, the way a charged shot always has
+    const m = g.player.actor.mat;
+    if (m.userData.preCrystal) return;
+    const on = this.charged && Math.floor(g.time * 16) % 2 === 0;
+    m.emissive.setHex(on ? part.fx : 0x000000);
+    m.emissiveIntensity = on ? 0.55 : 1;
+    this.flicker = true;
+  }
+  unflicker() {
+    if (!this.flicker) return;
+    this.flicker = false;
+    const m = this.game.player.actor.mat;
+    if (m.userData.preCrystal) return;
+    m.emissive.setHex(0x000000);
+    m.emissiveIntensity = 1;
+  }
+
+  /** Charged: a ring of its light, and a ping. */
+  ready() {
+    audio.sfx('charged');
+    const tip = this.tip, fx = this.game.fx, col = this.part.fx;
+    if (!tip) return;
+    fx.spawn('ring', tip.x, tip.y, tip.z, { size: 0.3, grow: 6, life: 0.28, color: col, glow: 2.6 });
+    fx.spawn('flash', tip.x, tip.y, tip.z, { size: 0.5, grow: 2.2, life: 0.2, glow: 2.2 });
   }
 
   /** The thing a wave would reach, if it went now: the nearest one in front of her, in her age. */
@@ -239,10 +357,14 @@ export class Kit {
     if (part === 'seal') for (const t of g.sealTargets?.() || []) consider('custom', t, t.x, t.y, t.z, t.name);
     for (const t of g.waveTargets?.(part) || []) consider('custom', t, t.x, t.y, t.z, t.name);
     const held = (e) => e.stasisT > 0;
-    for (const e of g.enemies) if (e.alive && e.active() && !held(e)) consider('enemy', e, e.body.x, e.body.y, e.body.z, 'it');
-    for (const e of g.entities) if (e instanceof Warden && e.active() && !e.dormant && !held(e)) consider('warden', e, e.x, 0, e.z, 'the Warden');
+    for (const e of g.enemies) if (e.alive && e.active() && !held(e) && !e.rewinding) consider('enemy', e, e.body.x, e.body.y, e.body.z, 'it');
+    for (const e of g.entities) {
+      if (e instanceof Warden && e.active() && !e.dormant && !held(e)) consider('warden', e, e.x, 0, e.z, 'the Warden');
+      // the Hairspring on a block: back to where it was before its last push
+      if (part === 'rewind' && e instanceof Pushable && e.active() && e.history?.length && !e.moving && !(e.spec.lockFlag && g.state.flags[e.spec.lockFlag])) consider('block', e, e.cx + 0.5, 0, e.cz + 0.5, 'the block');
+    }
     for (const n of g.npcs) {
-      if (!n.active() || n.spec.memory || n.spec.holo || n.spec.frozen || n.talking || held(n) || n.spec.noSeal) continue;
+      if (!n.active() || n.spec.memory || n.spec.holo || n.spec.frozen || n.talking || held(n) || n.spec.noSeal || n.rewindT > 0) continue;
       consider('npc', n, n.x, n.y, n.z, n.spec.name);
     }
     // something that shimmers, in a chapter with things to seal (Hollowmere's bridge, belfry, ...)
@@ -274,28 +396,111 @@ export class Kit {
     this.glowing = t;
   }
 
-  /** Let go of a held swing: a ring of light, and whatever it meets gets the part's effect. */
-  fire() {
-    const g = this.game, b = g.player.body, t = this.findTarget(), part = this.wrench;
-    audio.sfx('shift', { era: g.era });
-    this.launchRing(b.x, b.y + 0.9, b.z, g.player.facing, t);
-    if (!t) return;
-    this.setGlow(null);
-    g.bursts.emit(t.x, t.y + 0.8, t.z, 40, { color: [this.part.hex, 0xffffff], speed: 4, life: 1 });
-    audio.sfx('socket');
+  /** Let go of a held swing: the wave goes out from the wrench, and lands on whatever is in front of her. */
+  fire(t = this.findTarget()) {
+    const g = this.game, p = g.player, b = p.body, part = this.part;
+    this.unflicker();
+    audio.sfx('wave', { part: part.id });
+    p.castT = 0.34;
+    p.actor.play('cast', true);
+    const f = p.facing, x = b.x + f * 0.75, y = b.y + 1.05, z = b.z + 0.15;
+    // the muzzle: a flash, a ring, a kick back
+    g.fx.spawn('flash', x, y, z, { size: 0.5, grow: 2.6, life: 0.14, color: part.fx, glow: 2.8 });
+    g.fx.spawn('ring', x, y, z, { size: 0.3, grow: 5, life: 0.2, color: part.fx, glow: 2.2 });
+    b.vx -= f * 2.2;
+    g.renderer.shake = Math.max(g.renderer.shake || 0, 0.14);
+    if (t) this.setGlow(null);
+    const end = { x: x + f * RANGE, y, z };
+    const to = t ? aimAt(t) : () => end;
+    const d0 = to();
+    const dur = Math.max(0.1, Math.min(0.26, Math.hypot(d0.x - x, d0.y - y, d0.z - z) / 24));
+    const shot = { part, from: { x, y, z }, to, t: 0, dur, target: t, x, y, z, stampT: 0 };
+    const follow = () => (shot.done ? null : shot);
+    shot.core = g.fx.spawn(CARD_OF[part.id], x, y, z, { size: 1.05, life: 9, fade: 'none', color: part.fx, glow: 2.6, spin: part.id === 'rewind' ? -18 : part.id === 'tempo' ? 9 : 7, tick: part.id === 'tempo' ? Math.PI / 5 : 0, follow });
+    g.fx.spawn('glow', x, y, z, { size: 1.5, life: 9, fade: 'none', color: part.fx, glow: 1.6, follow });
+    this.shots.push(shot);
+  }
+
+  updateShots(dt) {
+    const fx = this.game.fx;
+    for (const s of this.shots) {
+      s.t += dt / s.dur;
+      const k = Math.min(1, s.t), to = s.to();
+      s.x = s.from.x + (to.x - s.from.x) * k;
+      s.y = s.from.y + (to.y - s.from.y) * k;
+      s.z = s.from.z + (to.z - s.from.z) * k;
+      const id = s.part.id, col = s.part.fx;
+      if (id === 'seal') {
+        // a crystal, shedding ice
+        fx.spawn('shard', s.x, s.y + (Math.random() - 0.5) * 0.3, s.z, { size: 0.24, life: 0.4, color: Math.random() < 0.5 ? col : 0xffffff, glow: 2.2, vy: 0.4, gravity: 4, spin: (Math.random() - 0.5) * 14 });
+        fx.spawn('snow', s.x, s.y, s.z, { size: 0.7, life: 0.12, color: col, glow: 1.6, alpha: 0.5, rot: s.core.rot });
+      } else if (id === 'tempo') {
+        // a gear that leaves itself behind every few hundredths of a second: time, stuttering
+        s.stampT -= dt;
+        if (s.stampT <= 0) {
+          s.stampT = 0.03;
+          fx.spawn('gear', s.x, s.y, s.z, { size: 0.7, life: 0.45, color: col, glow: 1.8, alpha: 0.55, rot: s.core.rot, tick: Math.PI / 5 });
+        }
+      } else {
+        // a coil turning backward, its light winding round the path
+        const a = s.t * 26;
+        for (const off of [0, Math.PI]) fx.spawn('glow', s.x, s.y + Math.sin(a + off) * 0.32, s.z + Math.cos(a + off) * 0.32, { size: 0.3, life: 0.4, color: col, glow: 2.4 });
+      }
+      if (k >= 1) {
+        s.done = true;
+        this.land(s);
+      }
+    }
+    this.shots = this.shots.filter((s) => !s.done);
+  }
+
+  /** A wave arrives: on its target (a flash, the briefest pause, the part's effect), or on nothing. */
+  land(s) {
+    const g = this.game, fx = g.fx, col = s.part.fx, id = s.part.id, { x, y, z } = s;
+    const t = s.target && stillThere(s.target) ? s.target : null;
+    if (!t) {
+      fx.spawn('ring', x, y, z, { size: 0.4, grow: 2.5, life: 0.25, color: col, glow: 1.6 });
+      fx.scatter(id === 'seal' ? 'shard' : 'flash', x, y, z, 5, { size: 0.15, speed: 1.6, life: 0.4, color: col, glow: 2 });
+      return;
+    }
+    g.hitStop = 0.07;
+    audio.sfx('impact', { part: id });
+    g.renderer.shake = Math.max(g.renderer.shake || 0, 0.3);
+    fx.spawn('flash', x, y, z, { size: 0.8, grow: 3, life: 0.2, glow: 2.4 });
+    fx.spawn('ring', x, y, z, { size: 0.5, grow: 7, life: 0.38, color: col, glow: 2.4 });
+    fx.spawn('glow', x, y, z, { size: 2.2, grow: 1.6, life: 0.3, color: col, glow: 1.6 });
+    if (id === 'seal') {
+      fx.spawn('hex', x, y, z, { size: 0.6, grow: 4, life: 0.65, color: col, glow: 2.4, spin: 1.8, fade: 'inout' });
+      fx.scatter('shard', x, y, z, 14, { size: 0.26, speed: 4.5, life: 0.7, color: col, glow: 2.4, gravity: 9 });
+    } else {
+      // a clock face: its hand creeping forward (the Escapement), or spinning back (the Hairspring)
+      fx.spawn('dial', x, y, z, { size: 0.6, grow: 3.4, life: 0.8, color: col, glow: 2.2, rot: 0, fade: 'inout' });
+      fx.spawn('hand', x, y, z, { size: 0.6, grow: 3.4, life: 0.8, glow: 2.2, rot: 0, fade: 'inout', ...(id === 'tempo' ? { spin: -0.8, tick: Math.PI / 6 } : { spin: 16 }) });
+      if (id === 'tempo') fx.scatter('gear', x, y, z, 6, { size: 0.3, speed: 2.4, life: 0.8, color: col, glow: 2, drag: 2.5, spinAmt: 4 });
+      else fx.spawn('spiral', x, y, z, { size: 1.2, grow: 2.4, life: 0.5, color: col, glow: 2.2, spin: 14 });
+    }
+    this.apply(t, id);
+  }
+
+  /** What each part does to what it lands on. */
+  apply(t, part) {
+    const g = this.game;
     if (t.kind === 'custom') return part === 'seal' && t.ref.seal ? t.ref.seal() : t.ref.hit?.(part);
     if (t.kind === 'region') return g.abilities.trySeal();
+    if (t.kind === 'block') return t.ref.rewind();
     const say = (lines) => g.hud.toast(`<b>${t.ref.spec.name}:</b> "${pick(lines)}"`, 3500);
     if (part === 'seal') {
       if (t.kind === 'enemy') {
         if (g.sealEnemy?.(t.ref)) return; // a chapter where it lasts for centuries (Hollowmere's creatures)
         t.ref.stasis(HOLD.enemy);
+        this.mark(t.ref, 'held');
         if (!progress.hasReward('shatterHint')) {
           progress.grantReward('shatterHint');
           g.hud.toast(`Held in its moment, until something disturbs it. Strike it (${touchActive() ? '<b>Attack</b>' : '<kbd>X</kbd>'}) and it will shatter.`, 5000);
         }
         return;
       }
+      this.mark(t.ref, 'held');
       if (t.kind === 'warden') {
         t.ref.stasis(HOLD.warden);
         t.ref.state = 'return';
@@ -310,14 +515,62 @@ export class Kit {
     }
     if (part === 'tempo') {
       t.ref.slow(SLOW[t.kind]);
+      this.mark(t.ref, 'slow');
       if (t.kind === 'npc') say(SLOWED);
       return;
     }
     if (part === 'rewind') {
-      if (t.kind === 'npc') return say(REWOUND);
       t.ref.rewind?.();
-      g.bursts.emit(t.ref.body?.x ?? t.ref.x, (t.ref.body?.y ?? 0) + 0.8, t.ref.body?.z ?? t.ref.z, 30, { color: [this.part.hex, 0xffffff], speed: 3, life: 0.8 });
+      this.mark(t.ref, 'rewind');
+      if (t.kind === 'npc') this.backward(t.ref);
     }
+  }
+
+  /** Someone sent back a few seconds: what they're about to say, said backward first. */
+  backward(n) {
+    const line = pick(REWOUND);
+    this.game.hud.toast(`<b>${n.spec.name}:</b> "${[...line].reverse().join('')}"`, 1100);
+    setTimeout(() => this.game.hud.toast(`<b>${n.spec.name}:</b> "${line}"`, 3500), 1100);
+  }
+
+  /**
+   * What a wave leaves on something: a dial over it while it's slowed (and afterimages wherever it
+   * goes), frost while it's held, a clock running backward while it rewinds.
+   */
+  mark(ref, kind) {
+    const fx = this.game.fx, m = { ref, kind, t: 0, ghostT: 0 };
+    this.marks = this.marks.filter((q) => !(q.ref === ref && q.kind === kind));
+    this.marks.push(m);
+    const col = PARTS.find((p) => p.power === MARK_POWER[kind]).fx;
+    const head = () => (this.marks.includes(m) ? headOf(ref) : null);
+    if (kind === 'held') fx.spawn('snow', 0, 0, 0, { size: 1.5, life: 1e9, fade: 'none', color: col, glow: 1.2, alpha: 0.35, spin: 0.25, follow: () => (this.marks.includes(m) ? midOf(ref) : null) });
+    else {
+      fx.spawn('dial', 0, 0, 0, { size: 0.6, life: 1e9, fade: 'none', color: col, glow: 2, rot: 0, follow: head });
+      fx.spawn('hand', 0, 0, 0, { size: 0.6, life: 1e9, fade: 'none', glow: 2, rot: 0, follow: head, ...(kind === 'slow' ? { spin: -1.2, tick: Math.PI / 6 } : { spin: 18 }) });
+    }
+  }
+
+  updateMarks(dt) {
+    const fx = this.game.fx;
+    for (const m of this.marks) {
+      const r = m.ref;
+      m.t += dt;
+      const here = r.alive !== false && (!r.active || r.active());
+      const on = here && (m.kind === 'slow' ? r.slowT > 0 : m.kind === 'held' ? r.stasisT > 0 : r.rewinding || r.rewindT > 0 || m.t < 0.8);
+      if (!on) {
+        m.done = true;
+        continue;
+      }
+      if (m.kind === 'slow' && r.actor && (m.ghostT -= dt) <= 0) {
+        m.ghostT = 0.12;
+        fx.ghost(r.actor, PARTS[2].fx, { life: 0.5, alpha: 0.35 });
+      }
+      if (m.kind === 'held' && Math.random() < dt * 2) {
+        const p = midOf(r);
+        fx.spawn('flash', p.x + (Math.random() - 0.5) * 0.8, p.y + (Math.random() - 0.5) * 0.8, p.z + 0.3, { size: 0.25, life: 0.3, glow: 2.4, fade: 'inout' });
+      }
+    }
+    this.marks = this.marks.filter((m) => !m.done);
   }
 
   /** Someone held by a wave has come out of it. */
@@ -333,51 +586,31 @@ export class Kit {
     this.game.hud.toast(`<b>${n.spec.name}:</b> "${n.thawLine}"`, 3500);
   }
 
-  launchRing(x, y, z, dir, t) {
-    const g = this.game;
-    if (!this.ringMesh) {
-      this.ringMesh = new THREE.Mesh(
-        new THREE.TorusGeometry(0.5, 0.06, 6, 28),
-        new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, depthWrite: false }),
-      );
-      this.ringMesh.rotation.y = Math.PI / 2;
-      g.scene.add(this.ringMesh);
-    }
-    this.ringMesh.material.color.setHex(this.part.hex).multiplyScalar(2.2);
-    const to = t ? { x: t.x, y: t.y + 0.8, z: t.z } : { x: x + dir * RANGE, y, z };
-    this.wave = { t: 0, from: { x, y, z }, to };
-    this.ringMesh.visible = true;
-  }
-
-  updateWave(dt) {
-    const w = this.wave;
-    if (!w) return;
-    w.t += dt / 0.3;
-    const k = Math.min(1, w.t), m = this.ringMesh;
-    m.position.set(w.from.x + (w.to.x - w.from.x) * k, w.from.y + (w.to.y - w.from.y) * k, w.from.z + (w.to.z - w.from.z) * k);
-    m.quaternion.copy(this.game.renderer.billboardQ); // (face on, so it reads as a ring)
-    m.scale.setScalar(0.6 + k * 1.6);
-    m.material.opacity = 1 - k * 0.8;
-    if (k >= 1) {
-      m.visible = false;
-      this.wave = null;
-    }
-  }
-
   // ------------------------------------------------------------------ the Menu
+  /** Vivienne as she is now, her clothes and her wrench's parts to choose from, and the Chronoheart's powers. */
   renderMenu(el) {
+    const part = this.part, have = this.parts(), outfits = this.outfits(), o = OUTFITS.find((x) => x.id === this.outfit);
+    const d = doll(this.outfit, part.css);
+    el.querySelector('.doll-img').src = d.url;
+    const glow = el.querySelector('.doll-glow');
+    glow.hidden = part.id === 'plain';
+    glow.style.left = d.tip[0] * 100 + '%';
+    glow.style.top = d.tip[1] * 100 + '%';
+    glow.style.setProperty('--part', part.css);
+    el.querySelector('.doll-caption').innerHTML = `<b>Vivienne</b><span>${o?.name ?? ''}</span>${o ? `<small>${o.note}</small>` : ''}`;
+    const tile = (key, val, img, label, on, css = '') => `<button type="button" class="kit-tile${on ? ' on' : ''}" data-kit="${key}:${val}" aria-pressed="${on}" aria-label="${label}" title="${label}"${css ? ` style="--part:${css}"` : ''}>${img}</button>`;
+    const clothes = el.querySelector('.kit-clothes');
+    clothes.hidden = outfits.length < 2;
+    clothes.querySelector('.kit-tiles').innerHTML = outfits.map((x) => tile('outfit', x.id, `<img src="${doll(x.id, part.css).url}" alt="">`, x.name, x.id === this.outfit)).join('');
+    const wr = el.querySelector('.kit-wrench');
+    wr.style.setProperty('--part', part.css);
+    wr.querySelector('.kit-key').innerHTML = have.length > 1 && !touchActive() ? '<kbd>T</kbd> swaps' : '';
+    wr.querySelector('.kit-tiles').innerHTML = have.map((p) => tile('wrench', p.id, `<img src="${iconURL(p.icon)}" alt="">`, p.name, p.id === part.id, p.css)).join('');
+    wr.querySelector('.kit-note').innerHTML = `<b>${part.name}.</b> ${part.note}`;
     const learned = POWERS.filter((p) => this.learned(p.id));
-    const btn = (key, val, label, on, note = '') => `<button type="button" class="kit-opt${on ? ' on' : ''}" data-kit="${key}:${val}" aria-pressed="${on}">${label}${note ? `<small>${note}</small>` : ''}</button>`;
-    const parts = [];
-    const have = this.parts();
-    if (have.length > 1) {
-      parts.push(`<div class="kit-row"><h4>Wrench <span class="kit-key">${touchActive() ? '' : '<kbd>T</kbd> swaps'}</span></h4><div class="kit-opts">${have.map((p) => btn('wrench', p.id, `<i class="kit-swatch" style="--part:${p.css}"></i>${p.name}`, this.wrench === p.id, p.note)).join('')}</div></div>`);
-    }
-    const outfits = this.outfits();
-    if (outfits.length > 1) parts.push(`<div class="kit-row"><h4>Clothes</h4><div class="kit-opts">${outfits.map((o) => btn('outfit', o.id, o.name, this.outfit === o.id, o.note)).join('')}</div></div>`);
-    if (learned.length) parts.push(`<div class="kit-row"><h4>The Chronoheart</h4><ul class="kit-powers">${learned.map((p) => `<li><b>${p.name}</b> <span>${p.where}</span></li>`).join('')}</ul></div>`);
-    el.hidden = !parts.length;
-    el.querySelector('.kit-list').innerHTML = parts.join('');
+    document.querySelector('#inventory-panel .kit-powers').innerHTML = learned.length
+      ? learned.map((p) => `<li><b>${p.name}</b><span>${p.where}</span></li>`).join('')
+      : '<li class="muted">Nothing yet. The Chronoheart is quiet, for now.</li>';
     if (!el.dataset.wired) {
       el.dataset.wired = '1';
       el.addEventListener('click', (e) => {

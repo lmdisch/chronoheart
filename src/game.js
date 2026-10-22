@@ -9,6 +9,7 @@ import { audio } from './audio/audio.js';
 import { Renderer } from './render/renderer.js';
 import { Post } from './render/post.js';
 import { Ambient, Bursts } from './render/particles.js';
+import { FX } from './render/fx.js';
 import { World, T } from './world/world.js';
 import { hits } from './world/physics.js';
 import { Player, NPC, Enemy, Warden, Searchlight, Pushable, Pickup, Interactable, Strikeable, Shrine } from './world/entities.js';
@@ -63,6 +64,8 @@ export class Game {
     this.post = new Post(this.renderer);
     this.ambient = new Ambient(this.scene);
     this.bursts = new Bursts(this.scene);
+    this.fx = new FX(this.scene);
+    this.hitStop = 0; // seconds the action holds still, the instant a wave lands
     this.hud = new HUD();
     this.dialogue = new Dialogue();
     this.mode = 'title';
@@ -1027,7 +1030,7 @@ export class Game {
     if (this.mode === 'title' || this.mode === 'credits') {
       this.updateTitle(dt);
       this.player.mesh.visible = this.player.shadow.visible = false;
-    } else if (this.mode === 'play' || this.mode === 'dialogue') {
+    } else if ((this.mode === 'play' || this.mode === 'dialogue') && !(this.hitStop > 0)) {
       this.updatePlay(dt);
       this.kit.update(dt, this.controlsEnabled());
       this.updateCogCompass(dt);
@@ -1036,6 +1039,7 @@ export class Game {
       this.player.update(dt);
       for (const e of this.entities) if (e.alive && e.active()) e.update(dt);
     }
+    this.hitStop = Math.max(0, this.hitStop - dt);
 
     const r = this.renderer;
     r.tickAtmos(dt);
@@ -1057,6 +1061,8 @@ export class Game {
     r.tickShaders(this.time);
     this.ambient.update(dt, this.time, r.camTarget.x, r.camTarget.y);
     this.bursts.update(dt);
+    this.kit.updateLamp(dt);
+    this.fx.update(dt);
 
     // depth-of-field focus: camera distance to the player (or the camera target on the title)
     const fp = this.lapse ? this.lapse.focus : this.player && this.mode !== 'title' && this.mode !== 'credits' ? new THREE.Vector3(this.player.body.x, this.player.body.y + 0.8, this.player.body.z) : r.camTarget;

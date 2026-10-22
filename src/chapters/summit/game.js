@@ -85,6 +85,8 @@ export class SummitGame extends Game {
     this.mode = 'cutscene';
     this.hud.showPrompt(null);
     this.powers.clearEchoes?.();
+    const rift = this.interactables.find((i) => i.id === 'shimmer' && i.shimmer && i.available());
+    if (rift && !this.inArenaMood) await this.throughRift(rift);
     setFade(1, '#fff2d0');
     audio.sfx('shift', { era: M });
     this.renderer.shake = 1.2;
@@ -106,6 +108,35 @@ export class SummitGame extends Game {
     }
     this.lockT = 0.3;
     this.save();
+  }
+
+  /** Into the tear: it opens wide, its rings spin up, and it draws her in, thinner and thinner. */
+  async throughRift(rift) {
+    const m = this.player.mesh, from = m.position.clone(), to = new THREE.Vector3(rift.x, rift.y + 0.5, rift.z);
+    audio.sfx('rewind');
+    let last = performance.now();
+    const t0 = last, D = 1300;
+    await new Promise((done) => {
+      const tick = () => {
+        const now = performance.now(), k = Math.min(1, (now - t0) / D), e = k * k;
+        rift.surge = Math.min(1, k * 1.4);
+        rift.updateRift(Math.min(0.05, (now - last) / 1000));
+        last = now;
+        m.position.lerpVectors(from, to, e);
+        m.scale.set(1 - 0.85 * e, 1 + 0.5 * e, 1);
+        this.renderer.shake = 0.15 + k * 0.9;
+        if (k > 0.55 && !this.riftSfx) {
+          this.riftSfx = true;
+          audio.sfx('shift', { era: M });
+        }
+        if (k < 1) requestAnimationFrame(tick);
+        else done();
+      };
+      tick();
+    });
+    this.riftSfx = false;
+    m.scale.set(1, 1, 1);
+    rift.surge = 0;
   }
 
   /** The End of Time has a light of its own; anywhere else, the chapter's usual one. */
@@ -157,10 +188,8 @@ export class SummitGame extends Game {
     const d = this.duel, b = this.player.body;
     this.player.facing = Math.sign(d.x - b.x) || 1;
     this.kit.equip('seal', true);
-    this.kit.launchRing(b.x, b.y + 0.9, b.z, this.player.facing, { x: d.x, y: d.y, z: (ARENA.z0 + ARENA.z1 + 1) / 2 });
-    audio.sfx('shift', { era: M });
-    await wait(320);
-    audio.sfx('socket');
+    this.kit.fire({ kind: 'custom', name: 'Donald Eugene', ref: { pos: () => ({ x: d.x, y: d.y + 1.3, z: d.z }), seal: () => d.stun(1e6) } });
+    await wait(450);
     d.stun(1e6);
     await wait(700);
     letterbox(false);

@@ -239,8 +239,9 @@ export const L = {
   /** Where each leg's road turns back up the slope (its first column), and which way. */
   turns: LEGS.slice(0, 5).map((l, k) => ({ k, x: U(TURN(k)[0]), x1: U(TURN(k)[1]), end: l.dir > 0 ? 'east' : 'west', y: endH(k) })),
   cameraBounds: [U(8), U(92)],
-  // at the overlook, the camera rises and looks down past the edge, to the towns far below
-  vistas: [{ x0: U(-2), x1: U(OVERLOOK_U - 6), z0: ZS - 12, z1: ZS + 7, pitch: 33, dist: 56, lift: 2, fov: 52 }],
+  // at the overlook, the camera rises and looks down past the edge, to the towns far below (out on
+  // the overlook itself: not on the road by the Needle, where the shimmer wants a close look)
+  vistas: [{ x0: U(-2), x1: U(OVERLOOK_U - 6), z0: ZS - 12, z1: ZS - 1, pitch: 33, dist: 56, lift: 2, fov: 52 }],
 };
 
 /**
@@ -885,6 +886,24 @@ export const SPAWNS = [
   { type: 'interact', id: 'lyraCup', era: M, ...on(5, U(22.4), 3.2), prompt: 'The cup', visual: 'cup', needs: 'lyraAtRest' },
   { type: 'interact', id: 'telescope', era: M, x: U(24), y: gy(5, U(24)), z: ZS - 8.8, prompt: 'Look through the brass telescope' },
   { type: 'interact', id: 'flagSpot', era: M, x: L.flagSpot.x + 0.5, y: gy(5, L.flagSpot.x), z: L.flagSpot.z, prompt: 'Plant the flag', needs: 'zachQuest', unless: 'flagPlanted' },
+  // what's out on the road: snow wolves in the First Age, Donald Eugene's clockwork beetles in the
+  // Golden Hour, frost wisps in the Stopped Age (never in the frost, where you can't shift away)
+  { type: 'enemy', kind: 'wolf', era: P, ...on(0, U(64), 3), range: [U(58), U(72)] },
+  { type: 'enemy', kind: 'beetle', era: M, ...on(0, U(46), 2.5), range: [U(43), U(50)] },
+  { type: 'enemy', kind: 'wisp', era: F, ...on(0, U(76), 3.5), range: [U(70), U(82)] },
+  { type: 'enemy', kind: 'wolf', era: P, ...on(1, U(47), 3), range: [U(43), U(52)] },
+  { type: 'enemy', kind: 'beetle', era: M, ...on(1, U(67), 3), range: [U(62), U(74)] },
+  { type: 'enemy', kind: 'wisp', era: F, ...on(1, U(13), 3), range: [U(8), U(18)] },
+  { type: 'enemy', kind: 'wolf', era: P, ...on(2, U(50), 3), range: [U(46), U(55)] },
+  { type: 'enemy', kind: 'beetle', era: M, ...on(2, U(87), 3), range: [U(83), U(91)] },
+  { type: 'enemy', kind: 'wisp', era: F, ...on(2, U(49), 3), range: [U(45), U(54)] },
+  { type: 'enemy', kind: 'wolf', era: P, ...on(3, U(30), 3), range: [U(26), U(36)] },
+  { type: 'enemy', kind: 'beetle', era: M, ...on(3, U(25), 3), range: [U(20), U(30)] },
+  { type: 'enemy', kind: 'wisp', era: F, ...on(3, U(61), 3), range: [U(57), U(66)] },
+  { type: 'enemy', kind: 'wolf', era: P, ...on(4, U(40), 3), range: [U(35), U(46)] },
+  { type: 'enemy', kind: 'beetle', era: M, ...on(4, U(83), 3), range: [U(78), U(88)] },
+  { type: 'enemy', kind: 'wisp', era: F, ...on(4, U(42), 3), range: [U(36), U(47)] },
+  { type: 'enemy', kind: 'beetle', era: M, ...on(5, U(50), 3), range: [U(45), U(56)], hideIf: 'hoursReturned' },
   // the last of Donald Eugene's spilled cogs
   { type: 'cog', id: 'cogP1', era: P, ...on(0, L.pineX + 0.5, 6), lift: 0.7 },
   { type: 'cog', id: 'cogF1', era: F, ...on(0, L.pineX + 1, 3.5), lift: 3.7 },

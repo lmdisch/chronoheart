@@ -344,6 +344,63 @@ class AudioEngine {
       case 'socket':
         [64, 71, 76].forEach((m, i) => this.osc('triangle', mtof(m), t + i * 0.07, 0.15, 0.09, d, { release: 0.9 }));
         break;
+      // the wrench's waves (opt.part: seal, tempo, rewind)
+      case 'charged':
+        [76, 83, 88].forEach((m, i) => this.osc('square', mtof(m), t + i * 0.035, 0.03, 0.035, d, { filter: 5000, release: 0.25 }));
+        this.osc('sine', mtof(100), t + 0.1, 0.05, 0.03, d, { release: 0.4 });
+        break;
+      case 'wave': {
+        const p = opt.part;
+        if (p === 'seal') {
+          this.osc('sine', 1800, t, 0.05, 0.08, d, { release: 0.35 }).o.frequency.exponentialRampToValueAtTime(3600, t + 0.2);
+          this.noise(t, 0.25, 0.08, d, { type: 'highpass', freq: 6000 });
+        } else if (p === 'tempo') {
+          [0, 0.07, 0.14].forEach((dt, i) => this.osc('square', i % 2 ? 1300 : 1700, t + dt, 0.015, 0.05, d, { filter: 4200, release: 0.04 }));
+          this.osc('triangle', 330, t, 0.15, 0.08, d, { release: 0.3 }).o.frequency.exponentialRampToValueAtTime(160, t + 0.3);
+        } else {
+          const o = this.osc('sawtooth', 220, t, 0.2, 0.06, d, { filter: 2200, release: 0.2 }).o;
+          o.frequency.exponentialRampToValueAtTime(1100, t + 0.25);
+          [67, 72, 76, 79].forEach((m, i) => this.osc('triangle', mtof(m), t + i * 0.04, 0.03, 0.05, d, { release: 0.15 }));
+        }
+        this.noise(t, 0.18, 0.1, d, { type: 'bandpass', freq: 1400, q: 1.2 });
+        break;
+      }
+      case 'impact': {
+        const p = opt.part;
+        this.drum(t, 260, 70, 0.12, 0.3, d);
+        if (p === 'seal') {
+          [96, 91, 100].forEach((m, i) => this.osc('sine', mtof(m), t + i * 0.03, 0.04, 0.06, d, { release: 0.6 }));
+          this.noise(t, 0.4, 0.14, d, { type: 'highpass', freq: 4000 });
+        } else if (p === 'tempo') {
+          for (let i = 0; i < 4; i++) this.osc('square', 900, t + i * 0.18 * (1 + i * 0.4), 0.012, 0.05, d, { filter: 3000, release: 0.05 });
+          this.osc('sine', 220, t, 0.4, 0.08, d, { release: 0.6 }).o.frequency.exponentialRampToValueAtTime(90, t + 0.8);
+        } else {
+          const o = this.osc('sawtooth', 1200, t, 0.3, 0.05, d, { filter: 2000, release: 0.3 }).o;
+          o.frequency.exponentialRampToValueAtTime(160, t + 0.45);
+          [84, 79, 76, 72, 67, 64].forEach((m, i) => this.osc('triangle', mtof(m), t + i * 0.05, 0.03, 0.06, d, { release: 0.2 }));
+        }
+        break;
+      }
+      // the End of Time
+      case 'bolt':
+        this.osc('square', 520, t, 0.08, 0.05, d, { filter: 2400, release: 0.1 }).o.frequency.exponentialRampToValueAtTime(260, t + 0.18);
+        this.noise(t, 0.2, 0.08, d, { type: 'bandpass', freq: 3000, q: 2 });
+        break;
+      case 'rumble':
+        this.noise(t, 1.0, 0.16, d, { type: 'lowpass', freq: 220, attack: 0.3 });
+        for (let i = 0; i < 5; i++) this.noise(t + i * 0.2, 0.05, 0.05, d, { type: 'bandpass', freq: 2500 + Math.random() * 2000, q: 5 });
+        break;
+      case 'crumble':
+        this.noise(t, 0.9, 0.32, d, { type: 'lowpass', freq: 1400 });
+        this.drum(t, 90, 35, 0.7, 0.6, d);
+        for (let i = 0; i < 6; i++) this.noise(t + 0.1 + i * 0.07, 0.06, 0.08, d, { type: 'bandpass', freq: 600 + Math.random() * 900, q: 3 });
+        break;
+      case 'restore': {
+        const o = this.osc('sawtooth', 160, t, 0.4, 0.05, d, { filter: 1500, release: 0.3 }).o;
+        o.frequency.exponentialRampToValueAtTime(900, t + 0.5);
+        [60, 64, 67, 72].forEach((m, i) => this.osc('triangle', mtof(m), t + 0.3 + i * 0.05, 0.05, 0.06, d, { release: 0.4 }));
+        break;
+      }
       case 'fanfare':
         [[60, 64, 67], [65, 69, 72], [67, 71, 74], [72, 76, 79, 84]].forEach((ch, i) =>
           ch.forEach((m) => this.osc('sawtooth', mtof(m), t + i * 0.4, 0.35, 0.035, d, { filter: 2400, attack: 0.03, release: 0.8 })),

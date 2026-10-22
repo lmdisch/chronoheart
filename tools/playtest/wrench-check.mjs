@@ -6,7 +6,8 @@
 import { boot, newGame, sleep, settle } from './lib.mjs';
 let fails = 0;
 const check = (ok, what) => { console.log(`${ok ? 'PASS' : 'FAIL'}  ${what}`); if (!ok) fails++; };
-const wave = async (page) => { await page.keyboard.down('KeyX'); await sleep(700); await page.keyboard.up('KeyX'); await sleep(400); };
+// (held until it's charged: on a slow machine the game's clock runs behind the wall clock)
+const wave = async (page) => { await page.keyboard.down('KeyX'); await page.waitForFunction(() => __game.kit.charged, { timeout: 5000 }).catch(() => {}); await page.keyboard.up('KeyX'); await sleep(1100); }; // (out, across, and landed)
 
 // ---- Chapter One, replayed after finishing it: no Stasis ring until the strongbox is opened again
 {
@@ -72,11 +73,12 @@ const wave = async (page) => { await page.keyboard.down('KeyX'); await sleep(700
   s = await G(() => ({ wrench: __game.kit.wrench, chip: document.querySelector('#wrench-chip .wc-name').textContent }));
   check(s.wrench === 'tempo' && s.chip === 'Escapement', `T: the Escapement (${JSON.stringify(s)})`);
   // a crab in the Past, slowed
-  await G(() => { const g = __game; g.applyEra(0, true); const c = g.enemies.find((e) => e.era === 0 && e.alive); g.player.place(c.body.x - 2.2, 0, c.body.z); g.player.facing = 1; window.__crab = c; });
+  await G(() => { const g = __game; g.applyEra(0, true); const c = g.enemies.find((e) => e.era === 0 && e.alive); c.hp = 99; c.go = c.update; c.update = () => {}; g.player.place(c.body.x - 2.2, 0, c.body.z); g.player.facing = 1; window.__crab = c; }); // (held still for the test; the swing that starts the charge may land first)
   await sleep(200);
   await wave(page);
-  s = await G(() => window.__crab.slowT);
-  check(s > 5, `a crab, slowed to a crawl (${s?.toFixed?.(1)}s)`);
+  s = await G(() => ({ slow: window.__crab.slowT, alive: window.__crab.alive, x: window.__crab.body.x, px: __game.player.body.x, wrench: __game.kit.wrench, mode: __game.mode }));
+  check(s.slow > 5, `a crab, slowed to a crawl (${JSON.stringify(s)})`);
+  await G(() => { const c = window.__crab; c.update = c.go; });
   // the Hairspring (Rewind learned): back where it was
   await G(() => { const g = __game; g.state.flags.hasRewind = true; g.kit.equip('rewind', true); });
   const moved = await G(async () => {

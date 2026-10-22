@@ -176,6 +176,9 @@ function drawHumanoid(ctx, ox, oy, o, pose = {}) {
   drawArm(L, R, 16 + lean, 17 + by, pose.armF ?? 0.2, o.top, o.mittens || o.skin, pose.tool ? o.tool || 'wrench' : null, o.sleeves, o.wrenchHead);
 }
 
+/** Where the wrench's head was drawn in the frame being drawn now (see Sheet.frame, Sheet.tips). */
+let toolTip = null;
+
 /** long: sleeves to the wrist, so only the hand (or a mitten) shows. */
 function drawArm(L, R, sx, sy, a, sleeve, skin, tool, long = false, head = null) {
   const len = 5;
@@ -190,7 +193,10 @@ function drawArm(L, R, sx, sy, a, sleeve, skin, tool, long = false, head = null)
   if (tool === 'wrench') {
     const tx = ex + Math.sin(a) * 7, ty = ey + Math.cos(a) * 7;
     L(ex, ey, tx, ty, '#b88a3a', 2);
-    L(tx - 1, ty - 1, tx + 1, ty + 1, head || '#e2bf62', 3);
+    // the head: steel jaws round whatever part is fitted (its color, in the middle)
+    L(tx - 1, ty - 1, tx + 1, ty + 1, '#c8ccd8', 3);
+    R(Math.round(tx) - 1, Math.round(ty) - 1, 2, 2, head || '#e2bf62');
+    toolTip = [tx, ty];
   } else if (tool === 'hammer') {
     const tx = ex + Math.sin(a) * 6, ty = ey + Math.cos(a) * 6;
     L(ex, ey, tx, ty, '#6b4428', 2);
@@ -427,6 +433,7 @@ class Sheet {
     this.rules = compileRules(rules);
     this.count = 0;
     this.anims = {};
+    this.tips = []; // per frame: where the wrench's head is, in base pixels (or null)
   }
   /** drawFn paints at base resolution; detailFn (optional) paints fine 1px details at 2x afterward. */
   frame(drawFn, detailFn = null) {
@@ -434,7 +441,9 @@ class Sheet {
     const { fw, fh } = this;
     const sc = this.scratch.ctx;
     sc.clearRect(0, 0, fw, fh);
+    toolTip = null;
     drawFn(sc, 0, 0);
+    this.tips[i] = toolTip;
     const src = new Uint32Array(sc.getImageData(0, 0, fw, fh).data.buffer.slice(0));
     const W2 = fw * SCALE, H2 = fh * SCALE;
     const big = polish(texturize(scale2x(src, fw, fh), W2, H2, this.rules), W2, H2);
@@ -509,13 +518,20 @@ function humanoidDetail(ctx, o, pose) {
   }
 }
 
-function humanoidSheet(o, opts = {}) {
+function humanoidRules(o) {
   const rules = { [o.hair]: 'hair', [o.top]: 'cloth', [o.legs]: o.robe ? 'cloth' : 'crease', [o.boots]: 'leather' };
   if (o.apron) rules[o.apron] = 'weave';
   if (o.beard) rules[o.beard] = 'hair';
-  const s = new Sheet(32, 32, 24, 8, rules);
+  return rules;
+}
+
+function humanoidSheet(o, opts = {}) {
+  const rules = humanoidRules(o);
+  const s = new Sheet(32, 32, opts.npcOnly ? 24 : 32, 8, rules);
   const f = (pose) => s.frame((ctx, ox, oy) => drawHumanoid(ctx, ox, oy, o, pose), (ctx) => humanoidDetail(ctx, o, pose));
-  const idle = [f({ bob: 0 }), f({ bob: 1, armF: 0.15, armB: -0.15 })];
+  // (o.carry: Vivienne, who always has her wrench in hand, so you can see what's fitted to it)
+  const c = o.carry ? { tool: true } : {};
+  const idle = o.carry ? [f({ bob: 0, armF: 0.5, ...c }), f({ bob: 1, armF: 0.42, armB: -0.15, ...c })] : [f({ bob: 0 }), f({ bob: 1, armF: 0.15, armB: -0.15 })];
   s.anim('idle', idle, 2.5);
   if (opts.npcOnly) {
     const talk = [f({ bob: 0, armF: 1.2 }), f({ bob: 1, armF: 0.9 })];
@@ -525,18 +541,21 @@ function humanoidSheet(o, opts = {}) {
   const walk = [];
   for (let i = 0; i < 6; i++) {
     const t = (i / 6) * Math.PI * 2;
-    walk.push(f({ bob: Math.abs(Math.sin(t)) > 0.7 ? 1 : 0, legF: Math.sin(t) * 0.7, legB: -Math.sin(t) * 0.7, armF: -Math.sin(t) * 0.8, armB: Math.sin(t) * 0.8 }));
+    walk.push(f({ bob: Math.abs(Math.sin(t)) > 0.7 ? 1 : 0, legF: Math.sin(t) * 0.7, legB: -Math.sin(t) * 0.7, armF: o.carry ? 0.45 - Math.sin(t) * 0.45 : -Math.sin(t) * 0.8, armB: Math.sin(t) * 0.8, ...c }));
   }
   s.anim('walk', walk, 10);
   s.anim('run', walk, 15);
-  s.anim('jump', [f({ legF: 0.9, legB: -0.3, armF: 2.6, armB: -2.4, crouch: -1 })], 1);
-  s.anim('fall', [f({ legF: 0.3, legB: -0.5, armF: 2.0, armB: -2.0 })], 1);
+  s.anim('jump', [f({ legF: 0.9, legB: -0.3, armF: 2.6, armB: -2.4, crouch: -1, ...c })], 1);
+  s.anim('fall', [f({ legF: 0.3, legB: -0.5, armF: 2.0, armB: -2.0, ...c })], 1);
   s.anim('climb', [f({ armF: 3.0, armB: 2.6, legF: 0.4, legB: -0.1 }), f({ armF: 2.6, armB: 3.0, legF: -0.1, legB: 0.4, bob: 1 })], 6);
   s.anim('attack', [
     f({ armF: 3.0, tool: true, lean: -1 }),
     f({ armF: 1.6, tool: true, lean: 1, legF: 0.4 }),
     f({ armF: 0.6, tool: true, lean: 1, legF: 0.4 }),
   ], 16, false);
+  // a wave: the wrench held up overhead while it gathers, then thrust out as it goes
+  s.anim('charge', [f({ armF: 3.0, armB: -0.6, tool: true, lean: -1 }), f({ armF: 2.85, armB: -0.5, tool: true, lean: -1, bob: 1 })], 10);
+  s.anim('cast', [f({ armF: 1.75, armB: -1.2, tool: true, lean: 1, legF: 0.5, legB: -0.4 }), f({ armF: 1.5, armB: -1.0, tool: true, lean: 1, legF: 0.4, legB: -0.3 })], 10, false);
   s.anim('push', [f({ lean: 1, armF: 1.5, armB: 1.3, legF: 0.4, legB: -0.6 }), f({ lean: 1, armF: 1.4, armB: 1.5, legF: -0.2, legB: -0.3, bob: 1 })], 5);
   s.anim('hurt', [f({ hurt: true, lean: -1, armF: -1.0, armB: -1.4 })], 1);
   s.anim('swim', [f({ armF: 1.8, armB: -1.2, legF: 0.9, legB: -0.9 }), f({ armF: 0.8, armB: -2.2, legF: -0.6, legB: 0.6, bob: 1 })], 4);
@@ -672,6 +691,96 @@ function droneSheet() {
   const b = s.frame((c, x, y) => draw(c, x, y, 1));
   const h = s.frame((c, x, y) => draw(c, x, y, 0, true));
   s.anim('walk', [a, b], 14);
+  s.anim('hurt', [h], 1);
+  return s.build();
+}
+
+/** Chapter Three, the First Age: a snow wolf, out of the dark between the torches. */
+function wolfSheet() {
+  const s = new Sheet(32, 32, 3, 8, { '#b8c0d0': 'fur', '#8890a4': 'fur' });
+  const draw = (ctx, ox, oy, t, hurt) => {
+    const B = hurt ? '#ffffff' : '#b8c0d0', D = '#8890a4', L = '#e8eef8', y = 20;
+    line(ctx, ox + 7, oy + y + 1, ox + 2, oy + y - 2 + (t ? 1 : 0), D, 2); // tail
+    rect(ctx, ox + 7, oy + y, 14, 6, B);
+    rect(ctx, ox + 8, oy + y + 4, 12, 2, L); // belly
+    rect(ctx, ox + 8, oy + y - 1, 11, 1, D); // the ridge of its back
+    rect(ctx, ox + 19, oy + y - 4, 7, 6, B); // head
+    rect(ctx, ox + 25, oy + y - 1, 3, 3, B); // snout
+    px(ctx, ox + 28, oy + y - 1, '#20243a');
+    rect(ctx, ox + 25, oy + y + 2, 3, 1, L);
+    rect(ctx, ox + 20, oy + y - 6, 2, 2, D);
+    rect(ctx, ox + 23, oy + y - 6, 2, 2, D);
+    px(ctx, ox + 23, oy + y - 2, '#ffd040'); // eye
+    const a = t ? 1 : -1;
+    rect(ctx, ox + 8 + a, oy + y + 6, 2, 5, D);
+    rect(ctx, ox + 11 - a, oy + y + 6, 2, 5, B);
+    rect(ctx, ox + 16 + a, oy + y + 6, 2, 5, D);
+    rect(ctx, ox + 19 - a, oy + y + 6, 2, 5, B);
+  };
+  const a = s.frame((c, x, y) => draw(c, x, y, 0));
+  const b = s.frame((c, x, y) => draw(c, x, y, 1));
+  const h = s.frame((c, x, y) => draw(c, x, y, 0, true));
+  s.anim('walk', [a, b], 9);
+  s.anim('hurt', [h], 1);
+  return s.build();
+}
+
+/** Chapter Three, the Golden Hour: one of Donald Eugene's clockwork beetles, brass, wound up and set loose on the road. */
+function beetleSheet() {
+  const s = new Sheet(32, 32, 3, 8, { '#c8963a': 'plate', '#8a6428': 'plate' });
+  const draw = (ctx, ox, oy, t, hurt) => {
+    const B = hurt ? '#ffffff' : '#c8963a', D = '#8a6428', H = '#f2cf5a', cx = ox + 15, y = oy + 22;
+    for (let i = 0; i < 3; i++) {
+      const lx = cx - 6 + i * 6 + ((i + t) % 2 ? 1 : -1);
+      line(ctx, lx, y + 3, lx - 1, y + 8, '#3a3030', 1);
+    }
+    // a brass dome, riveted, split down the middle
+    rect(ctx, cx - 9, y - 2, 18, 6, B);
+    rect(ctx, cx - 7, y - 5, 14, 3, B);
+    rect(ctx, cx - 4, y - 7, 8, 2, B);
+    rect(ctx, cx - 7, y - 5, 14, 1, H);
+    rect(ctx, cx - 9, y + 3, 18, 1, D);
+    for (let i = -6; i <= 6; i += 4) px(ctx, cx + i, y, H);
+    line(ctx, cx, y - 7, cx, y + 3, D, 1);
+    rect(ctx, cx + 9, y - 1, 4, 4, '#4a3a2a');
+    px(ctx, cx + 11, y, '#ff3a2a');
+    px(ctx, cx + 12, y, '#ffb0a0');
+    // the key on its back, turning
+    rect(ctx, cx - 1, y - 10, 2, 3, D);
+    if (t) rect(ctx, cx - 4, y - 13, 8, 3, H);
+    else rect(ctx, cx - 1, y - 14, 3, 5, H);
+  };
+  const a = s.frame((c, x, y) => draw(c, x, y, 0));
+  const b = s.frame((c, x, y) => draw(c, x, y, 1));
+  const h = s.frame((c, x, y) => draw(c, x, y, 0, true));
+  s.anim('walk', [a, b], 8);
+  s.anim('hurt', [h], 1);
+  return s.build();
+}
+
+/** Chapter Three, the Stopped Age: a frost wisp, the only thing still moving once time stopped. */
+function wispSheet() {
+  const s = new Sheet(32, 32, 3, 8, { '#a8d8ff': 'plate' });
+  const draw = (ctx, ox, oy, t, hurt) => {
+    const B = hurt ? '#ffffff' : '#a8d8ff', L = '#e8f6ff', D = '#5a8ac8', cx = ox + 16, cy = oy + 13 + (t ? 1 : 0);
+    for (let i = 0; i < 8; i++) {
+      rect(ctx, cx - i, cy - 8 + i, i * 2 + 1, 1, i < 2 ? L : B);
+      rect(ctx, cx - i, cy + 8 - i, i * 2 + 1, 1, i < 3 ? D : B);
+    }
+    rect(ctx, cx - 8, cy, 17, 1, B);
+    px(ctx, cx - 11, cy - 3 + (t ? 1 : 0), L);
+    px(ctx, cx + 11, cy + 2 - (t ? 1 : 0), L);
+    px(ctx, cx + 9, cy - 7, L);
+    rect(ctx, cx - 3, cy - 1, 2, 2, '#1a2a4a');
+    rect(ctx, cx + 2, cy - 1, 2, 2, '#1a2a4a');
+    px(ctx, cx - 3, cy - 1, '#9ff4ff');
+    px(ctx, cx + 2, cy - 1, '#9ff4ff');
+    for (let i = 0; i < 3; i++) px(ctx, cx - 2 + i * 2, cy + 10 + ((i + t) % 2) * 2, L);
+  };
+  const a = s.frame((c, x, y) => draw(c, x, y, 0));
+  const b = s.frame((c, x, y) => draw(c, x, y, 1));
+  const h = s.frame((c, x, y) => draw(c, x, y, 0, true));
+  s.anim('walk', [a, b], 5);
   s.anim('hurt', [h], 1);
   return s.build();
 }
@@ -891,7 +1000,7 @@ CHAR.orinYoung = CHAR.christopherYoung;
 const npc = (name) => () => humanoidSheet(CHAR[name], { npcOnly: true });
 const SHEETS = {
   // Vivienne wears what the chapter says she wears (see playerSheet in each chapter's theme.js)
-  vivienne: () => humanoidSheet({ ...(CHAR[outfit || theme.playerSheet] || CHAR.vivienne), wrenchHead }),
+  vivienne: () => humanoidSheet({ ...(CHAR[outfit || theme.playerSheet] || CHAR.vivienne), wrenchHead, carry: true }),
   megan: () => squirrelSheet(),
   zach: () => squirrelSheet({ B: '#86848e', L: '#cfccd6', acorn: false, spectacles: true }),
   eugene: npc('eugene'), michelle: npc('michelle'), lyra: npc('michelle'),
@@ -917,6 +1026,9 @@ const SHEETS = {
   orinOld: npc('orinOld'),
   meganWinter: () => squirrelSheet({ scarf: '#e04a4a' }),
   zachWinter: () => squirrelSheet({ B: '#86848e', L: '#cfccd6', acorn: false, spectacles: true, scarf: '#4a6ad8' }),
+  wolf: () => wolfSheet(),
+  beetle: () => beetleSheet(),
+  wisp: () => wispSheet(),
   // both
   rat: () => ratSheet(),
   drone: () => droneSheet(),
@@ -1079,6 +1191,13 @@ const ICONS = {
     line(c, 4, 6, 6, 2, '#5a3a22', 1);
     line(c, 12, 6, 10, 2, '#5a3a22', 1);
     rect(c, 6, 2, 5, 1, '#5a3a22');
+  },
+  wrench: (c) => {
+    // her wrench: a brass handle, steel jaws
+    line(c, 3, 13, 9, 7, '#b88a3a', 2);
+    disc(c, 11, 5, 3, '#c8ccd8');
+    rect(c, 11, 2, 2, 3, '#2a2030');
+    px(c, 9, 4, '#ffffff');
   },
   stasisRing: (c) => {
     // a brass ring, etched with an hourglass, glowing pale
@@ -1338,6 +1457,22 @@ export function iconTexture(name) {
   t.generateMipmaps = false;
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
+}
+
+/**
+ * Vivienne, head to toe, as the Menu shows her: in those clothes, with that part on her wrench.
+ * { url, tip }: tip is where the wrench's head is, as a fraction of the picture across and down.
+ */
+const dollCache = {};
+export function doll(outfitId, head) {
+  const k = outfitId + (head || '');
+  if (dollCache[k]) return dollCache[k];
+  const o = { ...(CHAR[outfitId] || CHAR.vivienne), wrenchHead: head, carry: true };
+  const s = new Sheet(32, 32, 1, 1, humanoidRules(o));
+  const pose = { bob: 0, armF: 0.5, armB: -0.2, tool: true };
+  s.frame((ctx) => drawHumanoid(ctx, 0, 0, o, pose), (ctx) => humanoidDetail(ctx, o, pose));
+  const t = s.tips[0] || [16, 16];
+  return (dollCache[k] = { url: s.canvas.toDataURL(), tip: [(t[0] + 0.5) / 32, (t[1] + 0.5) / 32] });
 }
 
 /** Portrait: crop the head/torso of the idle frame and scale it up. */

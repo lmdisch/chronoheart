@@ -206,26 +206,50 @@ export class Dialogue {
   }
 }
 
+let lastItem = null; // (the Menu opens on whatever you looked at last)
 export function showInventoryPanel(items, open, favors = []) {
   const el = $('inventory-panel');
   el.hidden = !open;
   if (!open) return;
+  if (!el.dataset.tabs) {
+    el.dataset.tabs = '1';
+    el.querySelector('.menu-tabs').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-tab]');
+      if (b) showTab(el, b.dataset.tab);
+    });
+  }
   // favors (kindness side quests) the player has heard about
-  const fav = el.querySelector('.favors');
-  fav.hidden = !favors.length;
-  fav.querySelector('.favor-list').innerHTML = favors
-    .map((f) => `<div class="favor ${f.done ? 'done' : ''}"><span class="favor-mark" aria-hidden="true">${f.done ? '♥' : '◇'}</span><div><h4>${f.title}${f.done ? ' <span class="badge kind">Done</span>' : ''}</h4><p>${f.text}</p></div></div>`)
-    .join('');
-  const list = el.querySelector('.inv-list');
+  const done = favors.filter((f) => f.done).length;
+  el.querySelector('[role=tab][data-tab="favors"] .tab-n').textContent = favors.length ? `${done}/${favors.length}` : '';
+  el.querySelector('.favor-list').innerHTML = favors.length
+    ? favors.map((f) => `<div class="favor ${f.done ? 'done' : ''}"><span class="favor-mark" aria-hidden="true">${f.done ? '♥' : '◇'}</span><div><h4>${f.title}${f.done ? ' <span class="badge kind">Done</span>' : ''}</h4><p>${f.text}</p></div></div>`).join('')
+    : '<p class="muted">No favors yet. Someone along the way may ask you for one.</p>';
+  // the pockets: a tile for each thing, and what it is underneath
+  const grid = el.querySelector('.inv-grid'), detail = el.querySelector('.inv-detail'), I = content.ITEMS;
+  items = items.filter((it) => I[it]);
+  el.querySelector('[role=tab][data-tab="pockets"] .tab-n').textContent = items.length || '';
   if (!items.length) {
-    list.innerHTML = '<p class="muted">Your apron pockets are empty, apart from a trusty wrench.</p>';
+    grid.innerHTML = '';
+    detail.innerHTML = '<p class="muted">Your apron pockets are empty, apart from a trusty wrench.</p>';
     return;
   }
-  list.innerHTML = items
-    .map(
-      (it) => `<div class="inv-item ${content.ITEMS[it]?.key ? 'key' : ''}"><img src="${iconURL(it)}" alt=""><div><h3>${content.ITEMS[it].name}${content.ITEMS[it].key ? ` <span class="badge">${theme.keyBadge}</span>` : ''}</h3><p>${content.ITEMS[it].desc}</p></div></div>`,
-    )
-    .join('');
+  grid.innerHTML = items.map((it) => `<button type="button" class="inv-tile${I[it]?.key ? ' key' : ''}" data-item="${it}" aria-label="${I[it].name}"><img src="${iconURL(it)}" alt=""></button>`).join('');
+  const pick = (it) => {
+    lastItem = it;
+    for (const t of grid.children) t.classList.toggle('on', t.dataset.item === it);
+    const d = I[it];
+    detail.innerHTML = `<h3>${d.name}${d.key ? ` <span class="badge">${theme.keyBadge}</span>` : ''}</h3><p>${d.desc}</p>`;
+  };
+  const on = (e) => {
+    const t = e.target.closest('[data-item]');
+    if (t) pick(t.dataset.item);
+  };
+  grid.onclick = grid.onpointerover = grid.onfocusin = on;
+  pick(items.includes(lastItem) ? lastItem : items[items.length - 1]);
+}
+function showTab(el, name) {
+  for (const b of el.querySelectorAll('[role=tab]')) b.setAttribute('aria-selected', String(b.dataset.tab === name));
+  for (const t of el.querySelectorAll('.menu-tab')) t.hidden = t.dataset.tab !== name;
 }
 
 export function setFade(v, color = '#000', text = '') {

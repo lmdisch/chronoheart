@@ -171,7 +171,7 @@ await interactNow();
 await check('Tamsin builds the bridge', (s) => s.f.bridgeBuilt);
 await walkTo(215.5, 3.5, { t: 3000 });
 await check('the bridge can be sealed (it glows white)', async () => !!(await G(() => window.__game.abilities.sealTarget())));
-await down('KeyX'); await sleep(700); await up('KeyX'); // (a Stasis wave from the wrench)
+await down('KeyX'); await page.waitForFunction(() => window.__game.kit.charged, { timeout: 5000 }).catch(() => {}); await up('KeyX'); await sleep(500); // (a Stasis wave from the wrench, out and landed)
 await settle();
 await check('the bridge sealed in its moment', (s) => s.f.bridgeSealed);
 await tp(214.5, 0, 3.5, F); await sleep(200);
@@ -273,7 +273,7 @@ await interactNow();
 await check('the Bell Hammer in the great bell', async () => !!(await G(() => window.__game.state.sockets.socketBell)));
 await walkTo(297.0, 1.0, { t: 2000 });
 await check('the belfry floor can be sealed (it glows white)', async () => !!(await G(() => window.__game.abilities.sealTarget())));
-await down('KeyX'); await sleep(700); await up('KeyX'); await settle();
+await down('KeyX'); await page.waitForFunction(() => window.__game.kit.charged, { timeout: 5000 }).catch(() => {}); await up('KeyX'); await sleep(500); await settle();
 await check('the belfry floor sealed', (s) => s.f.belfrySealed);
 await shift('KeyE');
 await walkTo(302.0, 1.0, { jump: true, t: 6000 });

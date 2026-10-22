@@ -20,63 +20,82 @@ check(s.on && s.hp === 12 && s.phase === 1 && s.arena && s.bar, `the duel starts
 check(s.parts.length === 4, `every wrench part is on at the End of Time (${s.parts})`);
 await sleep(2500);
 await page.screenshot({ path: `${OUT}/duel-p1.png` });
-// watch his first pattern: rings come, then he tires
+// watch his first pattern: bolts come, then he stumbles out of a blink near her, winded
 const seen = await G(async () => {
-  const g = __game, d = g.duel, out = { rings: 0, states: new Set(), caught: 0 };
+  const g = __game, d = g.duel, out = { bolts: 0, states: new Set(), near: null };
   g.godMode = true;
-  for (let i = 0; i < 160; i++) {
-    out.rings = Math.max(out.rings, d.rings.length);
+  for (let i = 0; i < 200; i++) {
+    out.bolts = Math.max(out.bolts, d.bolts.length);
     out.states.add(d.state);
-    if (d.frozenT > 0) out.caught++;
+    if (d.state === 'tired' && out.near === null) out.near = +Math.abs(d.x - g.player.body.x).toFixed(1);
     await new Promise((r) => setTimeout(r, 50));
   }
   g.godMode = false;
-  return { rings: out.rings, states: [...out.states], caught: out.caught };
+  return { bolts: out.bolts, states: [...out.states], near: out.near };
 });
-check(seen.rings > 0 && seen.states.includes('tired'), `phase 1: rings, then he tires (${JSON.stringify(seen)})`);
-// a ring that reaches her freezes her (not in god mode)
-const caught = await G(async () => {
-  const g = __game, d = g.duel, b = g.player.body;
-  g.player.place(40, 86, 0);
+check(seen.bolts > 0 && seen.states.includes('tired') && seen.near !== null && seen.near < 4, `phase 1: bolts, then he tires right in front of her (${JSON.stringify(seen)})`);
+const fresh = () => G(() => {
+  const g = __game, d = g.duel;
+  d.clearShots();
+  d.frozenT = 0;
+  g.player.place(40, 86, 0.5);
   g.player.invuln = 0;
+  g.player.hp = g.player.maxHp;
+  g.hud.setHearts(g.player.hp, g.player.maxHp);
   d.nextPattern(0);
-  d.queue = [{ do: 'blink', x: 50.5 }, { do: 'ring', high: false }, { do: 'wait', t: 5 }];
-  const hp0 = g.player.hp;
-  for (let i = 0; i < 80; i++) {
+  d.queue = [{ do: 'blink', x: 50.5 }, { do: 'bolt', kind: 'aimed' }, { do: 'wait', t: 9 }];
+});
+// a bolt down her line, and she stays in it: a heart, and frozen
+await sleep(1200);
+await fresh();
+const caught = await G(async () => {
+  const g = __game, d = g.duel, hp0 = g.player.hp;
+  for (let i = 0; i < 120; i++) {
     if (d.frozenT > 0) return { frozen: true, hp: g.player.hp, hp0 };
     await new Promise((r) => setTimeout(r, 50));
   }
-  return { frozen: false, hp: g.player.hp, hp0, x: b.x };
+  return { frozen: false, hp: g.player.hp, hp0 };
 });
-check(caught.frozen && caught.hp === caught.hp0 - 1, `a low ring that catches her: a heart, and frozen (${JSON.stringify(caught)})`);
+check(caught.frozen && caught.hp === caught.hp0 - 1, `a bolt that catches her: a heart, and frozen (${JSON.stringify(caught)})`);
+// the same again, and she steps down out of its line once it's away: it goes by
 await sleep(1500);
-// jumping a low ring: no catch
-const jumped = await G(async () => {
+await fresh();
+await page.waitForFunction(() => __game.duel.bolts.length > 0, { timeout: 8000 }).catch(() => {});
+await page.keyboard.down('KeyS');
+await sleep(650);
+await page.keyboard.up('KeyS');
+const dodged = await G(async () => {
   const g = __game, d = g.duel;
-  await new Promise((r) => setTimeout(r, 1200));
-  d.clearShots();
-  d.frozenT = 0;
-  g.player.place(40, 86, 0);
-  g.player.invuln = 0;
-  g.player.hp = g.player.maxHp;
-  d.nextPattern(0);
-  d.queue = [{ do: 'blink', x: 50.5 }, { do: 'ring', high: false }, { do: 'wait', t: 5 }];
-  for (let i = 0; i < 100; i++) {
-    const r = d.rings[0];
-    if (r && Math.abs(r.x - g.player.body.x) < 2.4 && g.player.body.onGround) {
-      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space' }));
-      setTimeout(() => window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space' })), 300);
-    }
+  for (let i = 0; i < 80; i++) {
     if (d.frozenT > 0) return { frozen: true };
-    if (!d.rings.length && i > 20) return { frozen: false, hp: g.player.hp };
-    await new Promise((r) => setTimeout(r, 30));
+    if (!d.bolts.length) return { frozen: false, hp: g.player.hp, z: +g.player.body.z.toFixed(2) };
+    await new Promise((r) => setTimeout(r, 50));
   }
   return { frozen: false, timeout: true };
 });
-check(!jumped.frozen, `jumping a low ring clears it (${JSON.stringify(jumped)})`);
+check(!dodged.frozen && !dodged.timeout, `stepping out of its line: it goes by (${JSON.stringify(dodged)})`);
+// ...or a roll, through it
+await fresh();
+const rolled = await G(async () => {
+  const g = __game, d = g.duel;
+  for (let i = 0; i < 200; i++) {
+    const o = d.bolts[0];
+    if (o && Math.abs(o.x - g.player.body.x) < 1.6 && g.player.state !== 'roll') {
+      g.player.facing = 1;
+      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyC' }));
+      setTimeout(() => window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyC' })), 60);
+    }
+    if (d.frozenT > 0) return { frozen: true };
+    if (!d.bolts.length && i > 30) return { frozen: false };
+    await new Promise((r) => setTimeout(r, 16));
+  }
+  return { frozen: false, timeout: true };
+});
+check(!rolled.frozen && !rolled.timeout, `a roll goes through it (${JSON.stringify(rolled)})`);
 // his guard: a wave while he's up does nothing; while he's tired it lands
 const guard = await G(async () => {
   const g = __game, d = g.duel;
+  d.clearShots();
   d.nextPattern(0);
   d.queue = [{ do: 'blink', x: 46.5 }, { do: 'wait', t: 9 }];
   await new Promise((r) => setTimeout(r, 600));
@@ -87,11 +106,12 @@ const guard = await G(async () => {
   const hp0 = d.hp;
   const t = g.kit.findTarget();
   g.kit.fire();
+  await new Promise((r) => setTimeout(r, 450));
   const afterGuard = d.hp;
   d.state = 'tired';
   d.t = 3;
-  await new Promise((r) => setTimeout(r, 100));
   g.kit.fire();
+  await new Promise((r) => setTimeout(r, 450));
   return { target: t && t.name, hp0, afterGuard, afterOpen: d.hp, state: d.state };
 });
 check(guard.target === 'Donald Eugene' && guard.afterGuard === guard.hp0 && guard.afterOpen === guard.hp0 - 1 && guard.state === 'stunned', `guard up: the wave breaks; tired: it lands and holds him (${JSON.stringify(guard)})`);
@@ -100,15 +120,14 @@ const melee = await G(async () => {
   const g = __game, d = g.duel;
   d.state = 'tired';
   d.t = 3;
-  if (d.don.mat.userData.preCrystal) d.don.mat.userData.preCrystal && null;
-  g.player.place(d.x - 0.9, 86, 0.5);
+  g.player.place(d.x - 0.9, 86, d.z);
   g.player.facing = 1;
   const hp0 = d.hp;
-  g.playerAttack(g.player.body.x + 0.85, 86.7, 0.5, 1);
+  g.playerAttack(g.player.body.x + 0.85, 86.7, d.z, 1);
   return { hp0, hp: d.hp };
 });
 check(melee.hp === melee.hp0 - 1, `a wrench swing lands while he's down (${JSON.stringify(melee)})`);
-// finish phase one with the Hairspring: his own ring, sent back
+// finish phase one with the Hairspring: his own bolt, sent back
 const back = await G(async () => {
   const g = __game, d = g.duel;
   g.kit.equip('rewind', true);
@@ -116,24 +135,24 @@ const back = await G(async () => {
   d.nextPattern(0);
   d.queue = [{ do: 'blink', x: 52.5 }, { do: 'wait', t: 0.6 }];
   await new Promise((r) => setTimeout(r, 700));
-  d.nextPattern(0);
-  d.queue = [{ do: 'blink', x: 52.5 }, { do: 'ring', high: false }, { do: 'wait', t: 9 }];
-  g.player.place(44, 86, 0.5);
+  g.player.place(44, 86, d.z);
   g.player.facing = 1;
+  d.nextPattern(0);
+  d.queue = [{ do: 'bolt', kind: 'aimed' }, { do: 'wait', t: 9 }];
   const hp0 = d.hp;
-  for (let i = 0; i < 100; i++) {
-    const r = d.rings[0];
-    if (r && Math.abs(r.x - g.player.body.x) < 4 && !r.back) {
+  for (let i = 0; i < 150; i++) {
+    const o = d.bolts[0];
+    if (o && Math.abs(o.x - g.player.body.x) < 4 && !o.back) {
       const t = g.kit.findTarget();
       g.kit.fire();
-      await new Promise((r) => setTimeout(r, 1500));
+      await new Promise((r) => setTimeout(r, 1800));
       return { target: t && t.name, hp0, hp: d.hp, phase: d.phase, state: d.state };
     }
     await new Promise((r) => setTimeout(r, 30));
   }
   return { timeout: true };
 });
-check(back.target === 'the ring' && back.hp <= back.hp0 - 2 || back.state === 'down', `the Hairspring sends a ring back into him (${JSON.stringify(back)})`);
+check((back.target === 'the bolt' && back.hp <= back.hp0 - 2) || back.state === 'down', `the Hairspring sends a bolt back into him (${JSON.stringify(back)})`);
 await settle(page, 30000).catch(() => {});
 // knock phase one out
 await G(() => { const d = __game.duel; if (d.phase === 1 && d.state !== 'down') { d.hp = 9; d.state = 'tired'; d.t = 3; d.damage(1); } });
@@ -142,16 +161,34 @@ await settle(page, 30000);
 await sleep(1000);
 s = await G(() => { const d = __game.duel; return { phase: d.phase, hp: d.hp, state: d.state }; });
 check(s.phase === 2 && s.hp === 8, `phase two (${JSON.stringify(s)})`);
-// the seams, and the Rewind wind-up
+// the floor, rewritten: cracks, then a hole she falls through (a heart, and back on the floor)
+const rift = await G(async () => {
+  const g = __game, d = g.duel, out = {};
+  d.clearShots();
+  g.player.place(45.5, 86, 0.5);
+  g.player.invuln = 0;
+  g.player.hp = g.player.maxHp;
+  const hp0 = g.player.hp;
+  d.nextPattern(0);
+  d.queue = [{ do: 'rift' }, { do: 'wait', t: 9 }];
+  await new Promise((r) => setTimeout(r, 400));
+  out.crack = d.rifts.map((r) => r.stage).join();
+  out.under = d.rifts.some((r) => r.x0 <= 45.5 && r.x1 > 45.5);
+  for (let i = 0; i < 100 && g.player.body.y >= 85.9; i++) await new Promise((r) => setTimeout(r, 30));
+  out.dropped = g.player.body.y < 85.9;
+  for (let i = 0; i < 100 && g.player.body.y < 85.9; i++) await new Promise((r) => setTimeout(r, 30));
+  out.back = Math.abs(g.player.body.y - 86) < 0.2;
+  out.lost = hp0 - g.player.hp;
+  await new Promise((r) => setTimeout(r, 4000));
+  out.mended = d.rifts.length === 0 && g.world.cell(1, 46, 85, 0) === 1;
+  return out;
+});
+check(rift.crack.includes('crack') && rift.under && rift.dropped && rift.back && rift.lost === 1 && rift.mended, `phase 2: the floor cracks and falls away under her; a heart, back on her feet; and it mends (${JSON.stringify(rift)})`);
+// the Rewind wind-up
 const p2 = await G(async () => {
-  const g = __game, d = g.duel, out = { seams: 0, high: 0 };
+  const g = __game, d = g.duel, out = {};
   g.godMode = true;
-  for (let i = 0; i < 160; i++) {
-    out.seams = Math.max(out.seams, d.seams.length);
-    if (d.rings.some((r) => r.high)) out.high++;
-    await new Promise((r) => setTimeout(r, 50));
-  }
-  // hurt him while he's tired: when it ends, he winds up
+  d.clearShots();
   d.nextPattern(0);
   d.queue = [{ do: 'tired', t: 0.6 }];
   await new Promise((r) => setTimeout(r, 200));
@@ -159,12 +196,12 @@ const p2 = await G(async () => {
   await new Promise((r) => setTimeout(r, 900));
   out.wind = d.state;
   const hpWind = d.hp;
-  await new Promise((r) => setTimeout(r, 2600));
+  await new Promise((r) => setTimeout(r, 2800));
   out.healed = d.hp === hpWind + 1;
   g.godMode = false;
   return out;
 });
-check(p2.seams > 0 && p2.wind === 'wind' && p2.healed, `phase 2: floor seams, and an unanswered Rewind undoes a hit (${JSON.stringify(p2)})`);
+check(p2.wind === 'wind' && p2.healed, `phase 2: an unanswered Rewind undoes a hit (${JSON.stringify(p2)})`);
 await page.screenshot({ path: `${OUT}/duel-p2.png` });
 await G(() => { const d = __game.duel; d.hp = 5; d.state = 'tired'; d.t = 3; d.damage(1); });
 await sleep(1500);
@@ -176,8 +213,9 @@ await page.screenshot({ path: `${OUT}/duel-p3.png` });
 // guarded until both squirrels are held
 const sq = await G(async () => {
   const g = __game, d = g.duel;
+  d.clearShots();
   d.state = 'tired';
-  d.t = 5;
+  d.t = 9;
   const guarded = !d.open;
   g.kit.equip('seal', true);
   for (const n of g.hallSquirrels) {
@@ -185,11 +223,12 @@ const sq = await G(async () => {
     g.player.facing = 1;
     await new Promise((r) => setTimeout(r, 80));
     g.kit.fire();
+    await new Promise((r) => setTimeout(r, 400));
   }
   return { guarded, held: g.state.flags.zachHeld && g.state.flags.meganHeld, openAfter: d.open };
 });
 check(sq.guarded && sq.held && sq.openAfter, `his guard holds until both squirrels are held (${JSON.stringify(sq)})`);
-// the Page Turn: unlit costs hearts; lit, she's safe
+// the Page Turn: unlit costs a heart; lit, she's safe
 const page1 = await G(async () => {
   const g = __game, d = g.duel;
   d.clearShots();
@@ -209,7 +248,6 @@ const page1 = await G(async () => {
   g.player.hp = g.player.maxHp;
   g.player.invuln = 0;
   d.frozenT = 0;
-  g.powers.toggle?.();
   if (!g.powers.lit) g.powers.lit = true;
   d.nextPattern(0);
   d.queue = [{ do: 'page' }, { do: 'wait', t: 9 }];
@@ -219,7 +257,7 @@ const page1 = await G(async () => {
   }
   return { max: g.player.maxHp, unlit, lit: g.player.hp };
 });
-check(page1.unlit === page1.max - 2 && page1.lit === page1.max, `the Page Turn: unlit, two hearts; lit, safe (${JSON.stringify(page1)})`);
+check(page1.unlit === page1.max - 1 && page1.lit === page1.max, `the Page Turn: unlit, a heart; lit, safe (${JSON.stringify(page1)})`);
 // the end
 await G(() => { const g = __game, d = g.duel; g.powers.lit = false; d.state = 'tired'; d.t = 3; d.hp = 1; d.damage(1); });
 const end = await page.waitForFunction(() => __game.mode === 'credits', { timeout: 150000 }).then(() => true).catch(() => false);

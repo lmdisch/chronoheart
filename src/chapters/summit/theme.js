@@ -113,7 +113,7 @@ export default {
   bell: { partials: [1, 2.4, 3.8, 6.2], gain: 0.12, release: 5 },
   playerSheet: 'vivienneWinter',
   shrine: [[0x6e7584, 0x8a92a2], [0x8a8378, 0x9a958a], [0x7a80a8, 0x9aa0c8]],
-  enemyBurst: { drone: [0x36f0ff, 0xff3fd2], rat: [0xaaaaaa, 0xffffff], other: [0xc8e8ff, 0xffffff] },
+  enemyBurst: { wolf: [0xd8e0f0, 0xffffff], beetle: [0xf2cf5a, 0xc8963a, 0xffffff], wisp: [0xa8d8ff, 0xffffff], other: [0xc8e8ff, 0xffffff] },
   voices: { vivienne: 140, eugene: -20, eugeneWinter: -20, eugeneYoung: 60, christopher: -40, christopherYoung: 50, orinOld: -50, michelle: 20, michelleWinter: 20, ingrid: 90, tobin: -80, sela: 30, anwen: 40, porterKit: 70, porterBram: -60, zachWinter: 420, meganWinter: 500 },
   keyBadge: 'Hour',
   lapse: { shine: [0xffe6a0, 0xffffff], splash: null, motes: [0xdfe8ff, 0xffffff], motesDrop: 0 },

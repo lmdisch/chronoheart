@@ -8,12 +8,58 @@ import { moveBody, overlapsType, hits } from './physics.js';
 import { T } from './world.js';
 import { iconTexture } from '../render/sprites.js';
 import { Actor } from '../render/actors.js';
+import { CARDS } from '../render/fx.js';
 import { theme, content } from '../chapter.js';
 
 const GRAV = 28;
 const SLOWED = 0.25; // the pace of something the Escapement has slowed
 const REWIND_STEPS = 30; // tenths of a second the Hairspring sends things back
 const BREATH = 10; // seconds of air underwater
+
+/**
+ * A tear in time (Interactable visual 'shimmer'): a sliver that tapers to points, its edge
+ * flickering, the End of Time showing through it (stars, and the gold of its cracks turning in the
+ * dark), white-hot at the rim, a cold fringe just outside it, and a haze round it like heat over
+ * a road. open: 0..1, how far it has opened.
+ */
+const RIFT = {
+  uniforms: { time: { value: 0 }, open: { value: 0 } },
+  vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+  fragmentShader: `uniform float time, open; varying vec2 vUv;
+    float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+    float wobble(float x) { float i = floor(x), f = fract(x); return mix(hash(vec2(i, 0.0)), hash(vec2(i + 1.0, 0.0)), f * f * (3.0 - 2.0 * f)); }
+    void main() {
+      vec2 p = vUv * 2.0 - 1.0;
+      p.x *= 0.667; // (the plane is 2.4 by 3.6)
+      float y = p.y;
+      float w = (0.2 + 0.3 * open) * pow(max(0.0, 1.0 - y * y), 0.7);
+      w *= 0.82 + 0.3 * wobble(y * 11.0 + time * 4.0) + 0.1 * sin(time * 2.0 + y * 5.0);
+      float d = abs(p.x) / max(w, 0.002);
+      vec3 col = vec3(0.0);
+      float a = 0.0;
+      if (d < 1.0) {
+        // the End of Time, seen through it: deep violet dark, stars, gold veins turning
+        vec2 q = vec2(p.x / max(w, 0.03) * 0.4, y);
+        float ang = atan(q.y, q.x) + time * 0.35, r = length(q);
+        col = mix(vec3(0.01, 0.005, 0.04), vec3(0.2, 0.06, 0.38), 0.5 + 0.5 * sin(ang * 3.0 + r * 9.0 - time * 1.8));
+        col *= 0.6 + 0.4 * d;
+        vec2 g = floor((p + vec2(0.0, time * 0.08)) * vec2(46.0, 30.0));
+        col += step(0.9, hash(g)) * vec3(1.0, 0.9, 0.72) * (0.7 + 0.5 * sin(time * 5.0 + hash(g) * 30.0));
+        col += vec3(1.0, 0.68, 0.22) * smoothstep(0.88, 1.0, sin(ang * 5.0 - r * 14.0 + time * 1.5)) * 1.2;
+        a = 1.0;
+      }
+      // the edge: white-hot, then gold, then a cold blue fringe outside it
+      float rim = exp(-pow((d - 1.0) * 7.0, 2.0));
+      col += mix(vec3(1.0, 0.7, 0.3), vec3(1.0, 0.95, 0.85), rim) * rim * 1.7;
+      float out1 = step(1.0, d), fringe = exp(-(d - 1.0) * 3.0) * out1;
+      col += vec3(0.3, 0.75, 1.0) * fringe * 0.8;
+      float halo = exp(-max(0.0, d - 1.0) * 0.5) * (1.0 - y * y) * (0.12 + open * 0.3) * out1;
+      col += vec3(1.0, 0.8, 0.5) * halo;
+      a = max(a, max(rim, max(fringe * 0.75, halo)));
+      a *= smoothstep(1.0, 0.8, abs(y));
+      gl_FragColor = vec4(col, a);
+    }`,
+};
 
 // shared blob-shadow
 const shadowTex = (() => {
@@ -159,6 +205,7 @@ export class Player {
     const g = this.game, b = this.body, world = g.world, era = g.era;
     const canAct = g.controlsEnabled();
     this.invuln = Math.max(0, this.invuln - dt);
+    this.castT = Math.max(0, (this.castT || 0) - dt); // a wave just sent (see src/kit.js)
     this.rollCd = Math.max(0, this.rollCd - dt);
     this.swimCd = Math.max(0, this.swimCd - dt);
     this.stateT += dt;
@@ -236,6 +283,7 @@ export class Player {
       let speed = sprint ? 7.0 : 4.6;
       if (inWater) speed *= 0.6;
       if (attacking) speed *= 0.35;
+      else if (g.kit?.charging) speed *= 0.55; // (a wave gathering on the wrench, held up overhead)
       const accel = b.onGround ? 20 : 9;
       b.vx = damp(b.vx, ix * speed, accel, dt);
       b.vz = damp(b.vz, iz * speed * 0.85, accel, dt);
@@ -368,6 +416,8 @@ export class Player {
     } else if (inWater && !b.onGround) a.play('swim');
     else if (!b.onGround) a.play(b.vy > 0 ? 'jump' : 'fall');
     else if (this.pushing) a.play('push');
+    else if (this.castT > 0) a.play('cast');
+    else if (g.kit?.charging) a.play('charge');
     else if (moving) a.play(Math.abs(b.vx) > 5.5 || Math.abs(b.vz) > 5 ? 'run' : 'walk');
     else a.play('idle');
     a.update(dt);
@@ -454,13 +504,32 @@ export class EraEntity {
     (this.trail ||= []).push({ x, y, z });
     if (this.trail.length > REWIND_STEPS) this.trail.shift();
   }
-  /** The Hairspring: back to where it was a few seconds ago (or null, if it hasn't been anywhere). */
-  rewound() {
-    const t = this.trail;
-    if (!t || !t.length) return null;
-    const at = t[0];
+  /** The Hairspring: start running back along where it has been (see runBack). False if it hasn't been anywhere. */
+  startRewind() {
+    const path = (this.trail || []).slice().reverse();
     this.trail = [];
-    return at;
+    if (!path.length) return false;
+    this.rewinding = { path, t: 0, dur: Math.min(0.9, 0.25 + path.length * 0.022), ghostT: 0 };
+    return true;
+  }
+  /**
+   * One frame of running back along its trail, its animation playing backward and afterimages
+   * left behind it: where it is now. (this.rewinding is cleared when it gets there.)
+   */
+  runBack(dt) {
+    const r = this.rewinding, n = r.path.length;
+    r.t += dt / r.dur;
+    const k = Math.min(1, r.t), f = k * (n - 1), i = Math.floor(f), u = f - i;
+    const p0 = r.path[i], p1 = r.path[Math.min(n - 1, i + 1)];
+    if (this.actor) {
+      this.actor.update(-dt * 2.5);
+      if ((r.ghostT -= dt) <= 0) {
+        r.ghostT = 0.05;
+        this.game.fx.ghost(this.actor, 0xffb84a, { life: 0.45, alpha: 0.5 });
+      }
+    }
+    if (k >= 1) this.rewinding = null;
+    return { x: p0.x + (p1.x - p0.x) * u, y: p0.y + (p1.y - p0.y) * u, z: p0.z + (p1.z - p0.z) * u };
   }
   /** Count down a stasis; true while it still holds. */
   stillHeld(dt) {
@@ -511,6 +580,10 @@ export class NPC extends EraEntity {
   prompt() {
     return `Talk to ${this.spec.name}`;
   }
+  /** The Hairspring (see src/kit.js). */
+  rewind() {
+    this.rewindT = 0.9;
+  }
   /** Here at all? spec.needs: only once that flag is set; spec.unless: only until it is. */
   present() {
     const f = this.game.state.flags;
@@ -527,6 +600,24 @@ export class NPC extends EraEntity {
     if (this.stillHeld(dt)) {
       this.actor.update(0);
       this.actor.mesh.position.set(this.x, this.y - 0.1, this.z);
+      this.actor.mesh.quaternion.copy(this.game.renderer.billboardQ);
+      return;
+    }
+    if (this.rewindT > 0) {
+      // sent back a few seconds: every little movement, played backward, flickering amber
+      this.rewindT -= dt;
+      this.actor.play('idle');
+      this.actor.update(-dt * 4);
+      if ((this.ghostT = (this.ghostT || 0) - dt) <= 0) {
+        this.ghostT = 0.06;
+        this.game.fx.ghost(this.actor, 0xffb84a, { life: 0.4, alpha: 0.45, drift: new THREE.Vector3(-this.facing * 1.2, 0, 0) });
+      }
+      const m = this.actor.mat, on = this.rewindT > 0 && Math.floor(this.rewindT * 20) % 2 === 0;
+      if (!m.userData.preGlow) {
+        m.emissive.setHex(on ? 0xffb84a : 0x000000);
+        m.emissiveIntensity = on ? 0.5 : 1;
+      }
+      this.actor.mesh.position.set(this.x + Math.sin(this.t * 60) * 0.05, this.y - 0.1, this.z);
       this.actor.mesh.quaternion.copy(this.game.renderer.billboardQ);
       return;
     }
@@ -577,6 +668,10 @@ export const ENEMY = {
   crab: { hp: 2, speed: 1.4, chase: 3.0, hw: 0.5, hd: 0.3, h: 0.6, size: 2.0, sight: 5 },
   rat: { hp: 1, speed: 2.0, chase: 3.8, hw: 0.35, hd: 0.25, h: 0.4, size: 1.6, sight: 5 },
   drone: { hp: 2, speed: 1.8, chase: 3.0, hw: 0.35, hd: 0.35, h: 0.7, size: 1.6, sight: 6, fly: true },
+  // Chapter Three's mountain: one in each age
+  wolf: { hp: 2, speed: 1.6, chase: 3.4, hw: 0.55, hd: 0.3, h: 0.8, size: 2.1, sight: 5 },
+  beetle: { hp: 2, speed: 1.2, chase: 2.8, hw: 0.5, hd: 0.35, h: 0.6, size: 2.0, sight: 5 },
+  wisp: { hp: 1, speed: 1.4, chase: 2.6, hw: 0.35, hd: 0.35, h: 0.7, size: 1.7, sight: 6, fly: true },
 };
 
 export class Enemy extends EraEntity {
@@ -585,7 +680,7 @@ export class Enemy extends EraEntity {
     this.hostile = true;
     this.cfg = ENEMY[spec.kind];
     this.hp = this.cfg.hp;
-    this.body = { x: spec.x, y: spec.y ?? 0, z: spec.z, vx: 0, vy: 0, vz: 0, hw: this.cfg.hw, hd: this.cfg.hd, h: this.cfg.h };
+    this.body = { x: spec.x, y: spec.y ?? 0, z: spec.z, vx: 0, vy: 0, vz: 0, hw: this.cfg.hw, hd: this.cfg.hd, h: this.cfg.h, stepUp: !!theme.slopes };
     this.actor = new Actor(spec.kind, this.cfg.size);
     this.shadow = makeShadow(this.cfg.hw * 2.4);
     this.group.add(this.actor.mesh, this.shadow);
@@ -630,11 +725,9 @@ export class Enemy extends EraEntity {
     if (Math.random() < 0.4) this.game.spawnHeart(this.era, b.x, b.y + 0.4, b.z);
     this.remove();
   }
-  /** The Hairspring: back where it was a few seconds ago, and too dizzy to do much for a moment. */
+  /** The Hairspring: back along where it was a few seconds ago, and too dizzy to do much after. */
   rewind() {
-    const at = this.rewound();
-    if (at) Object.assign(this.body, { x: at.x, y: at.y, z: at.z, vx: 0, vy: 0, vz: 0 });
-    this.hurtT = 1.2;
+    if (!this.startRewind()) this.hurtT = 1.2;
   }
   update(dt) {
     const g = this.game, b = this.body, p = g.player.body, cfg = this.cfg;
@@ -642,6 +735,14 @@ export class Enemy extends EraEntity {
       this.actor.update(0);
       this.actor.mesh.position.set(b.x, b.y - 0.08, b.z);
       this.actor.mesh.quaternion.copy(g.renderer.billboardQ);
+      return;
+    }
+    if (this.rewinding) {
+      Object.assign(b, this.runBack(dt), { vx: 0, vy: 0, vz: 0 });
+      if (!this.rewinding) this.hurtT = 1.0;
+      this.actor.mesh.position.set(b.x, b.y - 0.08, b.z);
+      this.actor.mesh.quaternion.copy(g.renderer.billboardQ);
+      this.shadow.position.set(b.x, b.y + 0.02, b.z);
       return;
     }
     dt = this.pace(dt);
@@ -763,8 +864,7 @@ export class Warden extends EraEntity {
   }
   /** The Hairspring: back where it was a few seconds ago, and it has forgotten why it was coming. */
   rewind() {
-    const at = this.rewound();
-    if (at) Object.assign(this, { x: at.x, z: at.z });
+    this.startRewind();
     if (this.state === 'alert' || this.state === 'chase') this.state = 'return';
     this.huntT = 0;
     this.stunT = Math.max(this.stunT || 0, 1);
@@ -791,6 +891,15 @@ export class Warden extends EraEntity {
     const tempo = (g.era === this.era ? g.tempoAt(this.x, 0) : 1) * (this.slowT > 0 ? SLOWED : 1);
     if (this.slowT > 0) this.pace(dt);
     dt *= tempo;
+    if (this.rewinding) {
+      const at = this.runBack(dt);
+      Object.assign(this, { x: at.x, z: at.z });
+      this.cone.visible = false;
+      this.actor.mesh.position.set(this.x, -0.1, this.z);
+      this.actor.mesh.quaternion.copy(g.renderer.billboardQ);
+      this.shadow.position.set(this.x, 0.02, this.z);
+      return;
+    }
     this.remember(dt, this.x, this.z);
     if (this.stillHeld(dt)) {
       this.cone.visible = false;
@@ -982,6 +1091,7 @@ export class Pushable extends EraEntity {
     this.game.world.clearDyn(this.era, x, 0, z);
   }
   setCell(x, z) {
+    this.history = [];
     this.vacate(this.cx, this.cz);
     this.cx = x;
     this.cz = z;
@@ -1003,14 +1113,30 @@ export class Pushable extends EraEntity {
   }
   push(dx, dz) {
     const tx = this.cx + dx, tz = this.cz + dz;
+    (this.history ||= []).push([this.cx, this.cz]); // (for the Hairspring: see rewind)
+    if (this.history.length > 8) this.history.shift();
     this.occupy(tx, tz);
     this.moving = { fx: this.cx, fz: this.cz, tx, tz, t: 0 };
+    audio.sfx('push');
+  }
+  /** The Hairspring: back to the cell it was last pushed from, if that's still clear. */
+  rewind() {
+    const last = this.history?.pop();
+    if (!last || this.moving) return;
+    const [tx, tz] = last;
+    if (this.game.world.cell(this.era, tx, 0, tz) !== T.AIR) return void this.history.push(last);
+    this.occupy(tx, tz);
+    this.moving = { fx: this.cx, fz: this.cz, tx, tz, t: 0, back: true };
     audio.sfx('push');
   }
   update(dt) {
     if (!this.moving) return;
     const m = this.moving;
-    m.t += dt / 0.24;
+    m.t += dt / (m.back ? 0.5 : 0.24);
+    if (m.back && Math.random() < 0.7) {
+      const p = this.mesh.position, a = m.t * 30;
+      this.game.fx.spawn('glow', p.x + Math.cos(a) * 0.6, p.y + Math.sin(a) * 0.6, p.z + 0.55, { size: 0.35, life: 0.4, color: 0xffb84a, glow: 2.4 });
+    }
     const t = Math.min(1, m.t);
     this.mesh.position.set(m.fx + (m.tx - m.fx) * t + 0.5, 0.5, m.fz + (m.tz - m.fz) * t + 0.5);
     if (t >= 1) {
@@ -1155,12 +1281,18 @@ export class Interactable extends EraEntity {
       this.inside.position.set(this.x, this.y + 0.7, this.z);
       this.group.add(base, this.lid, cog, notch, this.padlock, this.inside);
     } else if (v === 'shimmer') {
-      // a tear in time: a tall sliver of pale light, like heat over a road, but cold
-      this.shimmer = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.1, 2.4),
-        new THREE.MeshBasicMaterial({ color: new THREE.Color(0xfff2d0).multiplyScalar(1.6), transparent: true, opacity: 0.5, depthWrite: false, side: THREE.DoubleSide }),
-      );
-      this.group.add(this.shimmer);
+      // a tear in time: the End of Time showing through, a white-hot edge, two clock rings turning
+      // round it in opposite directions, and its light on the snow
+      this.shimmer = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 3.6), new THREE.ShaderMaterial({ ...RIFT, uniforms: THREE.UniformsUtils.clone(RIFT.uniforms), transparent: true, depthWrite: false, side: THREE.DoubleSide }));
+      const ring = (card, size, color) => {
+        const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: CARDS[card], color: new THREE.Color(color).multiplyScalar(1.3), transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending }));
+        sp.scale.setScalar(size);
+        return sp;
+      };
+      this.riftRings = [ring('dial', 3.7, 0xffd890), ring('gear', 2.9, 0x9fe8ff)];
+      this.riftPool = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 1.6).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: CARDS.glow, color: new THREE.Color(0xffe0a0).multiplyScalar(1.3), transparent: true, opacity: 0.6, depthWrite: false, blending: THREE.AdditiveBlending }));
+      this.surge = 0; // 0..1: how far it has opened (as she goes through: see SummitGame.throughRift)
+      this.group.add(this.shimmer, ...this.riftRings, this.riftPool);
     }
     if (this.spec.icon) {
       // something to pick up from it: floats above until its flag is set
@@ -1175,6 +1307,34 @@ export class Interactable extends EraEntity {
   prompt() {
     return this.spec.prompt;
   }
+  /** The tear in time (visual 'shimmer'): breathing, turning, drawing the light round it inward. */
+  updateRift(dt) {
+    const g = this.game, t = g.time, k = this.surge, cy = this.y + 1.55;
+    const sh = this.shimmer, u = sh.material.uniforms;
+    u.time.value = t;
+    u.open.value = k;
+    sh.position.set(this.x, cy, this.z);
+    sh.quaternion.copy(g.renderer.billboardQ);
+    sh.scale.setScalar(1 + k * 1.4);
+    const [a, b] = this.riftRings;
+    a.position.set(this.x, cy, this.z - 0.05);
+    b.position.set(this.x, cy, this.z - 0.04);
+    a.material.rotation = -t * (0.25 + k * 3);
+    b.material.rotation = Math.round((t * (0.6 + k * 5)) / (Math.PI / 5)) * (Math.PI / 5); // (the gear goes in ticks)
+    a.scale.setScalar(3.7 + Math.sin(t * 1.3) * 0.12 + k * 3);
+    b.scale.setScalar(2.9 + k * 2.4);
+    a.material.opacity = 0.42 + Math.sin(t * 2.1) * 0.08 + k * 0.4;
+    b.material.opacity = 0.32 + k * 0.4;
+    this.riftPool.position.set(this.x, this.y + 0.03, this.z + 0.2);
+    this.riftPool.material.opacity = 0.5 + Math.sin(t * 3) * 0.08 + k * 0.5;
+    // the light round it, pulled in
+    if (this.era !== g.era || !this.group.visible) return;
+    for (let n = Math.floor(dt * (12 + k * 90) + Math.random()); n > 0; n--) {
+      const ang = Math.random() * Math.PI * 2, r = 1.4 + Math.random() * (1.2 + k * 2), T = 0.6 + Math.random() * 0.4;
+      const x = this.x + Math.cos(ang) * r, y = cy + Math.sin(ang) * r * 1.2;
+      g.fx.spawn(Math.random() < 0.3 ? 'shard' : 'glow', x, y, this.z + 0.2, { size: Math.random() < 0.3 ? 0.18 : 0.3, life: T, color: Math.random() < 0.5 ? 0xffd890 : 0x9fe8ff, glow: 2.2, vx: (this.x - x) / T, vy: (cy - y) / T, fade: 'inout', rot: ang + Math.PI / 2 });
+    }
+  }
   /** There to be used at all (whatever age you're standing in)? */
   available() {
     const f = this.game.state.flags;
@@ -1186,14 +1346,7 @@ export class Interactable extends EraEntity {
   update(dt) {
     const g = this.game, s = g.state, t = g.time;
     if (this.cup || this.shimmer) this.group.visible = this.available();
-    if (this.shimmer) {
-      const sh = this.shimmer;
-      sh.position.set(this.x, this.y + 1.25, this.z);
-      sh.quaternion.copy(g.renderer.billboardQ);
-      sh.scale.set(0.8 + Math.sin(t * 7) * 0.12, 1 + Math.sin(t * 3.1) * 0.05, 1);
-      sh.material.opacity = 0.35 + Math.sin(t * 11) * 0.1 + Math.sin(t * 2.3) * 0.08;
-      if (this.era === g.era && Math.random() < dt * 14) g.bursts.emit(this.x + (Math.random() - 0.5) * 0.8, this.y + Math.random() * 2.4, this.z, 1, { color: [0xfff2d0, 0xbff6ff], speed: 0.3, life: 0.9, gravity: -0.4, glow: 2 });
-    }
+    if (this.shimmer) this.updateRift(dt);
     if (this.lid) {
       const open = !!s.flags[this.spec.openFlag];
       this.lidOpen = damp(this.lidOpen ?? (open ? 1 : 0), open ? 1 : 0, 6, dt);

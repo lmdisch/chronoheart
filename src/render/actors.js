@@ -159,15 +159,25 @@ export class Actor {
   }
   update(dt) {
     const a = this.sheet.anims[this.anim];
-    this.t += dt;
+    this.t += dt; // (dt below zero plays it backward: the Hairspring)
+    const n = a.frames.length;
     let f = Math.floor(this.t * a.fps);
-    if (a.loop) f %= a.frames.length;
-    else if (f >= a.frames.length) {
-      f = a.frames.length - 1;
+    if (a.loop) f = ((f % n) + n) % n;
+    else if (f >= n) {
+      f = n - 1;
       this.done = true;
-    }
-    this.look.show(a.frames[f]);
+    } else if (f < 0) f = 0;
+    this.frame = a.frames[f];
+    this.look.show(this.frame);
     this.applyMat();
+  }
+  /** Where the wrench's head is in this frame, in the world (or null: not in her hand, or no wrench). */
+  toolTip(out) {
+    const tip = this.sheet.tips?.[this.frame];
+    if (!tip) return null;
+    const s = this.sheet, lx = ((tip[0] + 0.5 - s.fw / 2) * this.w) / s.fw, ly = ((s.fh - tip[1] - 0.5) * this.h * SPRITE_STRETCH) / s.fh;
+    out.set(lx * (this.flip ? -1 : 1), ly, 0.35).applyQuaternion(this.mesh.quaternion).add(this.mesh.position);
+    return out;
   }
   /** Copy the tint, glow and fade onto the material. */
   applyMat() {
