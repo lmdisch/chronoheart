@@ -121,7 +121,7 @@ export default {
   titleCam: { x: 50, sway: 14, y: 76, z: -86 }, // the summit, and the view
   // a lower camera than the valley's, so the sky shows; it dips lower still at each viewpoint
   camera: { fov: 34, pitch: 24, dist: 34, lift: 4.5, far: 1100, blur: 0.4 },
-  // the sea of clouds below the mountain, the openings onto the valley and the harbor far below,
+  // the sea of clouds below the mountain, the opening onto the peninsula far below (see vista.js),
   // and the summit's shadow sweeping across it like a clock hand
-  clouds: { y: -9, holes: [[14, -300, 74], [162, -318, 80], [-150, 60, 40]], hand: { x: 38, z: -84, len: 170, angle: -2.2 }, fadeNear: 140, fadeFar: 900 },
+  clouds: { y: -9, holes: [[14, -330, 132], [168, -412, 112], [-150, 60, 40]], hand: { x: 38, z: -84, len: 170, angle: -2.2 }, fadeNear: 140, fadeFar: 900 },
 };

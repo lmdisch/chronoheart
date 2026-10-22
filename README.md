@@ -118,7 +118,9 @@ src/
       timecraft.js          Rewind, the timed gates, and the flood that carries you out of the Well
     summit/               Chapter Three, Highcrest
       theme.js              skies (aurora, the near moon, the cloud sea), music, and the ages after the ending
-      level.js              the whole mountain in all three ages: the switchback road, the frost, the towns far below
+      level.js              the whole mountain in all three ages: the switchback road, the frost
+      vista.js              the view from the top: the peninsula far below in voxel miniature (Hollowmere, Saltwick),
+                            its sea, and the far ranges on the horizon in pixel art
       story.js              items, favors, every line of dialogue, the endings
       objectives.js         the goal and hint
       game.js               SummitGame: the frost, the shimmer, the End of Time, the ending
@@ -153,7 +155,7 @@ IDEAS.md                  the story's decisions, and ideas that were considered
 
 **Adding a chapter:** make `src/chapters/<id>/` with the same files, add it to `CHAPTERS` in `src/chapter.js` (with `requires` set to the chapter before it), and add its game class to `GAMES` in `src/main.js`. Anything only one chapter shows in the page (a line of help text, say) gets an `only-<id>` class in `index.html`.
 
-Chapter One's valley is **346 units long** (the last 40 are the Gearworks, inside the clock). Chapter Two's shore is **300**. Chapter Three is a mountain: a road **100** long climbing its face in six switchback legs, each 16 further back and about 14 higher than the last, 77 to the top. It needs a few engine options: `theme.openDepth` (the road leaves the usual strip and winds back into the scene, walled by rock and barriers), `theme.zMin` / `yMax` (a bigger world), `theme.slopes` (you walk up and down single steps), and the terrain past the voxels is a mesh (`src/render/mountains.js`) built from the same height function, out to the ranges on the horizon. Where each area begins is in `AREAS` in the chapter's `level.js`.
+Chapter One's valley is **346 units long** (the last 40 are the Gearworks, inside the clock). Chapter Two's shore is **300**. Chapter Three is a mountain: a road **100** long climbing its face in six switchback legs, each 16 further back and about 14 higher than the last, 77 to the top. It needs a few engine options: `theme.openDepth` (the road leaves the usual strip and winds back into the scene, walled by rock and barriers), `theme.zMin` / `yMax` (a bigger world), `theme.slopes` (you walk up and down single steps), and the terrain past the voxels is built from the same height function as columns of blocks (`src/render/mountains.js`), out to the ranges either side. Far below through the clouds, the peninsula with Hollowmere and Saltwick is a voxel miniature (a block to every two units), and the ranges on the horizon are painted pixel art (both in the chapter's `vista.js`). Where each area begins is in `AREAS` in the chapter's `level.js`.
 
 ---
 

@@ -365,6 +365,13 @@ class AudioEngine {
         this.noise(t, 0.18, 0.1, d, { type: 'bandpass', freq: 1400, q: 1.2 });
         break;
       }
+      case 'parry': {
+        // a bolt knocked back off the wrench: a bright metal ping
+        this.drum(t, 320, 90, 0.08, 0.25, d);
+        [88, 95].forEach((m, i) => this.osc('square', mtof(m), t + i * 0.02, 0.01, 0.05, d, { filter: 5000, release: 0.25 }));
+        this.noise(t, 0.08, 0.12, d, { type: 'highpass', freq: 3000 });
+        break;
+      }
       case 'impact': {
         const p = opt.part;
         this.drum(t, 260, 70, 0.12, 0.3, d);

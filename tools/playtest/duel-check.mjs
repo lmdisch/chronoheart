@@ -92,6 +92,32 @@ const rolled = await G(async () => {
   return { frozen: false, timeout: true };
 });
 check(!rolled.frozen && !rolled.timeout, `a roll goes through it (${JSON.stringify(rolled)})`);
+// ...or the wrench, swung just as it reaches her: knocked back, it shatters his guard and he's down
+await fresh();
+const batted = await G(async () => {
+  const g = __game, d = g.duel, hp0 = d.hp;
+  let swung = false, back = false;
+  for (let i = 0; i < 300; i++) {
+    const o = d.bolts[0];
+    if (o && !swung && o.x - g.player.body.x < 1.9) {
+      swung = true;
+      g.player.facing = 1;
+      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyX' }));
+      setTimeout(() => window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyX' })), 40);
+    }
+    if (o && o.back) back = true;
+    if (d.frozenT > 0) return { frozen: true };
+    if (d.hp < hp0) {
+      const out = { back, hp0, hp: d.hp, state: d.state, open: d.open };
+      d.hp = hp0;
+      d.drawBar();
+      return out;
+    }
+    await new Promise((r) => setTimeout(r, 16));
+  }
+  return { timeout: true, swung, back };
+});
+check(batted.back && batted.hp === batted.hp0 - 1 && batted.state === 'tired' && batted.open, `the wrench knocks a bolt back: his guard shatters, and he's down (${JSON.stringify(batted)})`);
 // his guard: a wave while he's up does nothing; while he's tired it lands
 const guard = await G(async () => {
   const g = __game, d = g.duel;

@@ -152,6 +152,10 @@ await check('a Lost Cog on top of the rockfall', (s) => s.cogs.includes('cogM4')
 await walkTo(U(73), Z(4), { t: 5000 });
 await R();
 await check('down the far side', (s) => s.x > U(71) && s.y < H.rock + 1);
+// the far side is a block at a time, so it can be climbed back up (the way back down the mountain)
+await walkTo(U(64), Z(4), { jump: true, t: 8000 });
+await check('and back up it, onto the rockfall', (s) => s.y >= H.rock + 5.5);
+await walkTo(U(73), Z(4), { t: 5000 });
 await turn(4);
 await check('up the last switchback: the summit', (s) => onLeg(s, 5));
 

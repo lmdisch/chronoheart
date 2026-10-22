@@ -99,6 +99,7 @@ export function terrainMeshes(opts) {
   const [fx0, fx1, fz0, fz1] = opts.fine;
   const xs = axis(X0, fx0, fx1, X1, opts.step);
   const zs = axis(Z0, fz0, fz1, Z1, opts.step);
+  if (opts.blocks) return blockMeshes(opts, xs, zs);
   const nx = xs.length, nz = zs.length;
   const pos = new Float32Array(nx * nz * 3);
   const hs = new Float32Array(nx * nz);
@@ -146,6 +147,88 @@ export function terrainMeshes(opts) {
   });
 }
 
+/**
+ * The same land as columns of blocks, the way the voxel world near at hand is built: a flat top on
+ * each cell of the grid (its height stepped to opts.step), and a cliff down each side that drops to
+ * a lower neighbor. The blocks grow with the grid toward the horizon. Cells that stay under the
+ * clouds (below opts.under) are left out, unless opts.keep(x, z) wants them (an opening).
+ */
+function blockMeshes(opts, xs, zs) {
+  const nx = xs.length - 1, nz = zs.length - 1, q = opts.step;
+  const tops = new Float32Array(nx * nz).fill(NaN);
+  const snowOf = new Float32Array(nx * nz), darkOf = new Float32Array(nx * nz), lowOf = new Float32Array(nx * nz);
+  for (let j = 0; j < nz; j++)
+    for (let i = 0; i < nx; i++) {
+      const x = (xs[i] + xs[i + 1]) / 2, z = (zs[j] + zs[j + 1]) / 2;
+      if (opts.hole(x, z)) continue;
+      const h = opts.heightAt(x, z);
+      if (opts.under !== undefined && h < opts.under && !opts.keep?.(x, z)) continue;
+      const k = j * nx + i;
+      tops[k] = Math.round(h / q) * q;
+      // how much snow it holds: by how steep the land is round it, and how high
+      const e = Math.max(q, (xs[i + 1] - xs[i]) * 0.5);
+      const gx = (opts.heightAt(x + e, z) - opts.heightAt(x - e, z)) / (2 * e), gz = (opts.heightAt(x, z + e) - opts.heightAt(x, z - e)) / (2 * e);
+      const ny = 1 / Math.hypot(gx, gz, 1);
+      const streak = fbm(x * 0.05, z * 0.05, 3);
+      const hold = (ny - 0.5 - streak * 0.16 - Math.max(0, 30 - h) * 0.004) / 0.16;
+      let snow = Math.min(1, Math.max(0, hold)) * Math.min(1, Math.max(0, (h - opts.snowLine) / 14));
+      if (h > opts.snowLine + 70) snow = Math.max(snow, Math.min(1, (h - opts.snowLine - 70) / 60) * 0.7);
+      snowOf[k] = snow > 0.5 ? 1 : snow > 0.25 ? 0.6 : 0;
+      darkOf[k] = Math.min(1, Math.max(0, 0.45 - streak * 1.5));
+      lowOf[k] = Math.min(1, Math.max(0, (opts.lowLine - h) / 6));
+    }
+  const pos = [], nrm = [], mask = [], idx = [];
+  const quad = (ps, n, m) => {
+    const b = pos.length / 3;
+    for (const p of ps) {
+      pos.push(p[0], p[1], p[2]);
+      nrm.push(n[0], n[1], n[2]);
+      mask.push(m[0], m[1], m[2]);
+    }
+    idx.push(b, b + 1, b + 2, b, b + 2, b + 3);
+  };
+  const FLOOR = -40;
+  for (let j = 0; j < nz; j++)
+    for (let i = 0; i < nx; i++) {
+      const k = j * nx + i, t = tops[k];
+      if (Number.isNaN(t)) continue;
+      const x0 = xs[i], x1 = xs[i + 1], z0 = zs[j], z1 = zs[j + 1];
+      quad([[x0, t, z1], [x1, t, z1], [x1, t, z0], [x0, t, z0]], [0, 1, 0], [snowOf[k], darkOf[k], lowOf[k]]);
+      // a cliff down to each lower neighbor (snow lies on its lip, bare rock below)
+      const side = (ni, nj, ps, n) => {
+        const inside = ni >= 0 && nj >= 0 && ni < nx && nj < nz;
+        const kn = nj * nx + ni;
+        let b = inside ? tops[kn] : FLOOR;
+        if (inside && Number.isNaN(b)) {
+          const cx = (xs[ni] + xs[ni + 1]) / 2, cz = (zs[nj] + zs[nj + 1]) / 2;
+          if (opts.hole(cx, cz)) return; // (the voxels take over there)
+          b = FLOOR;
+        }
+        if (b >= t) return;
+        const lip = Math.max(b, t - q * 0.4);
+        const m = [0, Math.min(1, darkOf[k] + 0.25), lowOf[k]];
+        if (snowOf[k] > 0 && lip > b) {
+          quad(ps(lip, t), n, [snowOf[k], darkOf[k], lowOf[k]]);
+          quad(ps(b, lip), n, m);
+        } else quad(ps(b, t), n, m);
+      };
+      side(i, j + 1, (lo, hi) => [[x0, lo, z1], [x1, lo, z1], [x1, hi, z1], [x0, hi, z1]], [0, 0, 1]);
+      side(i, j - 1, (lo, hi) => [[x1, lo, z0], [x0, lo, z0], [x0, hi, z0], [x1, hi, z0]], [0, 0, -1]);
+      side(i + 1, j, (lo, hi) => [[x1, lo, z1], [x1, lo, z0], [x1, hi, z0], [x1, hi, z1]], [1, 0, 0]);
+      side(i - 1, j, (lo, hi) => [[x0, lo, z0], [x0, lo, z1], [x0, hi, z1], [x0, hi, z0]], [-1, 0, 0]);
+    }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('normal', new THREE.Float32BufferAttribute(nrm, 3));
+  geo.setAttribute('mask', new THREE.Float32BufferAttribute(mask, 3));
+  geo.setIndex(pos.length / 3 > 65535 ? new THREE.Uint32BufferAttribute(idx, 1) : new THREE.Uint16BufferAttribute(idx, 1));
+  return opts.colors.map((pal) => {
+    const mesh = new THREE.Mesh(geo, terrainMaterial({ ...pal, blocks: true }));
+    mesh.frustumCulled = false;
+    return mesh;
+  });
+}
+
 // ---------------------------------------------------------------------------- the terrain's look
 const terrainVert = `
   #include <common>
@@ -165,17 +248,26 @@ const terrainFrag = `
   #include <common>
   #include <fog_pars_fragment>
   uniform vec3 uSun; uniform vec3 uSnowLit; uniform vec3 uSnowShade; uniform vec3 uRockLit; uniform vec3 uRockShade;
-  uniform vec3 uLow; uniform vec3 uHaze; uniform float uCloudY;
+  uniform vec3 uLow; uniform vec3 uHaze; uniform float uCloudY; uniform float uBlocks;
   varying vec3 vMask; varying vec3 vN; varying vec3 vW;
+  float hash(vec3 p){ return fract(sin(dot(p, vec3(12.9898, 78.233, 37.719))) * 43758.5453); }
   void main(){
     vec3 n = normalize(vN);
     float l = dot(n, normalize(uSun));
+    if (uBlocks > 0.5) {
+      // blocks: lit by face, as the voxels are; tops a little brighter, and a grain of big pixels over all of it
+      l = n.y > 0.5 ? max(l, 0.35) : l;
+    }
     // light that wraps a little round the edges, and faces turned away fall into cool shadow
     float lit = smoothstep(-0.15, 0.55, l);
     vec3 snow = mix(uSnowShade, uSnowLit, lit) * (0.92 + 0.12 * n.y);
     vec3 rock = mix(uRockShade, uRockLit, lit * 0.9);
     vec3 col = mix(rock * (1.0 - vMask.y * 0.45), snow, vMask.x);
     col = mix(col, uLow * (0.6 + 0.4 * lit), vMask.z);
+    if (uBlocks > 0.5) {
+      vec3 cell = floor(vW * 1.25 + n * 0.01);
+      col *= 0.9 + 0.16 * hash(cell);
+    }
     // the air: low down, near the cloud sea, everything softens toward it
     float haze = 1.0 - smoothstep(uCloudY, uCloudY + 40.0, vW.y);
     col = mix(col, uHaze, haze * 0.45);
@@ -192,7 +284,7 @@ function terrainMaterial(pal) {
         uSun: { value: new THREE.Vector3(...pal.sun).normalize() },
         uSnowLit: { value: c(pal.snowLit) }, uSnowShade: { value: c(pal.snowShade) },
         uRockLit: { value: c(pal.rockLit) }, uRockShade: { value: c(pal.rockShade) },
-        uLow: { value: c(pal.low) }, uHaze: { value: c(pal.haze) }, uCloudY: { value: pal.cloudY ?? -9 },
+        uLow: { value: c(pal.low) }, uHaze: { value: c(pal.haze) }, uCloudY: { value: pal.cloudY ?? -9 }, uBlocks: { value: pal.blocks ? 1 : 0 },
       },
     ]),
     vertexShader: terrainVert,

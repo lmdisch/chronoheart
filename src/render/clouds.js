@@ -41,6 +41,12 @@ const frag = `
       // the upper layer is only its thickest wisps
       a = smoothstep(0.52, 0.68, h) * uWisp;
       col = mix(col, uTop, 0.4);
+      // (thinner over the openings, so what's below shows through)
+      for (int i = 0; i < 4; i++) {
+        vec3 o = uHoles[i];
+        if (o.z <= 0.0) continue;
+        a *= mix(0.3, 1.0, smoothstep(0.6, 1.0, length(vW.xz - o.xy) / o.z));
+      }
     } else {
       for (int i = 0; i < 4; i++) {
         vec3 o = uHoles[i];

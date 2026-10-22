@@ -21,6 +21,7 @@ import { ZMIN, ZMAX, YMIN, YMAX } from '../../world/world.js';
 import { makeRng, hash3, shade } from '../../core/util.js';
 import { tagPalettes } from '../../render/materials.js';
 import { ridged, fbm, terrainMeshes } from '../../render/mountains.js';
+import { vista, LOWLAND } from './vista.js';
 import theme from './theme.js';
 
 const W = theme.width;
@@ -169,23 +170,26 @@ function peak(x, z, px, pz, h, r) {
   return -36 + (h + 36) * fall + (crag - 0.45) * 46 * Math.sqrt(fall) * (0.4 + fall);
 }
 
-/** The great ranges all round, rising out of the clouds; kept low in the valley north of the mountain. */
+/**
+ * The great ranges either side, rising out of the clouds, west and east of the lowland below the
+ * mountain. To the north they fall away, and there is only the sea, out to the far ranges on the
+ * horizon (see vista.js).
+ */
 function ranges(x, z) {
-  const vx = (x - 70) / 300, vz = (z + 300) / 165;
-  const valley = Math.hypot(vx, vz);
+  const flank = Math.max(smooth(-130, -260, x), smooth(320, 450, x));
   const dx = Math.max(0, -40 - x, x - 180), dz = Math.max(0, -150 - z, z - 40);
   const away = Math.hypot(dx, dz);
-  const m = smooth(0.85, 1.25, valley) * smooth(30, 120, away);
+  const m = flank * smooth(-660, -480, z) * smooth(30, 120, away);
   let h = -36;
   if (m > 0) {
     // ridged crests, warped a little so the ranges wander, sharpened toward their tops
     const wx = x + fbm(x * 0.004, z * 0.004, 2) * 60, wz = z + fbm(z * 0.004 + 9, x * 0.004, 2) * 60;
     const r = ridged(wx * 0.0075, wz * 0.0075, 6);
     const big = 0.6 + 0.4 * fbm(x * 0.0016 + 3, z * 0.0016, 2);
-    h = -36 + m * (Math.pow(r, 2.2) * 240 * big + r * 40);
+    h = -36 + m * (Math.pow(r, 2.2) * 190 * big + r * 40);
   }
   // Highcrest's neighbors, close at hand on either side (lower than Highcrest itself)
-  h = Math.max(h, peak(x, z, -95, -70, 62, 110), peak(x, z, 245, -95, 70, 120), peak(x, z, -60, -190, 50, 80));
+  h = Math.max(h, peak(x, z, -95, -70, 62, 110), peak(x, z, 245, -95, 70, 120), peak(x, z, -170, -200, 50, 80));
   return h;
 }
 
@@ -241,7 +245,7 @@ export const L = {
   cameraBounds: [U(8), U(92)],
   // at the overlook, the camera rises and looks down past the edge, to the towns far below (out on
   // the overlook itself: not on the road by the Needle, where the shimmer wants a close look)
-  vistas: [{ x0: U(-2), x1: U(OVERLOOK_U - 6), z0: ZS - 12, z1: ZS - 1, pitch: 33, dist: 56, lift: 2, fov: 52 }],
+  vistas: [{ x0: U(-2), x1: U(OVERLOOK_U - 6), z0: ZS - 12, z1: ZS - 1, pitch: 20, dist: 56, lift: 24, fov: 56 }],
 };
 
 /**
@@ -643,7 +647,8 @@ function crevasses(b, era) {
   }
   // the rockfall: too tall to climb, in every age
   for (let x = L.iceStairX1 + 1; x < L.downX0; x++) b.solid(x, y, z0, x, y + 4, z0 + 6, jitter(C.granite));
-  for (let x = L.downX0; x < L.downX0 + 4; x++) b.solid(x, y, z0, x, y + 3 - (x - L.downX0), z0 + 6, jitter(C.granite));
+  // (and a block at a time down the far side, so it can be climbed back up)
+  for (let x = L.downX0; x < L.downX0 + 5; x++) b.solid(x, y, z0, x, y + 4 - (x - L.downX0), z0 + 6, jitter(C.granite));
   for (let x = L.iceStairX1 + 1; x < L.downX0; x++) b.solid(x, y + 5, z0, x, y + 5, z0 + 6, jitter(C.snow));
   // the falls coming down beside it: frozen into a stair in the Stopped Age
   if (era === F) for (let i = 0; i <= L.iceStairX1 - L.iceStairX0; i++) b.solid(L.iceStairX0 + i, y, z0, L.iceStairX0 + i, y + i, z0 + 6, jitter(C.ice));
@@ -1039,132 +1044,19 @@ let terrainCache = null;
 function terrain(group, era) {
   terrainCache ||= terrainMeshes({
     heightAt: landAt,
-    hole: (x, z) => x > 0 && x < W && z > ZMIN && z < ZMAX,
+    hole: (x, z) => (x > 0 && x < W && z > ZMIN && z < ZMAX) || (x > LOWLAND.x0 && x < LOWLAND.x1 && z > LOWLAND.z0 && z < LOWLAND.z1),
     bounds: [-560, 720, -800, 200],
     fine: [-180, 320, -260, 60],
     step: 2.5,
+    blocks: true,
+    // (what stays under the clouds isn't drawn, but for the opening by Base Camp)
+    under: -14,
+    keep: (x, z) => Math.hypot(x + 150, z - 60) < 48,
     colors: TERRAIN_COLORS,
     snowLine: -6,
     lowLine: -12,
   });
   group.add(terrainCache[era]);
-}
-
-/**
- * Far below, through the openings in the clouds behind the mountain: the valley of Hollowmere, and
- * the harbor of Saltwick by the sea. Built big, so they read from the summit. In the First Age
- * there is only forest and sea; in the Stopped Age, frost.
- */
-export const TOWNS = { hollowmere: { x: 10, z: -330, y: -30.5 }, saltwick: { x: 160, z: -350, y: -30.5 } };
-function below(group, era) {
-  const S = 2.4;
-  const frost = era === F, first = era === P;
-  const mat = (color, glow = 0, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.85, emissive: glow ? color : 0, emissiveIntensity: glow, ...o });
-  const town = (t) => {
-    const g = new THREE.Group();
-    g.position.set(t.x, t.y, t.z);
-    g.scale.setScalar(S);
-    group.add(g);
-    return g;
-  };
-  const disc = (t, x, z, r, color, o) => {
-    const m = new THREE.Mesh(new THREE.CircleGeometry(r, 48).rotateX(-Math.PI / 2), mat(color, 0, o));
-    m.position.set(x, 0, z);
-    t.add(m);
-    return m;
-  };
-  const box = (t, x, yy, z, sx, sy, sz, color, glow = 0, rot = 0) => {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat(color, glow));
-    m.position.set(x, yy + sy / 2, z);
-    m.rotation.y = rot;
-    t.add(m);
-    return m;
-  };
-  const cone = (t, x, yy, z, r, h, color, sides = 4, rot = Math.PI / 4) => {
-    const m = new THREE.Mesh(new THREE.ConeGeometry(r, h, sides), mat(color));
-    m.position.set(x, yy + h / 2, z);
-    m.rotation.y = rot;
-    t.add(m);
-    return m;
-  };
-  const tree = (t, x, z, h) => cone(t, x, 0, z, h * 0.32, h, frost ? 0xd8e0ee : first ? 0x123a26 : 0x1f4a2c, 6, 0);
-  const rng = makeRng(9);
-
-  // ---- Hollowmere: fields, the river and its bridges, roofs, and the Clocktower with its lit face
-  const hm = town(TOWNS.hollowmere);
-  disc(hm, 0, 0, 48, frost ? 0xc8d0e0 : first ? 0x173a26 : 0x4a7a3a);
-  if (!first && !frost) for (let i = 0; i < 26; i++) {
-    const a = rng() * Math.PI * 2, d = 18 + rng() * 26;
-    box(hm, Math.cos(a) * d, 0.02, Math.sin(a) * d, 5 + rng() * 6, 0.05, 4 + rng() * 5, [0x6a8a3a, 0x8a9a4a, 0x5a7a34, 0xa89a5a][i % 4], 0, rng() * 3);
-  }
-  for (let i = 0; i < 7; i++) {
-    const r = new THREE.Mesh(new THREE.PlaneGeometry(4, 16).rotateX(-Math.PI / 2), mat(frost ? 0xc8e0f4 : 0x3a7ab8, 0, { roughness: 0.2, metalness: 0.3 }));
-    r.position.set(-30 + i * 10, 0.08, -14 + Math.sin(i * 0.9) * 7);
-    r.rotation.y = Math.PI / 2 + Math.cos(i * 0.9) * 0.5;
-    hm.add(r);
-  }
-  if (!first) {
-    box(hm, -8, 0.1, -12, 2, 0.5, 6, frost ? 0xb8c4d8 : 0x8a7a6a); // a bridge
-    for (let i = 0; i < 46; i++) {
-      const a = rng() * Math.PI * 2, d = 5 + rng() * 15;
-      const x = Math.cos(a) * d, z = Math.sin(a) * d, rot = rng() * 1.5;
-      box(hm, x, 0, z, 2.4, 1.8, 2, frost ? 0xa8b4c8 : 0xe8dcc0, 0, rot);
-      const roof = cone(hm, x, 1.8, z, 1.9, 1.3, frost ? 0xeef2fa : [0xa8502f, 0x8a3a2a, 0x6a4a3a][i % 3], 4, rot + Math.PI / 4);
-      roof.scale.set(1, 1, 0.8);
-      if (!frost && i % 2 === 0) box(hm, x, 0.5, z, 2.5, 0.5, 0.3, 0xffc870, 2.6, rot); // lit windows
-    }
-    // the Clocktower
-    box(hm, 0, 0, 0, 4.4, 15, 4.4, frost ? 0x9aa0b0 : 0xc9b48a);
-    box(hm, 0, 15, 0, 5, 1, 5, frost ? 0x8a90a0 : 0x8a7a5a);
-    cone(hm, 0, 16, 0, 3.6, 6, frost ? 0xdfe6f4 : 0x3a4a5a);
-    box(hm, 0, 10.6, 2.25, 3, 3, 0.3, frost ? 0x6a7aa0 : 0xffe0a0, frost ? 0.3 : 2.6);
-    box(hm, 0, 10.6, -2.25, 3, 3, 0.3, frost ? 0x6a7aa0 : 0xffe0a0, frost ? 0.3 : 2.6);
-  } else for (let i = 0; i < 6; i++) box(hm, -10 + i * 4, 0, 6 - (i % 2) * 5, 0.6, 0.5, 0.6, 0xff8a3a, 3); // campfires in the forest
-  for (let i = 0; i < (first ? 140 : 70); i++) {
-    const a = rng() * Math.PI * 2, d = (first ? 4 : 22) + rng() * 24;
-    tree(hm, Math.cos(a) * d, Math.sin(a) * d, 2.5 + rng() * 3);
-  }
-
-  // ---- Saltwick: the sea, the headland, the harbor wall and its boats, and Keeper's Light with its beam
-  const sw = town(TOWNS.saltwick);
-  disc(sw, 0, 0, 70, frost ? 0x9ab0d0 : first ? 0x0a2a48 : 0x2a6aa0, { roughness: 0.15, metalness: 0.35 });
-  const land = disc(sw, -22, 6, 26, frost ? 0xd0d8e8 : first ? 0x2a3a2a : 0x8a9a6a);
-  land.position.y = 0.1;
-  if (!first) {
-    box(sw, -6, 0, 4, 2.6, 12, 2.6, frost ? 0xc8d0e0 : 0xf0eee6);
-    for (const y of [3, 7]) box(sw, -6, y, 4, 2.7, 1, 2.7, frost ? 0xa8b0c8 : 0xc83a2a);
-    box(sw, -6, 12, 4, 3, 1.6, 3, 0x8a2a2a);
-    box(sw, -6, 13.6, 4, 2, 1.6, 2, frost ? 0x6a7aa0 : 0xffe9a0, frost ? 0.4 : 3);
-    for (let i = 0; i < 26; i++) {
-      const x = -34 + (i % 9) * 3 + rng(), z = 8 + Math.floor(i / 9) * 3.4 + rng();
-      box(sw, x, 0.1, z, 2.2, 1.6, 2.2, frost ? 0xb8c4d8 : 0xf0eee6);
-      cone(sw, x, 1.7, z, 1.8, 1.2, frost ? 0xeef2fa : 0x3a5a8a);
-      if (!frost && i % 3 === 0) box(sw, x, 0.5, z, 2.3, 0.5, 0.3, 0xffc870, 2.6);
-    }
-    box(sw, 4, 0, 14, 26, 1.2, 1.6, frost ? 0xc0c8d8 : 0x8a8378); // the harbor wall
-    for (let i = 0; i < 6; i++) {
-      const bx = -2 + i * 3.6, bz = 18 + (i % 2) * 2.4;
-      box(sw, bx, 0, bz, 2.6, 0.6, 1, frost ? 0xa8b4c8 : [0xa83a2a, 0x2a6a8a, 0xe8c040][i % 3]);
-      box(sw, bx, 0.6, bz, 0.12, 3, 0.12, 0x5a4030);
-    }
-    if (era === M) {
-      // the beam, sweeping round
-      const beam = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.4, 5, 50, 12, 1, true).rotateZ(Math.PI / 2).translate(25, 0, 0),
-        new THREE.MeshBasicMaterial({ color: 0xffe9a0, transparent: true, opacity: 0.22, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }),
-      );
-      const pivot = new THREE.Group();
-      pivot.position.set(-6, 14.4, 4);
-      pivot.add(beam);
-      sw.add(pivot);
-      SPINNERS.push({ obj: pivot, era, axis: 'y', speed: 0.6 });
-    }
-  } else {
-    // the First Age: the Tooth, and the Dawn Bell's mast
-    box(sw, -6, 0, 4, 3, 8, 3, 0x2a3440);
-    box(sw, -6, 8, 4, 0.4, 5, 0.4, 0x5a4030);
-  }
-  for (let i = 0; i < 30; i++) tree(sw, -30 + rng() * 20, -6 + rng() * 14, 2 + rng() * 2.5);
 }
 
 /**
@@ -1278,7 +1170,7 @@ export function buildLevel(world) {
     orrery(g, era);
     telescope(g, era);
     terrain(g, era);
-    below(g, era);
+    vista(g, era, TERRAIN_COLORS[era], SPINNERS);
   }
   frost(world);
   lookoutLamp(world);

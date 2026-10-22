@@ -5,8 +5,10 @@
 // moment to hit him: with the wrench, or a wave.
 //
 //   Phase 1  Stasis bolts: balls of cold light, fired down the hall along a line you can see on the
-//            floor before they come. Step up or down out of the line (or roll through). A bolt
-//            that catches you costs a heart and freezes you for a moment (tap to break out).
+//            floor before they come. Step up or down out of the line (or roll through), or swing
+//            the wrench just as one reaches you and knock it back: his own bolt shatters his guard
+//            and knocks him down. A bolt that catches you costs a heart and freezes you for a
+//            moment (tap to break out).
 //   Phase 2  He rewrites the floor: gold cracks spread across a stretch of it, and then it falls
 //            away into the dark under the End of Time, until he winds it back. Get off the cracks.
 //            Hurt him, and he winds up a Rewind to undo it: hit him while the clock spins.
@@ -262,12 +264,66 @@ export class Duel {
       b.slow = true;
       b.orb.mat.color.setHex(GREEN).multiplyScalar(1.5);
     } else if (part === 'rewind') {
-      b.back = true;
-      b.vx = (Math.sign(this.x - b.x) || 1) * Math.max(4, Math.abs(b.vx)) * 1.6;
-      b.vz = (this.z - b.z) * 1.5;
-      b.orb.mat.color.setHex(AMBER).multiplyScalar(1.6);
+      this.sendBack(b, AMBER);
+      b.power = 2;
       audio.sfx('rewind');
       this.hint('boltBack', 'Back where it came from. Straight at him.');
+    }
+  }
+
+  /** A bolt turned round, homing on him. */
+  sendBack(b, color) {
+    b.held = 0;
+    b.back = true;
+    b.vx = (Math.sign(this.x - b.x) || 1) * Math.max(4, Math.abs(b.vx)) * 1.6;
+    b.vz = (this.z - b.z) * 1.5;
+    b.orb.mat.color.setHex(color).multiplyScalar(1.6);
+  }
+
+  /** The wrench, swung just as a bolt reaches her (or at one held in mid-air): knocked back at him. */
+  batBolts(x, y, z) {
+    const g = this.game;
+    let any = false;
+    for (const b of this.bolts) {
+      if (b.dead || b.back || Math.abs(b.x - x) > 1.3 || Math.abs(b.z - z) > 1.1 || Math.abs(FY + BOLT.y - y) > 1.2) continue;
+      this.sendBack(b, GOLD);
+      g.fx.spawn('flash', b.x, FY + BOLT.y, b.z, { size: 0.8, grow: 2.6, life: 0.16, color: GOLD, glow: 2.6 });
+      g.fx.spawn('ring', b.x, FY + BOLT.y, b.z, { size: 0.3, grow: 5, life: 0.22, color: GOLD, glow: 2.4 });
+      g.fx.scatter('shard', b.x, FY + BOLT.y, b.z, 6, { size: 0.2, speed: 3.5, life: 0.35, color: GOLD, glow: 2.2 });
+      any = true;
+    }
+    if (!any) return false;
+    audio.sfx('parry');
+    g.hitStop = Math.max(g.hitStop, 0.06);
+    g.renderer.shake = Math.max(g.renderer.shake || 0, 0.25);
+    this.hint('batted', 'Knocked straight back at him!');
+    return true;
+  }
+
+  /** His own bolt, back into him: it goes through his guard, and shatters it (the Hairspring's hits harder). */
+  struckByBolt(o) {
+    if (this.squirrelsLeft) return this.deflect();
+    if (this.open) return this.damage(2, 'His own bolt, straight back at him!');
+    this.shatterGuard();
+    if (this.damage(o.power || 1, 'His own bolt shatters his guard!')) return;
+    // knocked down out of whatever he was doing, winded, his guard gone
+    for (const w of this.warns) w.mesh.parent?.remove(w.mesh);
+    this.warns = [];
+    this.queue = [];
+    this.state = 'tired';
+    this.t = 3;
+    this.hint('broken', `His guard is broken, and he's down! Hit him: your wrench (${key('X', 'Attack')}), or a wave.`);
+  }
+
+  shatterGuard() {
+    const g = this.game, y = this.y + 1.05;
+    audio.sfx('crush');
+    g.renderer.shake = 0.6;
+    g.fx.spawn('flash', this.x, y, this.z + 0.4, { size: 1.6, grow: 2.2, life: 0.2, color: GOLD, glow: 2.6 });
+    g.fx.spawn('ring', this.x, y, this.z + 0.4, { size: 2.2, grow: 2.4, life: 0.35, color: GOLD, glow: 2.4 });
+    for (let i = 0; i < 18; i++) {
+      const a = (i / 18) * Math.PI * 2;
+      g.fx.spawn('shard', this.x + Math.cos(a) * 1.15, y + Math.sin(a) * 1.15, this.z + 0.4, { size: 0.3, life: 0.7, color: GOLD, glow: 2.4, vx: Math.cos(a) * 4, vy: Math.sin(a) * 4 + 2, gravity: 10, spin: 12 });
     }
   }
 
@@ -291,7 +347,9 @@ export class Duel {
 
   /** The wrench, swung at him. */
   meleeHit(x, y, z) {
-    if (!this.active || this.hitCd > 0 || this.state === 'down') return;
+    if (!this.active || this.state === 'down') return;
+    if (this.batBolts(x, y, z)) return;
+    if (this.hitCd > 0) return;
     if (Math.abs(x - this.x) > 1.25 || Math.abs(z - this.z) > 2.2 || y < this.y - 0.8 || y > this.y + 2.4) return;
     this.hitCd = 0.3;
     if (this.state === 'wind') {
@@ -308,7 +366,7 @@ export class Duel {
     g.bursts.emit(this.x, this.y + 1.2, this.z, 16, { color: [GOLD, 0xffffff], speed: 4, life: 0.4 });
     g.fx.spawn('ring', this.x, this.y + 1.2, this.z + 0.3, { size: 1.6, grow: 1.5, life: 0.25, color: GOLD, glow: 2.2 });
     if (this.squirrelsLeft) this.hint('guardSquirrels', `His guard holds while he is rubbing out Zach and Megan. Hold them in their moment first: the <b>Stasis ring</b> (${key('T', 'wrench chip')}), hold ${key('X', 'Attack')} and let go.`);
-    else this.hint('guard', 'It breaks on his guard. Wait for him to tire: when he stumbles and sinks to the floor, his guard is down.');
+    else this.hint('guard', `It breaks on his guard. Wait for him to tire (he stumbles and sinks to the floor), or knock one of his bolts back into him: swing your wrench (${key('X', 'Attack')}) just as it reaches you. His own bolt shatters his guard.`);
   }
 
   stun(secs) {
@@ -374,7 +432,7 @@ export class Duel {
     const aimed = { do: 'bolt', kind: 'aimed' }, three = { do: 'bolt', kind: 'three' }, fan = { do: 'bolt', kind: 'fan' };
     const rest = (t) => [W(0.3), { do: 'blink', near: true }, { do: 'tired', t }];
     this.cycle++;
-    if (p === 1) return [{ do: 'blink', x: far }, W(0.4), aimed, W(1.2), aimed, W(1.2), three, W(1.5), ...rest(3.4)];
+    if (p === 1) return [{ do: 'blink', x: far }, W(0.4), aimed, W(1.2), three, W(1.5), ...rest(3.4)];
     if (p === 2) {
       if (this.cycle % 2) return [{ do: 'blink', x: far }, { do: 'rift' }, W(0.5), aimed, W(1.1), three, W(1.6), ...rest(3.0)];
       return [{ do: 'blink', x: far }, three, W(1.3), { do: 'rift' }, W(0.4), three, W(1.6), ...rest(3.0)];
@@ -633,14 +691,14 @@ export class Duel {
       if (Math.random() < 0.6) g.fx.spawn('shard', o.x - Math.sign(o.vx) * 0.3, FY + BOLT.y + (Math.random() - 0.5) * 0.4, o.z, { size: 0.18, life: 0.3, color: o.back ? AMBER : o.slow ? GREEN : BOLT_C, glow: 2, vx: -o.vx * 0.15, spin: 10 });
       if (o.x < X0 - 1.5 || o.x > ARENA.x1) {
         this.dropBolt(o, true);
+        if (!o.back) this.hint('bat', `Next time, swing your wrench (${key('X', 'Attack')}) just as a bolt reaches you: you'll knock it back at him, and his own bolt shatters his guard.`);
         continue;
       }
       if (o.back) {
         // sent back: it finds him, guard or no (unless he's drawing on the squirrels)
         if (Math.abs(o.x - this.x) < 0.8 && this.state !== 'down') {
           this.dropBolt(o, true);
-          if (this.squirrelsLeft) this.deflect();
-          else this.damage(2, 'His own bolt, straight back at him!');
+          this.struckByBolt(o);
         }
         continue;
       }
