@@ -2,7 +2,7 @@
 // pushing a block, Seal / Echo / Tempo, the Gearworks, the ending, and what finishing unlocks.
 // (The whole story, played through, is hollowmere-play.mjs.)
 // It is not a playthrough: it puts Vivienne where each thing happens and uses real key presses there.
-import { boot, newGame, sleep, settle } from './lib.mjs';
+import { boot, newGame, sleep, settle, SHOTS } from './lib.mjs';
 let failed = false;
 const check = (ok, what) => { console.log(`${ok ? 'PASS' : 'FAIL'}  ${what}`); if (!ok) failed = true; };
 const SAVE = 'chronoheart-save-v2';
@@ -62,14 +62,14 @@ const SAVE = 'chronoheart-save-v2';
 
   // Seal and Echo
   await G(() => { const g = __game; g.applyEra(1, true); g.player.place(8.5, 0, 4.5); g.abilities.unlock('seal'); g.abilities.unlock('echo'); });
-  await sleep(300);
-  check(await G(() => document.body.classList.contains('has-seal') && document.body.classList.contains('has-echo')), 'Seal and Echo unlock');
+  await page.waitForFunction('window.__game.controlsEnabled()', { timeout: 40000 }); // (just after a shift, input is locked for a moment)
+  check(await G(() => __game.state.flags.hasSeal && document.body.classList.contains('has-echo')), 'Seal and Echo unlock');
   await tap('KeyV'); await sleep(150);
-  const rec = await G(() => __game.abilities.recording);
+  const rec = await G(() => !!__game.abilities.rec);
   await page.keyboard.down('KeyD'); await sleep(900); await page.keyboard.up('KeyD');
   await tap('KeyV'); await sleep(300);
   const echoes = await G(() => __game.abilities.echoes.length);
-  check(rec && echoes === 1, `V records an echo, V again sets it going (${echoes})`);
+  check(rec && echoes === 1, `V records an echo, V again sets it going (recording ${rec}, ${echoes} echo)`);
 
   // Tempo: a tap still travels, a hold bends time
   await G(() => { const g = __game; g.state.flags.hasTempo = true; g.abilities.syncBody(); });
@@ -102,14 +102,14 @@ const SAVE = 'chronoheart-save-v2';
   }, SAVE);
   check(end.done && end.slot, 'the ending marks Chapter One finished and keeps its slot');
   check(end.eyebrow === 'The Clocktower ticks again' && /Chapter One/.test(end.chapter) && end.next === 'Begin Chapter Two', `the credits name the chapter and offer the next ("${end.chapter}", ${end.cogs}, "${end.next}")`);
-  await page.screenshot({ path: `${process.env.SHOTS || '.'}/credits-hollowmere.png` });
+  await page.screenshot({ path: `${SHOTS}/credits-hollowmere.png` });
   await page.click('#btn-credits-next');
   await sleep(1500);
   await page.waitForFunction('window.__game && document.body.dataset.chapter');
   const after = await G(() => ({ chapter: document.body.dataset.chapter, cards: [...document.querySelectorAll('.chapter-card')].map((c) => c.className + ' | ' + c.querySelector('.ch-state').textContent) }));
   check(after.chapter === 'saltwick', 'Begin Chapter Two opens the page on Chapter Two');
   check(/done/.test(after.cards[0]) && !/locked/.test(after.cards[1]), `its card is open, and Chapter One's says so (${after.cards.join(' ; ')})`);
-  await page.screenshot({ path: `${process.env.SHOTS || '.'}/title-after-one.png` });
+  await page.screenshot({ path: `${SHOTS}/title-after-one.png` });
   // and back again from the title
   await page.click('.chapter-card:not(.current)');
   await sleep(1500);

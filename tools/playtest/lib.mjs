@@ -1,8 +1,11 @@
 import puppeteer from 'puppeteer-core';
+import { tmpdir } from 'node:os';
 const CHROME = process.env.CHROME || process.env.HOME + '/.cache/puppeteer/chrome/mac_arm-148.0.7778.97/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing';
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+/** Where screenshots go: $SHOTS, else the system temp folder (never the repo). */
+export const SHOTS = process.env.SHOTS || tmpdir();
 /**
- * Open the game on a chapter ('hollowmere' or 'saltwick'), with a clean save and every chapter
+ * Open the game on a chapter ('hollowmere', 'saltwick' or 'summit'), with a clean save and every chapter
  * unlocked. save: a saved state to put in that chapter's slot first (for Continue). unlocked:
  * false leaves later chapters locked, as a new player finds them. storage: raw localStorage
  * entries to start from instead (for testing how old saves are brought over).

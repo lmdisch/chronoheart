@@ -134,10 +134,13 @@ src/
   audio/                  procedural music (one layer per age, the tune from the chapter) and sound effects
   ui/                     HUD and dialogue, touch controls, picking locks, styles
 tools/
-  reachability/           per chapter: do the gates hold, and can you always walk back to the start?
+  reachability/           Chapters One and Two: do the gates hold, and can you always walk back to the start?
   playtest/               headless scripted playtests (see its README)
+  artifact/               build.mjs: the single-page build for the claude.ai artifact
 docs/                     each chapter's player guide: how to play, walkthrough, cogs, favors, secrets
-IDEAS.md                  the story's decisions, and ideas that were considered
+  story.md                the story: the canon every line of dialogue is written from
+  story-history.md        how earlier versions of the story were decided, and ideas that weren't used
+wrangler.jsonc            Cloudflare hosting
 ```
 
 ---
@@ -171,7 +174,7 @@ const r = await import('/tools/reachability/saltwick.js'); console.table(r.check
 
 Every stage should say `stuck: []`, and in Chapter Two that its gate holds. Start a new game afterward, since it changes the save state.
 
-**Scripted playtests.** `tools/playtest/` drives the real game in headless Chrome with real key presses: a smoke test of both chapters, a full playthrough of each chapter, and checks of Chapter One's systems and Chapter Two's side content. See [tools/playtest/README.md](tools/playtest/README.md).
+**Scripted playtests.** `tools/playtest/` drives the real game in headless Chrome with real key presses: a smoke test of every chapter, a full playthrough of each chapter, the duel with Donald Eugene, the wrench and its parts, and checks of Chapter One's systems and Chapter Two's side content. See [tools/playtest/README.md](tools/playtest/README.md).
 
 ---
 
@@ -181,11 +184,10 @@ Every stage should say `stuck: []`, and in Chapter Two that its gate holds. Star
 
 ## Publishing the live page
 
-The claude.ai artifact is a single self-contained HTML page, not the `dist/` output. It's assembled like this:
+The claude.ai artifact is a single self-contained HTML page, not the `dist/` output. `node tools/artifact/build.mjs` writes it to `dist-artifact/chronoheart.html` (and `dist-artifact/test.html`, the same page wrapped to open locally). It:
 
-1. Build the game code **unminified**, with `three` left external, as one ES module.
-2. Inline `src/ui/style.css` into a `<style>` tag, and copy the `<main id="app">…</main>` markup from `index.html`.
-3. Add an import map that loads `three` (and `three/examples/jsm/`) from jsDelivr, version 0.186.0.
-4. Add the module script, starting with `document.body.dataset.era = 'present';`.
+1. builds the game code **unminified**, with `three` left external, as one ES module;
+2. inlines `src/ui/style.css` into a `<style>` tag, and copies the `<main id="app">…</main>` markup from `index.html`;
+3. adds an import map that loads `three` (and `three/examples/jsm/`) from jsDelivr, version 0.186.0.
 
 Smoke-test the assembled page locally (serve it, start a new game in each chapter, switch chapters from the title) before publishing.

@@ -1,9 +1,9 @@
-// Quick check of both chapters: the title screen, a new game, a save and Continue, no errors.
-import { boot, newGame, sleep } from './lib.mjs';
-const out = process.env.SHOTS || '.';
+// Quick check of every chapter: the title screen, a new game, a save and Continue, no errors.
+import { boot, newGame, sleep, SHOTS } from './lib.mjs';
+const out = SHOTS;
 let failed = false;
 const check = (ok, what) => { console.log(`${ok ? 'PASS' : 'FAIL'}  ${what}`); if (!ok) failed = true; };
-for (const chapter of ['hollowmere', 'saltwick']) {
+for (const chapter of ['hollowmere', 'saltwick', 'summit']) {
   const { browser, page, errors } = await boot({ chapter });
   await sleep(1500);
   await page.screenshot({ path: `${out}/title-${chapter}.png` });

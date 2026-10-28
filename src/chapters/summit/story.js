@@ -216,17 +216,15 @@ export const AFTER = [
 // ---------------------------------------------------------------------------
 export function npcLines(game, id) {
   const f = game.state.flags, inv = game.state.inventory, kind = game.state.kindness;
+  const emberToIngrid = () => [
+    IN("Is that... it's warm. It's been burning since before there was a town up here, hasn't it? I can feel it."),
+    ...lightLamp('Ingrid takes the coal up to the lookout and tucks it into the dark lamp. It catches at once, and the wind can do nothing about it at all.'),
+    IN("Gran always said that lamp was waiting for the right flame. There. Now it'll outlast all of us."),
+  ];
   switch (id) {
     case 'ingrid': {
+      if (inv.includes('ember')) return emberToIngrid();
       if (f.hoursReturned) return [IN("My lamps! Listen to them: they're burning right down to the wick, the way lamps should. I could cry. I won't. It would freeze.")];
-      if (inv.includes('ember')) return [
-        IN("Is that... it's warm. It's been burning since before there was a town up here, hasn't it? I can feel it."),
-        { take: 'ember' },
-        N('Ingrid takes the coal up to the lookout and tucks it into the dark lamp. It catches at once, and the wind can do nothing about it at all.'),
-        { flag: 'lampLit', refresh: true, sfx: 'key' },
-        IN("Gran always said that lamp was waiting for the right flame. There. Now it'll outlast all of us."),
-        { kind: 'ember' },
-      ];
       if (!f.hasLantern) return [
         IN('Every lamp on the road, every night, all winter. And every year they burn a little shorter. Nobody can tell me why.'),
         IN("You're climbing? Up to the top? Then take Gran's lantern. It never shone like a proper lantern. Somebody tinkered with it, long before me, and up here its light does strange things."),
@@ -239,6 +237,7 @@ export function npcLines(game, id) {
       return [IN("Light Gran's lantern, and turn it to whichever time you need. Back, or forward."), IN("The lookout lamp's still dark. A flame that never goes out: that's what it wants.")];
     }
     case 'ingridW':
+      if (inv.includes('ember')) return emberToIngrid();
       return [IN("...was I standing here long? My feet are freezing. And I had the strangest dream: that nothing ever changed again.")];
     case 'tobinW':
       return [TO("Where did my ink go? Oh. Oh, it's dried. How wonderful. Ink is supposed to dry.")];
@@ -371,6 +370,13 @@ export async function interact(game, ent) {
       return;
     case 'lookoutLamp':
       if (f.lampLit) return say(N('The lookout lamp, burning with a flame from the First Age. The wind has given up trying.'));
+      if (game.state.inventory.includes('ember')) {
+        return game.dialogue.run([
+          V('A flame that never goes out. I think I have one.'),
+          ...lightLamp('Vivienne tucks the coal into the dark lamp. It catches at once, and the wind can do nothing about it at all.'),
+          V('There. Ingrid should see this.'),
+        ], (cmd) => runCommand(game, cmd));
+      }
       return say([N('An old lamp on a tall post, dark. Its glass is clean: someone polishes it, even though it never gets lit.'), f.emberQuest ? V('A flame that never goes out. Somewhere, someone must have one.') : V('Ingrid would know about this.')]);
     case 'statue':
       return say([
@@ -478,6 +484,11 @@ export async function struck(game, ent) {
       }
       return;
   }
+}
+
+/** The coal from the First Fire goes into the lookout lamp: whoever does it, the favor is done. */
+function lightLamp(how) {
+  return [{ take: 'ember' }, N(how), { flag: 'lampLit', refresh: true, sfx: 'key' }, { kind: 'ember' }];
 }
 
 /** The little commands mixed in with the lines: give, take, flag, favor, kindness, sound, power, refresh. */

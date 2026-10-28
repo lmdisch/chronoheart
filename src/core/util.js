@@ -33,11 +33,6 @@ export function hash3(x, y, z) {
   return (h >>> 0) / 4294967296;
 }
 
-/** Hex color int -> [r,g,b] in 0..1 */
-export function hexToRgb(hex) {
-  return [((hex >> 16) & 255) / 255, ((hex >> 8) & 255) / 255, (hex & 255) / 255];
-}
-
 /** Material-family tag stored above the 24 RGB bits (see render/materials.js). */
 export const tagOf = (hex) => hex - (hex & 0xffffff);
 
@@ -47,16 +42,6 @@ export function shade(hex, f) {
   const g = clamp(Math.round(((hex >> 8) & 255) * f), 0, 255);
   const b = clamp(Math.round((hex & 255) * f), 0, 255);
   return ((r << 16) | (g << 8) | b) + tagOf(hex);
-}
-
-export function mixHex(a, b, t) {
-  const ar = (a >> 16) & 255, ag = (a >> 8) & 255, ab = a & 255;
-  const br = (b >> 16) & 255, bg = (b >> 8) & 255, bb = b & 255;
-  return (
-    ((Math.round(lerp(ar, br, t)) << 16) |
-      (Math.round(lerp(ag, bg, t)) << 8) |
-      Math.round(lerp(ab, bb, t))) + tagOf(a)
-  );
 }
 
 export const ERA = { PAST: 0, PRESENT: 1, FUTURE: 2 };

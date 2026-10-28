@@ -1,8 +1,8 @@
 // Chapter Three's duel with Donald Eugene (see src/chapters/summit/duel.js), driven by script: into
 // the hall, each phase's attacks, hits that land and hits that don't, the Rewind wind-up, the
 // squirrels, the Page Turn, and the win through to the credits.
-import { boot, newGame, sleep, settle } from './lib.mjs';
-const OUT = process.env.SHOTS || '.';
+import { boot, newGame, sleep, settle, SHOTS } from './lib.mjs';
+const OUT = SHOTS;
 const { browser, page, errors } = await boot({ chapter: 'summit' });
 const G = (fn, ...a) => page.evaluate(fn, ...a);
 let fails = 0;

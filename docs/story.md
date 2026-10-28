@@ -1,6 +1,6 @@
 # The story of Chronoheart
 
-**Decided with Logan, 2026-10-20.** This replaces every earlier version of the story (Orin as the hour thief, borrowed hours, the Tide Clock, the First Clockmaker loop, the three age endings). Older canon in [IDEAS.md](../IDEAS.md) is kept only as history. Write all dialogue from this page, in the voice described at the end.
+**Decided with Logan, 2026-10-20.** This replaces every earlier version of the story (Orin as the hour thief, borrowed hours, the Tide Clock, the First Clockmaker loop, the three age endings). Older canon in [story-history.md](story-history.md) is kept only as history. Write all dialogue from this page, in the voice described at the end.
 
 ---
 
@@ -168,7 +168,7 @@ There is one ending.
 
 ## Voice
 
-From [the 2026-10-19 story pass](../IDEAS.md), still true:
+From [the 2026-10-19 story pass](story-history.md), still true:
 
 - **Say the theme once.** Lyra says it, in the memory. Everyone else acts it out. Vivienne never makes a speech about it.
 - **Withhold, then show.** Don's crime is learned through things the player sees change, not through anyone explaining it. His notebooks are the confession, and they are written like a craftsman's log.
